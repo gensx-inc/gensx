@@ -117,7 +117,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'pcd.query': {
+  pcd_query: {
     description: "Query MiniPCD for specific elements using text search and filters",
     params: z.object({
       kind: z.enum(['action', 'form', 'collection']).optional().describe("Filter by element type"),
@@ -154,7 +154,7 @@ export const toolbox = createToolBox({
   },
 
   // Action Tools
-  'dom.click': {
+  dom_click: {
     description: "Click on an element using role-based selector",
     params: z.object({
       selector: RoleSelectorSchema.describe("Role-based selector to target the element")
@@ -168,7 +168,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'dom.type': {
+  dom_type: {
     description: "Type text into an input element using role-based selector",
     params: z.object({
       selector: RoleSelectorSchema.describe("Role-based selector to target the input element"),
@@ -184,7 +184,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'dom.select': {
+  dom_select: {
     description: "Select an option from a dropdown using role-based selector",
     params: z.object({
       selector: RoleSelectorSchema.describe("Role-based selector to target the select element"),
@@ -199,7 +199,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'dom.submit': {
+  dom_submit: {
     description: "Submit a form using role-based selector",
     params: z.object({
       selector: RoleSelectorSchema.describe("Role-based selector to target the form or submit button")
@@ -213,7 +213,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'dom.scroll': {
+  dom_scroll: {
     description: "Scroll the page to a specific position or element",
     params: z.object({
       y: z.number().optional().describe("Y position to scroll to (pixels from top)"),
@@ -228,7 +228,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'dom.waitFor': {
+  dom_waitFor: {
     description: "Wait for specific conditions to be met before continuing",
     params: z.object({
       event: z.enum(['urlChange', 'networkIdle', 'selector', 'text']).describe("Type of event to wait for"),
@@ -244,7 +244,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'dom.extract': {
+  dom_extract: {
     description: "Extract structured data from a collection (list, grid, table)",
     params: z.object({
       collectionId: z.string().describe("ID of the collection from MiniPCD"),
@@ -259,8 +259,97 @@ export const toolbox = createToolBox({
     })
   },
 
+  dom_findByText: {
+    description: "Find elements on the page by their visible text content - perfect for locating specific information",
+    params: z.object({
+      searchText: z.string().describe("Text to search for in element content"),
+      elementType: z.enum(['any', 'clickable', 'button', 'link', 'input']).optional().default('any').describe("Type of elements to search"),
+      exactMatch: z.boolean().optional().default(false).describe("Whether to match text exactly or allow partial matches")
+    }),
+    result: z.object({
+      ok: z.boolean(),
+      data: z.array(z.object({
+        text: z.string().describe("Full text content of the element"),
+        tagName: z.string().describe("HTML tag name"),
+        clickable: z.boolean().describe("Whether the element is clickable"),
+        href: z.string().optional().describe("Link href if applicable"),
+        selector: z.object({
+          kind: z.literal('text'),
+          text: z.string()
+        }).describe("Text-based selector for this element"),
+        position: z.object({
+          x: z.number(),
+          y: z.number(),
+          width: z.number(),
+          height: z.number()
+        }).describe("Position and size of the element")
+      })).optional(),
+      error: z.string().optional(),
+      retryable: z.boolean().optional(),
+      code: z.string().optional()
+    })
+  },
+
+  dom_getPageContent: {
+    description: "Get page content in a simple, reliable way - extracts visible text and clickable elements",
+    params: z.object({
+      includeLinks: z.boolean().optional().default(true).describe("Include links in clickable elements"),
+      includeClickables: z.boolean().optional().default(true).describe("Include clickable elements list")
+    }),
+    result: z.object({
+      ok: z.boolean(),
+      data: z.object({
+        pageTitle: z.string().describe("Page title"),
+        url: z.string().describe("Current URL"),
+        mainContent: z.string().describe("Main content area text (up to 5000 chars)"),
+        clickableElements: z.array(z.object({
+          text: z.string().describe("Text of clickable element"),
+          tag: z.string().describe("HTML tag name"),
+          href: z.string().optional().describe("Link href if applicable"),
+          isButton: z.boolean().describe("Whether it's a button-type element")
+        })).describe("List of clickable elements"),
+        allText: z.string().describe("All visible text on page (up to 8000 chars)")
+      }).optional(),
+      error: z.string().optional(),
+      retryable: z.boolean().optional(),
+      code: z.string().optional()
+    })
+  },
+
+  dom_getContentBlocks: {
+    description: "Get content blocks from the page using universal extraction (simplified approach that works on any website)",
+    params: z.object({
+      region: z.enum(['main', 'header', 'nav', 'footer', 'aside']).optional().describe("Limit extraction to specific page region"),
+      minTextLength: z.number().optional().default(20).describe("Minimum text length for content blocks"),
+      maxBlocks: z.number().optional().default(50).describe("Maximum number of content blocks to return")
+    }),
+    result: z.object({
+      ok: z.boolean(),
+      data: z.array(z.object({
+        id: z.string().describe("Unique block identifier"),
+        text: z.string().describe("Text content of the block"),
+        tagName: z.string().describe("HTML tag name"),
+        position: z.object({
+          x: z.number(),
+          y: z.number(),
+          width: z.number(),
+          height: z.number()
+        }).describe("Position and size of the element"),
+        clickable: z.boolean().describe("Whether the element is clickable"),
+        links: z.array(z.object({
+          text: z.string(),
+          href: z.string()
+        })).describe("Links found within this content block"),
+        region: z.string().describe("Page region (main, nav, header, footer, aside)")
+      })).optional(),
+      error: z.string().optional(),
+      retryable: z.boolean().optional(),
+      code: z.string().optional()
+    })
+  },
+
   // Tab Management Tools (handled by background)
-  'tabs.open': {
+  tabs_open: {
     description: "Open a new tab with the specified URL",
     params: z.object({
       url: z.string().url().describe("URL to open in new tab")
@@ -276,7 +365,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'tabs.switch': {
+  tabs_switch: {
     description: "Switch to an existing tab",
     params: z.object({
       tabId: z.number().describe("ID of the tab to switch to")
@@ -290,7 +379,7 @@ export const toolbox = createToolBox({
     })
   },
 
-  'tabs.close': {
+  tabs_close: {
     description: "Close a tab",
     params: z.object({
       tabId: z.number().describe("ID of the tab to close")
@@ -305,7 +394,7 @@ export const toolbox = createToolBox({
   },
 
   // Capture Tools (rarely used)
-  'capture.candidates': {
+  capture_candidates: {
     description: "Capture screenshot with highlighted candidate elements (use sparingly)",
     params: z.object({
       ids: z.array(z.string()).describe("Element IDs to highlight in the screenshot")

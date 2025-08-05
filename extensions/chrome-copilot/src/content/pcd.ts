@@ -29,6 +29,9 @@ let currentMiniPCD: MiniPCD | null = null;
 let detailsCache = new Map<string, PCDActionDetail>();
 let lastUpdateTimestamp = 0;
 
+// Collection element mapping (don't rely on DOM attributes that websites might strip)
+let collectionElementMap = new Map<string, HTMLElement>();
+
 // Observers for automatic updates
 let mutationObserver: MutationObserver | null = null;
 let intersectionObserver: IntersectionObserver | null = null;
@@ -156,8 +159,9 @@ export function buildMiniPCD(): MiniPCD {
     metrics
   };
   
-  // Clear details cache on rebuild
+  // Clear caches on rebuild
   detailsCache.clear();
+  collectionElementMap.clear();
   
   const buildTime = performance.now() - startTime;
   console.log(`✅ MiniPCD built in ${buildTime.toFixed(1)}ms:`, {
@@ -166,6 +170,15 @@ export function buildMiniPCD(): MiniPCD {
     collections: currentMiniPCD.collections.length,
     landmarks: currentMiniPCD.landmarks.length
   });
+
+  // Debug: Log detected collections
+  console.log('🔍 Detected collections:', currentMiniPCD.collections.map(c => ({
+    id: c.id,
+    name: c.name,
+    itemFields: c.itemFields,
+    approxCount: c.approxCount,
+    landmark: c.landmark
+  })));
   
   lastUpdateTimestamp = ts;
   return currentMiniPCD;
@@ -267,6 +280,13 @@ export function queryPCD(options: {
   // Sort by score and return top K
   results.sort((a, b) => b.score - a.score);
   return results.slice(0, options.topK || 10);
+}
+
+/**
+ * Get collection element by ID
+ */
+export function getCollectionElement(collectionId: string): HTMLElement | null {
+  return collectionElementMap.get(collectionId) || null;
 }
 
 /**
@@ -449,19 +469,41 @@ function buildCollections(): MiniCollection[] {
   const collections: MiniCollection[] = [];
   let idCounter = 0;
   
-  // Look for common list/grid patterns
-  const candidates = document.querySelectorAll(
+  // Look for traditional list/grid patterns
+  const traditionalCandidates = document.querySelectorAll(
     'ul, ol, table, [role="grid"], [role="list"], .grid, .list, .items, .results'
   );
   
-  for (const candidate of candidates) {
+  for (const candidate of traditionalCandidates) {
     const element = candidate as HTMLElement;
     if (shouldSkipElement(element)) continue;
     
     const collection = createMiniCollection(element, idCounter++);
     if (collection) {
       collections.push(collection);
-      element.dataset.pcdId = collection.id;
+      collectionElementMap.set(collection.id, element);
+    }
+  }
+  
+  // Look for modern card-based collections (React components, etc.)
+  const modernCandidates = findModernCollections();
+  console.log(`🔍 Found ${modernCandidates.length} modern collection candidates`);
+  
+  for (const candidate of modernCandidates) {
+    if (shouldSkipElement(candidate)) continue;
+    
+    const collection = createMiniCollection(candidate, idCounter++);
+    if (collection) {
+      console.log(`✅ Created modern collection:`, {
+        id: collection.id,
+        name: collection.name,
+        itemFields: collection.itemFields,
+        approxCount: collection.approxCount,
+        elementTag: candidate.tagName,
+        elementClasses: candidate.className
+      });
+      collections.push(collection);
+      collectionElementMap.set(collection.id, candidate);
     }
   }
   
@@ -792,21 +834,41 @@ function inferFormPurpose(
 }
 
 function inferCollectionName(element: HTMLElement): string {
-  // Try data attributes
+  // Try data attributes first
   const dataName = element.dataset.name || element.dataset.collection;
   if (dataName) return dataName;
   
-  // Try class names
-  const className = element.className;
-  if (className) {
-    for (const [name, pattern] of Object.entries(COLLECTION_PATTERNS)) {
-      if (pattern.test(className)) {
-        return name;
-      }
+  // Look at the content of clickable items to infer collection purpose
+  const clickableItems = element.querySelectorAll('a, button, [onclick], [role="button"]');
+  if (clickableItems.length >= 3) {
+    // Analyze common patterns in clickable text
+    const texts = Array.from(clickableItems)
+      .map(item => (item.textContent || '').trim().toLowerCase())
+      .filter(text => text.length > 0);
+    
+    // Look for common collection types based on content
+    const hasProjectTerms = texts.some(text => /project|repo|workspace|app/.test(text));
+    const hasProductTerms = texts.some(text => /product|item|buy|price|\$/.test(text));
+    const hasPostTerms = texts.some(text => /post|article|read|comment/.test(text));
+    const hasUserTerms = texts.some(text => /user|profile|member|contact/.test(text));
+    const hasFileTerms = texts.some(text => /file|document|download|upload/.test(text));
+    
+    if (hasProjectTerms) return 'projects';
+    if (hasProductTerms) return 'products';
+    if (hasPostTerms) return 'posts';
+    if (hasUserTerms) return 'users';
+    if (hasFileTerms) return 'files';
+  }
+  
+  // Try class names for semantic hints
+  const className = element.className.toLowerCase();
+  for (const [name, pattern] of Object.entries(COLLECTION_PATTERNS)) {
+    if (pattern.test(className)) {
+      return name;
     }
   }
   
-  // Try nearby headings
+  // Look for nearby headings
   const heading = element.querySelector('h1, h2, h3, h4, h5, h6') ||
                   element.previousElementSibling?.matches('h1, h2, h3, h4, h5, h6') ? 
                   element.previousElementSibling : null;
@@ -814,34 +876,216 @@ function inferCollectionName(element: HTMLElement): string {
   if (heading) {
     const headingText = heading.textContent?.trim();
     if (headingText && headingText.length < 50) {
-      return headingText;
+      return headingText.toLowerCase();
     }
   }
   
-  return element.tagName.toLowerCase();
+  // Default based on interaction type
+  return 'clickable-items';
+}
+
+/**
+ * Find interaction-based collections - areas with repeated clickable/actionable content
+ */
+function findModernCollections(): HTMLElement[] {
+  const candidates: HTMLElement[] = [];
+  
+  // Find all clickable elements on the page
+  const explicitClickable = Array.from(document.querySelectorAll('a, button, [onclick], [role="button"], [tabindex]')) as HTMLElement[];
+  
+  // Find divs/spans with cursor: pointer (common in React apps) 
+  // Target likely containers rather than checking every element
+  const cursorClickable = Array.from(document.querySelectorAll('div, span, li, section, article')).filter(el => {
+    const element = el as HTMLElement;
+    const computedStyle = window.getComputedStyle(element);
+    return computedStyle.cursor === 'pointer' && 
+           !element.matches('a, button') && // Avoid duplicates
+           element.textContent && element.textContent.trim().length > 0; // Has content
+  }) as HTMLElement[];
+  
+  const clickableElements = [...explicitClickable, ...cursorClickable];
+  console.log(`🔍 Found ${explicitClickable.length} explicit clickable + ${cursorClickable.length} cursor:pointer elements = ${clickableElements.length} total`);
+  
+  // Group clickable elements by their visual proximity and content similarity
+  const clusters = clusterClickableElements(clickableElements);
+  
+  // For each cluster, find the container that encompasses them
+  for (const cluster of clusters) {
+    if (cluster.length < 3) continue; // Need at least 3 similar clickable items
+    
+    const container = findCommonContainer(cluster);
+    if (container && !candidates.includes(container)) {
+      console.log(`🎯 Found collection container with ${cluster.length} clickable items:`, {
+        containerTag: container.tagName,
+        containerClasses: container.className,
+        childCount: container.children.length,
+        clickableItemsInCluster: cluster.length
+      });
+      candidates.push(container);
+    }
+  }
+  
+  return candidates;
+}
+
+/**
+ * Cluster clickable elements based on visual layout and content patterns
+ */
+function clusterClickableElements(elements: HTMLElement[]): HTMLElement[][] {
+  const clusters: HTMLElement[][] = [];
+  const used = new Set<HTMLElement>();
+  
+  for (const element of elements) {
+    if (used.has(element)) continue;
+    
+    const cluster = [element];
+    used.add(element);
+    
+    const elementRect = element.getBoundingClientRect();
+    const elementContent = getElementContent(element);
+    
+    // Find similar elements nearby
+    for (const other of elements) {
+      if (used.has(other) || other === element) continue;
+      
+      const otherRect = other.getBoundingClientRect();
+      const otherContent = getElementContent(other);
+      
+      // Check if elements are similar and reasonably positioned
+      if (areElementsSimilar(elementContent, otherContent) && 
+          areElementsNearby(elementRect, otherRect)) {
+        cluster.push(other);
+        used.add(other);
+      }
+    }
+    
+    clusters.push(cluster);
+  }
+  
+  return clusters.filter(cluster => cluster.length >= 3);
+}
+
+/**
+ * Extract interaction-relevant content from an element
+ */
+function getElementContent(element: HTMLElement): {
+  text: string;
+  hasImage: boolean;
+  hasIcon: boolean;
+  tagName: string;
+  role: string;
+  size: { width: number; height: number };
+} {
+  const rect = element.getBoundingClientRect();
+  const text = (element.textContent || '').trim().substring(0, 100);
+  
+  return {
+    text,
+    hasImage: element.querySelector('img') !== null,
+    hasIcon: element.querySelector('svg, i, [class*="icon"]') !== null,
+    tagName: element.tagName,
+    role: element.getAttribute('role') || element.tagName.toLowerCase(),
+    size: { width: Math.round(rect.width), height: Math.round(rect.height) }
+  };
+}
+
+/**
+ * Check if two elements are similar for clustering purposes
+ */
+function areElementsSimilar(content1: any, content2: any): boolean {
+  // Same role/interaction type
+  if (content1.role !== content2.role) return false;
+  
+  // Similar sizes (within 50% difference)
+  const sizeDiff = Math.abs(content1.size.width - content2.size.width) / Math.max(content1.size.width, content2.size.width);
+  if (sizeDiff > 0.5) return false;
+  
+  // Similar content patterns
+  const bothHaveImages = content1.hasImage === content2.hasImage;
+  const bothHaveIcons = content1.hasIcon === content2.hasIcon;
+  
+  // Both have text of reasonable length or both are primarily visual
+  const bothHaveText = (content1.text.length > 5) === (content2.text.length > 5);
+  
+  return bothHaveImages && bothHaveIcons && bothHaveText;
+}
+
+/**
+ * Check if elements are positioned nearby (same row/column or grid pattern)
+ */
+function areElementsNearby(rect1: DOMRect, rect2: DOMRect): boolean {
+  const maxDistance = 500; // Max pixels apart
+  
+  // Calculate distance between centers
+  const centerX1 = rect1.left + rect1.width / 2;
+  const centerY1 = rect1.top + rect1.height / 2;
+  const centerX2 = rect2.left + rect2.width / 2;
+  const centerY2 = rect2.top + rect2.height / 2;
+  
+  const distance = Math.sqrt(Math.pow(centerX2 - centerX1, 2) + Math.pow(centerY2 - centerY1, 2));
+  
+  return distance <= maxDistance;
+}
+
+/**
+ * Find the smallest container that encompasses all elements in a cluster
+ */
+function findCommonContainer(elements: HTMLElement[]): HTMLElement | null {
+  if (elements.length === 0) return null;
+  
+  // Start with the first element's parent
+  let container = elements[0].parentElement;
+  
+  // Walk up until we find a container that contains all elements
+  while (container) {
+    const containsAll = elements.every(element => container!.contains(element));
+    if (containsAll) {
+      return container;
+    }
+    container = container.parentElement;
+  }
+  
+  return document.body; // Fallback to body
 }
 
 function inferCollectionFields(items: Element[]): string[] {
   const fields = new Set<string>();
   
   for (const item of items) {
-    // Look for common field patterns
+    // Look for links
     const links = item.querySelectorAll('a[href]');
     if (links.length > 0) fields.add('link');
     
+    // Look for images
     const images = item.querySelectorAll('img');
     if (images.length > 0) fields.add('image');
     
-    const prices = item.textContent?.match(/\$[\d,]+(\.\d{2})?/);
-    if (prices) fields.add('price');
+    // Look for headings/titles
+    const headings = item.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headings.length > 0) fields.add('title');
     
-    const dates = item.textContent?.match(/\d{1,2}\/\d{1,2}\/\d{4}/);
-    if (dates) fields.add('date');
+    // Look for paragraphs/descriptions
+    const paragraphs = item.querySelectorAll('p');
+    if (paragraphs.length > 0) fields.add('description');
     
-    // Add more field detection as needed
+    // Look for date patterns in text
+    const itemText = item.textContent || '';
+    if (/\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2}|\b\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)/i.test(itemText)) {
+      fields.add('date');
+    }
+    
+    // Look for price patterns
+    if (/\$[\d,]+(\.\d{2})?|€[\d,]+(\.\d{2})?|£[\d,]+(\.\d{2})?/i.test(itemText)) {
+      fields.add('price');
+    }
+    
+    // Generic text content (always useful for extraction)
+    if (itemText.trim().length > 0) {
+      fields.add('text');
+    }
   }
   
-  return Array.from(fields).slice(0, 10); // Limit to 10 fields
+  return Array.from(fields).slice(0, 8); // Limit to 8 fields for better performance
 }
 
 function calculateRelevanceScore(label: string, kind: string | undefined, searchText: string): number {

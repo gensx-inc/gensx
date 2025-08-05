@@ -76,19 +76,21 @@ export type ToolResult<T=unknown> =
 
 export type ToolCall =
   | { name:'getMiniPCD'; args:{ tabId:number } }
-  | { name:'pcd.query'; args:{ tabId:number; kind?:'action'|'form'|'collection'; text?:string; topK?:number } }
+  | { name:'pcd_query'; args:{ tabId:number; kind?:'action'|'form'|'collection'; text?:string; topK?:number } }
   | { name:'getDetails'; args:{ tabId:number; ids:string[] } }
-  | { name:'dom.click'; args:{ tabId:number; selector:RoleSelector } }
-  | { name:'dom.type'; args:{ tabId:number; selector:RoleSelector; text:string; replace?:boolean } }
-  | { name:'dom.select'; args:{ tabId:number; selector:RoleSelector; value:string } }
-  | { name:'dom.submit'; args:{ tabId:number; selector:RoleSelector } }
-  | { name:'dom.scroll'; args:{ tabId:number; y?:number; selector?:RoleSelector } }
-  | { name:'dom.waitFor'; args:{ tabId:number; event:'urlChange'|'networkIdle'|'selector'|'text'; value?:string; timeoutMs?:number } }
-  | { name:'dom.extract'; args:{ tabId:number; collectionId:string; fields:string[] } }
-  | { name:'tabs.open'; args:{ url:string } }
-  | { name:'tabs.switch'; args:{ tabId:number } }
-  | { name:'tabs.close'; args:{ tabId:number } }
-  | { name:'capture.candidates'; args:{ tabId:number; ids:string[] } };
+  | { name:'dom_click'; args:{ tabId:number; selector:RoleSelector } }
+  | { name:'dom_type'; args:{ tabId:number; selector:RoleSelector; text:string; replace?:boolean } }
+  | { name:'dom_select'; args:{ tabId:number; selector:RoleSelector; value:string } }
+  | { name:'dom_submit'; args:{ tabId:number; selector:RoleSelector } }
+  | { name:'dom_scroll'; args:{ tabId:number; y?:number; selector?:RoleSelector } }
+  | { name:'dom_waitFor'; args:{ tabId:number; event:'urlChange'|'networkIdle'|'selector'|'text'; value?:string; timeoutMs?:number } }
+  | { name:'dom_extract'; args:{ tabId:number; collectionId:string; fields:string[] } }
+  | { name:'dom_findByText'; args:{ tabId:number; searchText:string; elementType?:'any'|'clickable'|'button'|'link'|'input'; exactMatch?:boolean } }
+  | { name:'dom_getPageContent'; args:{ tabId:number; includeLinks?:boolean; includeClickables?:boolean } }
+  | { name:'tabs_open'; args:{ url:string } }
+  | { name:'tabs_switch'; args:{ tabId:number } }
+  | { name:'tabs_close'; args:{ tabId:number } }
+  | { name:'capture_candidates'; args:{ tabId:number; ids:string[] } };
 
 // Task State Types for LLM Controller
 export type TaskStatus = 'created'|'planning'|'exploring'|'executing'|'awaiting_user'|'blocked'|'succeeded'|'failed'|'cancelled';
@@ -164,16 +166,16 @@ export type SiteGraph = {
 // Communication Types (between background and content scripts)
 export type ContentMessage = 
   | { type: 'getMiniPCD'; payload: {} }
-  | { type: 'pcd.query'; payload: { kind?: 'action'|'form'|'collection'; text?: string; topK?: number } }
+  | { type: 'pcd_query'; payload: { kind?: 'action'|'form'|'collection'; text?: string; topK?: number } }
   | { type: 'getDetails'; payload: { ids: string[] } }
-  | { type: 'dom.click'; payload: { selector: RoleSelector } }
-  | { type: 'dom.type'; payload: { selector: RoleSelector; text: string; replace?: boolean } }
-  | { type: 'dom.select'; payload: { selector: RoleSelector; value: string } }
-  | { type: 'dom.submit'; payload: { selector: RoleSelector } }
-  | { type: 'dom.scroll'; payload: { y?: number; selector?: RoleSelector } }
-  | { type: 'dom.waitFor'; payload: { event: 'urlChange'|'networkIdle'|'selector'|'text'; value?: string; timeoutMs?: number } }
-  | { type: 'dom.extract'; payload: { collectionId: string; fields: string[] } }
-  | { type: 'capture.candidates'; payload: { ids: string[] } };
+  | { type: 'dom_click'; payload: { selector: RoleSelector } }
+  | { type: 'dom_type'; payload: { selector: RoleSelector; text: string; replace?: boolean } }
+  | { type: 'dom_select'; payload: { selector: RoleSelector; value: string } }
+  | { type: 'dom_submit'; payload: { selector: RoleSelector } }
+  | { type: 'dom_scroll'; payload: { y?: number; selector?: RoleSelector } }
+  | { type: 'dom_waitFor'; payload: { event: 'urlChange'|'networkIdle'|'selector'|'text'; value?: string; timeoutMs?: number } }
+  | { type: 'dom_extract'; payload: { collectionId: string; fields: string[] } }
+  | { type: 'capture_candidates'; payload: { ids: string[] } };
 
 export type BackgroundMessage =
   | { type: 'task.create'; payload: { goal: string; userId: string } }

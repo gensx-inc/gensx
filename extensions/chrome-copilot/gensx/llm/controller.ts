@@ -392,7 +392,7 @@ async function exploreForGoal(
   
   // Query for potentially relevant actions
   const queryResult = await toolExecutor({
-    name: 'pcd.query',
+    name: 'pcd_query',
     args: { tabId, text: task.subgoal || task.goal, topK: 5 }
   });
   
@@ -418,7 +418,7 @@ async function exploreForGoal(
   
   // Execute exploratory click
   const clickResult = await toolExecutor({
-    name: 'dom.click',
+    name: 'dom_click',
     args: { tabId, selector: detail.selector }
   });
   

@@ -93,7 +93,7 @@ export const LoginSkill: Skill<{ username?: string; password?: string }> = {
       steps.push({
         kind: 'tool',
         call: {
-          name: 'dom.type',
+          name: 'dom_type',
           args: {
             tabId: 0, // Will be filled by controller
             selector: binding.usernameField.selector,
@@ -110,7 +110,7 @@ export const LoginSkill: Skill<{ username?: string; password?: string }> = {
       steps.push({
         kind: 'tool',
         call: {
-          name: 'dom.type',
+          name: 'dom_type',
           args: {
             tabId: 0, // Will be filled by controller
             selector: binding.passwordField.selector,
@@ -127,7 +127,7 @@ export const LoginSkill: Skill<{ username?: string; password?: string }> = {
       steps.push({
         kind: 'tool',
         call: {
-          name: 'dom.click',
+          name: 'dom_click',
           args: {
             tabId: 0, // Will be filled by controller
             selector: binding.submitButton.selector
@@ -215,7 +215,7 @@ export const SearchSkill: Skill<{ query: string }> = {
       steps.push({
         kind: 'tool',
         call: {
-          name: 'dom.type',
+          name: 'dom_type',
           args: {
             tabId: 0, // Will be filled by controller
             selector: binding.searchInput.selector,
@@ -231,7 +231,7 @@ export const SearchSkill: Skill<{ query: string }> = {
         steps.push({
           kind: 'tool',
           call: {
-            name: 'dom.click',
+            name: 'dom_click',
             args: {
               tabId: 0, // Will be filled by controller
               selector: binding.searchButton.selector
@@ -245,7 +245,7 @@ export const SearchSkill: Skill<{ query: string }> = {
         steps.push({
           kind: 'tool',
           call: {
-            name: 'dom.submit',
+            name: 'dom_submit',
             args: {
               tabId: 0, // Will be filled by controller
               selector: binding.searchInput.selector
@@ -330,7 +330,7 @@ export const NavigationSkill: Skill<{ target: string }> = {
       steps.push({
         kind: 'tool',
         call: {
-          name: 'dom.click',
+          name: 'dom_click',
           args: {
             tabId: 0, // Will be filled by controller
             selector: binding.targetElement.selector
@@ -344,7 +344,7 @@ export const NavigationSkill: Skill<{ target: string }> = {
       steps.push({
         kind: 'tool',
         call: {
-          name: 'dom.waitFor',
+          name: 'dom_waitFor',
           args: {
             tabId: 0, // Will be filled by controller
             event: 'urlChange',
@@ -418,7 +418,7 @@ export const FormFillSkill: Skill<{ fields: Record<string, string> }> = {
     steps.push({
       kind: 'tool',
       call: {
-        name: 'dom.click',
+        name: 'dom_click',
         args: {
           tabId: 0, // Will be filled by controller
           selector: binding.targetForm.selector
@@ -482,7 +482,7 @@ export const DataExtractSkill: Skill<{ fields: string[] }> = {
       steps.push({
         kind: 'tool',
         call: {
-          name: 'dom.extract',
+          name: 'dom_extract',
           args: {
             tabId: 0, // Will be filled by controller
             collectionId: binding.targetCollection.id,

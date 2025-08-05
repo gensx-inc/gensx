@@ -6,7 +6,7 @@
 import { RoleSelector, ToolResult, Observation, MiniPCD } from '../shared/types';
 import { TIMEOUTS } from '../shared/constants';
 import { resolveRoleSelector, findBestMatch, getAccessibleName } from './roleDsl';
-import { getMiniPCD, queryPCD, getDetails } from './pcd';
+import { getMiniPCD, queryPCD, getDetails, getCollectionElement } from './pcd';
 
 /**
  * Tool implementations matching the new API surface
@@ -32,7 +32,7 @@ export const domToolImplementations = {
   /**
    * Query MiniPCD for elements
    */
-  'pcd.query': async (args: {
+  pcd_query: async (args: {
     kind?: 'action'|'form'|'collection';
     text?: string;
     topK?: number;
@@ -68,7 +68,7 @@ export const domToolImplementations = {
   /**
    * Click on an element using role selector
    */
-  'dom.click': async (args: { selector: RoleSelector }): Promise<ToolResult<Observation>> => {
+  dom_click: async (args: { selector: RoleSelector }): Promise<ToolResult<Observation>> => {
     try {
       const elements = resolveRoleSelector(args.selector);
       
@@ -137,7 +137,7 @@ export const domToolImplementations = {
   /**
    * Type text into an element
    */
-  'dom.type': async (args: { 
+  dom_type: async (args: { 
     selector: RoleSelector; 
     text: string; 
     replace?: boolean 
@@ -240,7 +240,7 @@ export const domToolImplementations = {
   /**
    * Select an option from a dropdown
    */
-  'dom.select': async (args: { 
+  dom_select: async (args: { 
     selector: RoleSelector; 
     value: string 
   }): Promise<ToolResult<Observation>> => {
@@ -328,7 +328,7 @@ export const domToolImplementations = {
   /**
    * Submit a form
    */
-  'dom.submit': async (args: { selector: RoleSelector }): Promise<ToolResult<Observation>> => {
+  dom_submit: async (args: { selector: RoleSelector }): Promise<ToolResult<Observation>> => {
     try {
       const elements = resolveRoleSelector(args.selector);
       
@@ -399,7 +399,7 @@ export const domToolImplementations = {
   /**
    * Scroll the page or to an element
    */
-  'dom.scroll': async (args: { 
+  dom_scroll: async (args: { 
     y?: number; 
     selector?: RoleSelector 
   }): Promise<ToolResult<Observation>> => {
@@ -472,7 +472,7 @@ export const domToolImplementations = {
   /**
    * Wait for specific conditions
    */
-  'dom.waitFor': async (args: { 
+  dom_waitFor: async (args: { 
     event: 'urlChange'|'networkIdle'|'selector'|'text'; 
     value?: string; 
     timeoutMs?: number 
@@ -519,20 +519,405 @@ export const domToolImplementations = {
   },
 
   /**
+   * Find elements by their visible text content
+   */
+  dom_findByText: async (args: {
+    searchText: string;
+    elementType?: 'any' | 'clickable' | 'button' | 'link' | 'input';
+    exactMatch?: boolean;
+  }): Promise<ToolResult<Array<{
+    text: string;
+    tagName: string;
+    clickable: boolean;
+    href?: string;
+    selector: {
+      kind: 'text';
+      text: string;
+    };
+    position: { x: number; y: number; width: number; height: number };
+  }>>> => {
+    try {
+      const searchText = args.searchText.toLowerCase();
+      const exactMatch = args.exactMatch !== false;
+      const elementType = args.elementType || 'any';
+      
+      // Find all elements that contain the search text
+      let candidates: HTMLElement[] = [];
+      
+      if (elementType === 'clickable') {
+        candidates = Array.from(document.querySelectorAll('a, button, [onclick], [role="button"], input[type="button"], input[type="submit"], [tabindex], *[style*="cursor: pointer"], *[style*="cursor:pointer"]')) as HTMLElement[];
+      } else if (elementType === 'button') {
+        candidates = Array.from(document.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"]')) as HTMLElement[];
+      } else if (elementType === 'link') {
+        candidates = Array.from(document.querySelectorAll('a[href], [role="link"]')) as HTMLElement[];
+      } else if (elementType === 'input') {
+        candidates = Array.from(document.querySelectorAll('input, textarea, select, [contenteditable]')) as HTMLElement[];
+      } else {
+        // Search all elements
+        candidates = Array.from(document.querySelectorAll('*')) as HTMLElement[];
+      }
+      
+      // Filter by text content
+      const matches: Array<{
+        text: string;
+        tagName: string;
+        clickable: boolean;
+        href?: string;
+        selector: { kind: 'text'; text: string };
+        position: { x: number; y: number; width: number; height: number };
+      }> = [];
+      
+      for (const element of candidates) {
+        const elementText = element.textContent?.trim() || '';
+        const ariaLabel = element.getAttribute('aria-label') || '';
+        const title = element.getAttribute('title') || '';
+        const allText = `${elementText} ${ariaLabel} ${title}`.toLowerCase();
+        
+        let isMatch = false;
+        if (exactMatch) {
+          isMatch = allText === searchText || elementText.toLowerCase() === searchText;
+        } else {
+          isMatch = allText.includes(searchText);
+        }
+        
+        if (isMatch && elementText.length > 0) {
+          try {
+            const rect = element.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+              const isClickable = element.matches('a, button, [onclick], [role="button"], input[type="button"], input[type="submit"]') ||
+                                 window.getComputedStyle(element).cursor === 'pointer' ||
+                                 element.hasAttribute('tabindex');
+              
+              matches.push({
+                text: elementText,
+                tagName: element.tagName.toLowerCase(),
+                clickable: isClickable,
+                href: element.getAttribute('href') || undefined,
+                selector: {
+                  kind: 'text',
+                  text: elementText
+                },
+                position: {
+                  x: Math.round(rect.left),
+                  y: Math.round(rect.top),
+                  width: Math.round(rect.width),
+                  height: Math.round(rect.height)
+                }
+              });
+            }
+          } catch (error) {
+            // Skip elements that can't be measured
+          }
+        }
+      }
+      
+      // Sort by position (top to bottom, left to right) and deduplicate
+      const sortedMatches = matches
+        .sort((a, b) => {
+          const yDiff = a.position.y - b.position.y;
+          if (Math.abs(yDiff) > 10) return yDiff;
+          return a.position.x - b.position.x;
+        })
+        .slice(0, 20); // Limit results
+      
+      // Remove duplicates with same text and position
+      const uniqueMatches = sortedMatches.filter((match, index) => {
+        return !sortedMatches.slice(0, index).some(prev => 
+          prev.text === match.text && 
+          Math.abs(prev.position.x - match.position.x) < 5 &&
+          Math.abs(prev.position.y - match.position.y) < 5
+        );
+      });
+      
+      console.log(`🔍 Found ${uniqueMatches.length} elements matching "${args.searchText}"`);
+      
+      return { ok: true, data: uniqueMatches };
+      
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Text search failed',
+        retryable: true,
+        code: 'TEXT_SEARCH_ERROR'
+      };
+    }
+  },
+
+  /**
+   * Get page content in a simple, reliable way
+   */
+  dom_getPageContent: async (args: {
+    includeLinks?: boolean;
+    includeClickables?: boolean;
+  }): Promise<ToolResult<{
+    pageTitle: string;
+    url: string;
+    mainContent: string;
+    clickableElements: Array<{
+      text: string;
+      tag: string;
+      href?: string;
+      isButton: boolean;
+    }>;
+    allText: string;
+  }>> => {
+    try {
+      const includeLinks = args.includeLinks !== false;
+      const includeClickables = args.includeClickables !== false;
+      
+      // Get basic page info
+      const pageTitle = document.title;
+      const url = window.location.href;
+      
+      // Get main content area text with proper spacing
+      let mainContent = '';
+      const mainElement = document.querySelector('main, [role="main"], #main, .main-content, .content');
+      if (mainElement) {
+        mainContent = extractTextWithSpacing(mainElement);
+      } else {
+        // Fallback to body but exclude nav/header/footer
+        const bodyClone = document.body.cloneNode(true) as HTMLElement;
+        const excludeSelectors = 'nav, header, footer, [role="navigation"], [role="banner"], [role="contentinfo"], .nav, .header, .footer';
+        const excludeElements = bodyClone.querySelectorAll(excludeSelectors);
+        excludeElements.forEach(el => el.remove());
+        mainContent = extractTextWithSpacing(bodyClone);
+      }
+      
+      // Get clickable elements if requested
+      const clickableElements: Array<{
+        text: string;
+        tag: string;
+        href?: string;
+        isButton: boolean;
+      }> = [];
+      
+      if (includeClickables) {
+        // Find all clickable elements
+        const clickables = document.querySelectorAll('a, button, [onclick], [role="button"], input[type="button"], input[type="submit"]');
+        
+        for (const el of clickables) {
+          const element = el as HTMLElement;
+          const text = element.textContent?.trim() || element.getAttribute('aria-label') || element.getAttribute('title') || '';
+          
+          if (text && text.length > 0 && text.length < 200) {
+            clickableElements.push({
+              text,
+              tag: element.tagName.toLowerCase(),
+              href: element.getAttribute('href') || undefined,
+              isButton: element.matches('button, [role="button"], input[type="button"], input[type="submit"]')
+            });
+          }
+        }
+      }
+      
+      // Get all visible text as fallback with proper spacing
+      const allText = extractTextWithSpacing(document.body);
+      
+      console.log(`📄 Page content extracted: ${mainContent.length} chars main, ${clickableElements.length} clickables, ${allText.length} chars total`);
+      
+      return {
+        ok: true,
+        data: {
+          pageTitle,
+          url,
+          mainContent: mainContent.substring(0, 5000), // Limit to prevent huge context
+          clickableElements: clickableElements.slice(0, 50), // Limit clickables
+          allText: allText.substring(0, 8000) // Larger limit for full text
+        }
+      };
+      
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Page content extraction failed',
+        retryable: true,
+        code: 'PAGE_CONTENT_ERROR'
+      };
+    }
+  },
+
+  /**
+   * Get content blocks from the page (universal extraction)
+   */
+  dom_getContentBlocks: async (args: {
+    region?: 'main' | 'header' | 'nav' | 'footer' | 'aside';
+    minTextLength?: number;
+    maxBlocks?: number;
+  }): Promise<ToolResult<Array<{
+    id: string;
+    text: string;
+    tagName: string;
+    position: { x: number; y: number; width: number; height: number };
+    clickable: boolean;
+    links: Array<{ text: string; href: string }>;
+    region: string;
+  }>>> => {
+    try {
+      const minTextLength = args.minTextLength || 20;
+      const maxBlocks = args.maxBlocks || 50;
+      
+      // Find content container based on region
+      let container = document.body;
+      if (args.region) {
+        const regionElement = document.querySelector(
+          args.region === 'main' ? 'main, [role="main"]' :
+          args.region === 'header' ? 'header, [role="banner"]' :
+          args.region === 'nav' ? 'nav, [role="navigation"]' :
+          args.region === 'footer' ? 'footer, [role="contentinfo"]' :
+          args.region === 'aside' ? 'aside, [role="complementary"]' : 'body'
+        );
+        if (regionElement) container = regionElement as HTMLElement;
+      }
+      
+      console.log(`🔍 Getting content blocks from ${container.tagName} (region: ${args.region || 'body'})`);
+      
+      // Find all elements with meaningful text content
+      const contentElements = Array.from(container.querySelectorAll('*'))
+        .filter(el => {
+          const element = el as HTMLElement;
+          
+          // Skip certain elements
+          if (element.matches('script, style, noscript, meta, link, head, title')) {
+            return false;
+          }
+          
+          // Skip elements that are just containers for other elements
+          if (element.children.length > 3 && element.textContent) {
+            const directText = Array.from(element.childNodes)
+              .filter(node => node.nodeType === Node.TEXT_NODE)
+              .map(node => node.textContent?.trim())
+              .join(' ').trim();
+            
+            if (directText.length < 10) {
+              return false; // Mostly a container
+            }
+          }
+          
+          const text = element.textContent?.trim() || '';
+          return text.length >= minTextLength;
+        }) as HTMLElement[];
+      
+      console.log(`📝 Found ${contentElements.length} content elements`);
+      
+      // Group elements by visual proximity (simplified approach)
+      const contentBlocks: Array<{
+        id: string;
+        text: string;
+        tagName: string;
+        position: { x: number; y: number; width: number; height: number };
+        clickable: boolean;
+        links: Array<{ text: string; href: string }>;
+        region: string;
+      }> = [];
+      
+      const processedElements = new Set<HTMLElement>();
+      
+      for (const element of contentElements.slice(0, maxBlocks)) {
+        if (processedElements.has(element)) continue;
+        
+        try {
+          const rect = element.getBoundingClientRect();
+          
+          // Skip elements that are not visible
+          if (rect.width === 0 || rect.height === 0) continue;
+          
+          // Check if element is clickable
+          const computedStyle = window.getComputedStyle(element);
+          const isClickable = element.matches('a, button, [onclick], [role="button"]') ||
+                             computedStyle.cursor === 'pointer' ||
+                             element.hasAttribute('tabindex');
+          
+          // Extract links within this element
+          const links: Array<{ text: string; href: string }> = [];
+          const linkElements = element.querySelectorAll('a[href]');
+          for (const link of linkElements) {
+            const linkText = link.textContent?.trim();
+            const href = link.getAttribute('href');
+            if (linkText && href && linkText.length <= 100) {
+              links.push({ text: linkText, href });
+            }
+          }
+          
+          // Determine region
+          let region = 'main';
+          if (element.closest('nav, [role="navigation"]')) region = 'nav';
+          else if (element.closest('header, [role="banner"]')) region = 'header';
+          else if (element.closest('footer, [role="contentinfo"]')) region = 'footer';
+          else if (element.closest('aside, [role="complementary"]')) region = 'aside';
+          
+          const blockId = `block_${contentBlocks.length + 1}`;
+          
+          contentBlocks.push({
+            id: blockId,
+            text: element.textContent?.trim() || '',
+            tagName: element.tagName.toLowerCase(),
+            position: {
+              x: Math.round(rect.left),
+              y: Math.round(rect.top),
+              width: Math.round(rect.width),
+              height: Math.round(rect.height)
+            },
+            clickable: isClickable,
+            links,
+            region
+          });
+          
+          processedElements.add(element);
+          
+        } catch (error) {
+          console.warn('Error processing element:', error);
+        }
+      }
+      
+      // Sort by position (top to bottom, left to right)
+      contentBlocks.sort((a, b) => {
+        const yDiff = a.position.y - b.position.y;
+        if (Math.abs(yDiff) > 50) return yDiff; // Different rows
+        return a.position.x - b.position.x; // Same row, sort by x
+      });
+      
+      console.log(`🎯 Extracted ${contentBlocks.length} content blocks`);
+      return { ok: true, data: contentBlocks };
+      
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Content blocks extraction failed',
+        retryable: true,
+        code: 'CONTENT_BLOCKS_ERROR'
+      };
+    }
+  },
+
+  /**
    * Extract data from a collection
    */
-  'dom.extract': async (args: { 
+  dom_extract: async (args: { 
     collectionId: string; 
     fields: string[] 
   }): Promise<ToolResult<Array<Record<string, string>>>> => {
     try {
-      // Find collection element by PCD ID
-      const collectionElement = document.querySelector(`[data-pcd-id="${args.collectionId}"]`);
+      // Primary: Try to get collection element from internal mapping
+      let collectionElement = getCollectionElement(args.collectionId);
+      
+      // Fallback 1: If element is stale (removed from DOM), try re-detection
+      if (collectionElement && !document.contains(collectionElement)) {
+        console.warn(`Collection element for ${args.collectionId} is stale, trying fallback`);
+        collectionElement = null;
+      }
+      
+      // Fallback 2: Re-detect collections using heuristics
+      if (!collectionElement) {
+        collectionElement = findCollectionFallback(args.collectionId);
+        if (collectionElement) {
+          console.log(`Found fallback collection for ${args.collectionId}`);
+        }
+      }
       
       if (!collectionElement) {
         return {
           ok: false,
-          error: `Collection with ID ${args.collectionId} not found`,
+          error: `Collection with ID ${args.collectionId} not found. Try refreshing the page data.`,
           retryable: true,
           code: 'COLLECTION_NOT_FOUND'
         };
@@ -540,21 +925,34 @@ export const domToolImplementations = {
 
       // Extract data from collection items
       const items = Array.from(collectionElement.children);
+      console.log(`🔍 Extracting from collection ${args.collectionId}: found ${items.length} child items`);
+      console.log(`📦 Collection element:`, {
+        tagName: collectionElement.tagName,
+        className: collectionElement.className,
+        innerHTML: collectionElement.innerHTML.substring(0, 200) + '...'
+      });
+      
       const extractedData: Array<Record<string, string>> = [];
 
       for (const item of items.slice(0, 100)) { // Limit to 100 items
         const itemData: Record<string, string> = {};
         
         for (const field of args.fields) {
-          itemData[field] = extractFieldFromItem(item, field);
+          const fieldValue = extractFieldFromItem(item, field);
+          itemData[field] = fieldValue;
+          console.log(`  📝 Field "${field}": "${fieldValue}"`);
         }
         
         // Only include items with at least one non-empty field
         if (Object.values(itemData).some(value => value.trim())) {
           extractedData.push(itemData);
+          console.log(`  ✅ Added item:`, itemData);
+        } else {
+          console.log(`  ❌ Skipped empty item:`, itemData);
         }
       }
 
+      console.log(`🎯 Final extracted data: ${extractedData.length} items`);
       return { ok: true, data: extractedData };
       
     } catch (error) {
@@ -567,6 +965,101 @@ export const domToolImplementations = {
     }
   }
 };
+
+/**
+ * Fallback function to find collections when primary lookup fails
+ * Uses multiple strategies to find the most likely collection container
+ */
+function findCollectionFallback(collectionId: string): HTMLElement | null {
+  const candidates: { element: HTMLElement; score: number }[] = [];
+  
+  // Strategy 1: Traditional list/grid patterns (prioritize data tables)
+  const traditionalCandidates = document.querySelectorAll(
+    'table, tbody, [role="grid"], [role="list"], .grid, .list, .items, .results, ul, ol'
+  );
+  
+  for (const candidate of traditionalCandidates) {
+    const element = candidate as HTMLElement;
+    if (element.children.length >= 2) {
+      // Heavily favor tables and tbody elements over lists
+      let score = element.children.length * 5;
+      if (element.tagName === 'TABLE' || element.tagName === 'TBODY') {
+        score *= 10; // Much higher priority for table elements
+      }
+      // Penalize navigation-like elements
+      if (element.matches('.sidebar, nav, [role="navigation"]') || 
+          element.closest('.sidebar, nav, [role="navigation"]')) {
+        score *= 0.1; // Heavy penalty for navigation elements
+      }
+      candidates.push({ element, score });
+    }
+  }
+  
+  // Strategy 2: Containers with many clickable children
+  const clickableElements = [
+    ...Array.from(document.querySelectorAll('a, button, [onclick], [role="button"], [tabindex]')),
+    ...Array.from(document.querySelectorAll('div, span, li, section, article')).filter(el => {
+      const element = el as HTMLElement;
+      try {
+        const computedStyle = window.getComputedStyle(element);
+        return computedStyle.cursor === 'pointer' && 
+               !element.matches('a, button') &&
+               element.textContent && element.textContent.trim().length > 0;
+      } catch {
+        return false;
+      }
+    })
+  ] as HTMLElement[];
+  
+  const containers = document.querySelectorAll('div, section, article, main');
+  for (const container of containers) {
+    const element = container as HTMLElement;
+    const childClickables = clickableElements.filter(clickable => element.contains(clickable));
+    
+    if (childClickables.length >= 3) {
+      // Prefer containers where clickables are more directly contained
+      const directChildren = Array.from(element.children) as HTMLElement[];
+      const relevantChildren = directChildren.filter(child => 
+        childClickables.some(clickable => child.contains(clickable) || child === clickable)
+      );
+      
+      if (relevantChildren.length >= 2) {
+        const score = relevantChildren.length * 5 + childClickables.length;
+        candidates.push({ element, score });
+      }
+    }
+  }
+  
+  // Strategy 3: Find containers with repeated similar content structure
+  const allContainers = document.querySelectorAll('div, section');
+  for (const container of allContainers) {
+    const element = container as HTMLElement;
+    const children = Array.from(element.children) as HTMLElement[];
+    
+    if (children.length >= 3) {
+      // Check if children have similar structure (same tag names, similar content lengths)
+      const tagNames = children.map(child => child.tagName);
+      const uniqueTags = new Set(tagNames);
+      
+      if (uniqueTags.size <= 2) { // Mostly uniform structure
+        const avgTextLength = children.reduce((sum, child) => 
+          sum + (child.textContent?.length || 0), 0) / children.length;
+        
+        if (avgTextLength > 10) { // Has meaningful content
+          candidates.push({ element, score: children.length * 3 });
+        }
+      }
+    }
+  }
+  
+  // Return the highest scoring candidate
+  if (candidates.length > 0) {
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates[0].element;
+  }
+  
+  return null;
+}
 
 /**
  * Helper function to check if element can receive text input
@@ -695,6 +1188,34 @@ async function waitForCondition(event: string, value?: string): Promise<void> {
 }
 
 /**
+ * Extract text content from an element while preserving proper spacing
+ */
+function extractTextWithSpacing(element: Element): string {
+  // Clone the element to avoid modifying the original
+  const clone = element.cloneNode(true) as Element;
+  
+  // Add spaces around block elements to prevent text concatenation
+  const blockElements = clone.querySelectorAll('div, p, li, tr, td, th, h1, h2, h3, h4, h5, h6, section, article, nav, header, footer, main, aside');
+  blockElements.forEach(el => {
+    // Add space before and after block elements
+    if (el.previousSibling && el.previousSibling.nodeType === Node.TEXT_NODE) {
+      if (!el.previousSibling.textContent?.endsWith(' ')) {
+        el.insertAdjacentText('beforebegin', ' ');
+      }
+    }
+    if (el.nextSibling && el.nextSibling.nodeType === Node.TEXT_NODE) {
+      if (!el.nextSibling.textContent?.startsWith(' ')) {
+        el.insertAdjacentText('afterend', ' ');
+      }
+    }
+  });
+  
+  // Get text content and clean up excessive whitespace
+  const text = clone.textContent || '';
+  return text.replace(/\s+/g, ' ').trim();
+}
+
+/**
  * Extract field value from collection item
  */
 function extractFieldFromItem(item: Element, field: string): string {
@@ -738,7 +1259,43 @@ function extractFieldFromItem(item: Element, field: string): string {
       const desc = item.querySelector('.description, .summary, p');
       return desc?.textContent?.trim() || '';
       
+    case 'text':
+      // For table rows, get all cell text
+      if (item.tagName === 'TR') {
+        const cells = item.querySelectorAll('td');
+        const cellTexts = Array.from(cells).map(cell => cell.textContent?.trim()).filter(text => text);
+        return cellTexts.join(' | ');
+      }
+      // For other elements, get all text content
+      return item.textContent?.trim() || '';
+      
     default:
+      // For table rows, try to get cell content by index or pattern
+      if (item.tagName === 'TR') {
+        const cells = item.querySelectorAll('td');
+        // Try to find relevant cell content
+        for (const cell of cells) {
+          const cellText = cell.textContent?.trim() || '';
+          // Look for email patterns for member data
+          if (field.toLowerCase().includes('email') && cellText.includes('@')) {
+            return cellText;
+          }
+          // Look for name-like patterns
+          if (field.toLowerCase().includes('name') && cellText && !cellText.includes('@') && cellText.length > 2) {
+            return cellText;
+          }
+          // Return first non-empty cell for generic fields
+          if (cellText && field === 'text') {
+            return cellText;
+          }
+        }
+        // If no specific match, return first non-empty cell
+        for (const cell of cells) {
+          const cellText = cell.textContent?.trim() || '';
+          if (cellText) return cellText;
+        }
+      }
+      
       // Generic field extraction by class or data attribute
       const fieldElement = item.querySelector(`.${field}, [data-field="${field}"]`);
       return fieldElement?.textContent?.trim() || '';
