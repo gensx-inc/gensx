@@ -6,13 +6,13 @@ import {
   streamObject,
   streamText,
 } from "@gensx/vercel-ai";
-import { tool } from "ai";
+import { stepCountIs, tool } from "ai";
 import { z } from "zod";
 
 const tools = {
   weather: tool({
     description: "Get the weather in a location",
-    parameters: z.object({
+    inputSchema: z.object({
       location: z.string().describe("The location to get the weather for"),
     }),
     execute: async ({ location }: { location: string }) => {
@@ -62,7 +62,7 @@ export const BasicChatWithTools = gensx.Workflow(
           content: prompt,
         },
       ],
-      maxSteps: 10,
+      stopWhen: stepCountIs(10),
       model: openai("gpt-4o-mini"),
       tools: tools,
     });
@@ -107,7 +107,7 @@ export const StreamingChatWithTools = gensx.Workflow(
           content: prompt,
         },
       ],
-      maxSteps: 10,
+      stopWhen: stepCountIs(10),
       model: openai("gpt-4o-mini"),
       tools: tools,
     });

@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
-import type { Tool, ToolExecutionOptions } from "ai";
+import type { LanguageModelV2 } from "@ai-sdk/provider";
+import type { Tool, ToolCallOptions } from "ai";
 
 import { Component, ComponentOpts, wrap } from "@gensx/core";
 import * as ai from "ai";
@@ -25,7 +26,7 @@ function wrapTools<T extends Record<string, Tool>>(
         ...tool,
         execute: (
           args: ToolParams,
-          options: ToolExecutionOptions,
+          options: ToolCallOptions,
         ): Promise<ToolResult> => {
           const ToolComponent = Component(
             `tool.${name}`,
@@ -221,14 +222,14 @@ export const wrapVercelAIModel = <T extends object>(
 
 function assertIsLanguageModel(
   languageModel: object,
-): asserts languageModel is ai.LanguageModelV1 {
+): asserts languageModel is LanguageModelV2 {
   if (
     !("doStream" in languageModel) ||
     typeof languageModel.doStream !== "function" ||
     !("doGenerate" in languageModel) ||
     typeof languageModel.doGenerate !== "function"
   ) {
-    throw new Error(`Invalid model. Is this a LanguageModelV1 instance?`);
+    throw new Error(`Invalid model. Is this a LanguageModelV2 instance?`);
   }
 }
 

@@ -2,67 +2,141 @@ import { vi } from "vitest";
 
 // Mock the OpenAI module
 const createMockOpenAI = (modelId: string) => ({
-  specificationVersion: "v1" as const,
+  specificationVersion: "v2" as const,
   provider: "openai",
   modelId,
   defaultObjectGenerationMode: "json" as const,
+  supportedUrls: {},
   doGenerate: vi
     .fn()
-    .mockImplementation(async (params: { mode?: { type: string } }) => {
-      await Promise.resolve();
+    .mockImplementation(
+      async (params: { responseFormat?: { type: string } }) => {
+        await Promise.resolve();
 
-      // Check if this is an object generation request
-      if (params.mode?.type === "object-json") {
-        const response = {
-          text: JSON.stringify({
-            recipe: {
-              name: "Chocolate Chip Cookies",
-              ingredients: ["flour", "sugar", "chocolate chips"],
-              steps: ["Mix ingredients", "Bake at 350F"],
+        // Check if this is an object generation request
+        if (params.responseFormat?.type === "json") {
+          const response = {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  recipe: {
+                    name: "Chocolate Chip Cookies",
+                    ingredients: ["flour", "sugar", "chocolate chips"],
+                    steps: ["Mix ingredients", "Bake at 350F"],
+                  },
+                }),
+              },
+            ],
+            finishReason: "stop",
+            usage: {
+              promptTokens: 10,
+              completionTokens: 2,
+              totalTokens: 12,
             },
-          }),
+            response: {
+              id: "test-id",
+              modelId: modelId,
+              timestamp: new Date(),
+              headers: {},
+              messages: [
+                {
+                  role: "assistant",
+                  content: [
+                    {
+                      type: "text",
+                      text: JSON.stringify({
+                        recipe: {
+                          name: "Chocolate Chip Cookies",
+                          ingredients: ["flour", "sugar", "chocolate chips"],
+                          steps: ["Mix ingredients", "Bake at 350F"],
+                        },
+                      }),
+                    },
+                  ],
+                },
+              ],
+            },
+            rawCall: { rawPrompt: "test", rawSettings: {} },
+            rawResponse: { headers: {} },
+            warnings: [],
+            request: { body: "{}" },
+          };
+          return response;
+        }
+
+        // Default text response - AI SDK v5 format
+        const response = {
+          content: [{ type: "text", text: "Hello World" }],
           finishReason: "stop",
-          promptTokens: 10,
-          completionTokens: 2,
-          totalTokens: 12,
           usage: {
             promptTokens: 10,
             completionTokens: 2,
             totalTokens: 12,
           },
+          response: {
+            id: "test-id",
+            modelId: modelId,
+            timestamp: new Date(),
+            headers: {},
+            messages: [
+              {
+                role: "assistant",
+                content: [{ type: "text", text: "Hello World" }],
+              },
+            ],
+          },
+          rawCall: { rawPrompt: "test", rawSettings: {} },
+          rawResponse: { headers: {} },
+          warnings: [],
+          request: { body: "{}" },
         };
         return response;
-      }
-
-      // Default text response
-      const response = {
-        text: "Hello World",
-        finishReason: "stop",
-        promptTokens: 10,
-        completionTokens: 2,
-        totalTokens: 12,
-        usage: {
-          promptTokens: 10,
-          completionTokens: 2,
-          totalTokens: 12,
-        },
-      };
-      return response;
-    }),
+      },
+    ),
   doStream: vi.fn().mockImplementation(async () => {
     await Promise.resolve();
     return {
       stream: new ReadableStream({
         async start(controller) {
+          const messageId = "msg_test_id";
+
+          controller.enqueue({
+            type: "stream-start",
+            warnings: [],
+          });
+
+          controller.enqueue({
+            type: "response-metadata",
+            id: "resp_test_id",
+            timestamp: new Date(),
+            modelId: modelId,
+          });
+
+          controller.enqueue({
+            type: "text-start",
+            id: messageId,
+          });
+
           controller.enqueue({
             type: "text-delta",
-            textDelta: "Hello ",
+            id: messageId,
+            delta: "Hello ",
           });
+
           await Promise.resolve();
+
           controller.enqueue({
             type: "text-delta",
-            textDelta: "World",
+            id: messageId,
+            delta: "World",
           });
+
+          controller.enqueue({
+            type: "text-end",
+            id: messageId,
+          });
+
           controller.enqueue({
             type: "finish",
             finishReason: "stop",
@@ -71,9 +145,17 @@ const createMockOpenAI = (modelId: string) => ({
               completionTokens: 2,
             },
           });
+
           controller.close();
         },
       }),
+      response: {
+        id: "test-id",
+        modelId: modelId,
+        timestamp: new Date(),
+        headers: {},
+        messages: [],
+      },
       rawCall: { rawPrompt: "test", rawSettings: {} },
       rawResponse: { headers: {} },
       warnings: [],
@@ -98,7 +180,7 @@ const createMockOpenAI = (modelId: string) => ({
 });
 
 const createMockEmbedding = (modelId: string) => ({
-  specificationVersion: "v1" as const,
+  specificationVersion: "v2" as const,
   provider: "openai",
   modelId,
   maxEmbeddingsPerCall: 100,

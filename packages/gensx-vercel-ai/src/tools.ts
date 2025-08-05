@@ -12,7 +12,7 @@ export function asToolSet(toolBox: ToolBox): Record<string, Tool> {
       acc[name] = {
         description: toolDef.description,
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-        parameters: jsonSchema(toJsonSchema(toolDef.params) as any),
+        inputSchema: jsonSchema(toJsonSchema(toolDef.params) as any),
         execute: async (args: InferToolParams<typeof toolBox, typeof name>) => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-return
           return await executeExternalTool(toolBox, name, args);

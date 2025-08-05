@@ -38,7 +38,6 @@ test("StreamObject streams JSON objects", async () => {
   const response = await workflow({
     prompt: "Generate a recipe",
     model: languageModel,
-    // @ts-expect-error - schema is not a valid property of the streamObject function
     schema: z.object({
       recipe: z.object({
         name: z.string(),
@@ -64,7 +63,6 @@ test("GenerateObject generates JSON object", async () => {
   const response = await workflow({
     prompt: "Generate a recipe",
     model: languageModel,
-    // @ts-expect-error - schema is not a valid property of the generateObject function
     schema: z.object({
       recipe: z.object({
         name: z.string(),
