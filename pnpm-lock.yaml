@@ -1229,6 +1229,9 @@ importers:
       ai:
         specifier: ^4.3.19
         version: 4.3.19(react@19.1.0)(zod@3.25.56)
+      europa:
+        specifier: ^6.0.0
+        version: 6.0.0
       html-to-text:
         specifier: ^9.0.5
         version: 9.0.5
@@ -6112,6 +6115,10 @@ packages:
   etag@1.8.1:
     resolution: {integrity: sha512-aIL5Fx7mawVa300al2BnEE4iNvo1qETxLrPI/o05L7z6go7fCw1J6EQmbK4FmJ2AS7kgVF/KEZWufBfdClMcPg==}
     engines: {node: '>= 0.6'}
+
+  europa@6.0.0:
+    resolution: {integrity: sha512-unEUV0g12Nv+SVpD+2fQ1XYKbg+0Coek12Gg6ikjbGi5VSa0iBOAM56I3lUYV+8m3ggJ+uY9ozi5oyzmXzZL4A==}
+    engines: {node: ^12.20.0 || >=14}
 
   event-target-shim@5.0.1:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
@@ -14355,6 +14362,8 @@ snapshots:
   esutils@2.0.3: {}
 
   etag@1.8.1: {}
+
+  europa@6.0.0: {}
 
   event-target-shim@5.0.1: {}
 

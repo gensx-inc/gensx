@@ -40,7 +40,9 @@
     ]
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "gensx/**/*",
+    "shared/**/*"
   ],
   "exclude": [
     "node_modules",

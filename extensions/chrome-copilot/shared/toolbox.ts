@@ -2,20 +2,23 @@ import { createToolBox } from "@gensx/core";
 import { z } from "zod";
 
 export const toolbox = createToolBox({
-  fetchPageContent: {
-    description: "Fetch the html content of the current page",
-    params: z
-      .object({
-        dummy: z
-          .string()
-          .optional()
-          .describe("This is a dummy parameter to pass through to the tool."),
-      })
-      .optional(),
+  fetchPageText: {
+    description: "Fetch the content of the current page as markdown",
+    params: z.object({
+    }),
     result: z.object({
       success: z.boolean(),
       url: z.string().describe("The url of the current page"),
-      content: z.string().describe("The html content of the current page"),
+      content: z.string().describe("The markdown content of the current page"),
+    }),
+  },
+
+  getCurrentUrl: {
+    description: "Get the current url of the page",
+    params: z.object({}),
+    result: z.object({
+      success: z.boolean(),
+      url: z.string().describe("The url of the current page"),
     }),
   },
 
@@ -490,49 +493,6 @@ export const toolbox = createToolBox({
           ),
         })
         .optional(),
-      error: z.string().optional(),
-    }),
-  },
-
-  getPageText: {
-    description:
-      "Extract text content from page elements with intelligent token limiting and element identification info for later use with inspectElements",
-    params: z
-      .object({
-        maxTokensPerElement: z
-          .number()
-          .min(1)
-          .max(500)
-          .optional()
-          .default(50)
-          .describe("Maximum tokens per element (estimated at ~4 chars per token). Min: 1, Max: 500"),
-        includeHidden: z
-          .boolean()
-          .optional()
-          .default(false)
-          .describe("Include hidden elements in results"),
-        skipEmptyElements: z
-          .boolean()
-          .optional()
-          .default(true)
-          .describe("Skip elements with no text content"),
-      }),
-    result: z.object({
-      success: z.boolean(),
-      url: z.string(),
-      title: z.string().optional(),
-      elementCount: z.number().describe("Total number of text elements found"),
-      elements: z.array(
-        z.object({
-          selector: z.string().describe("Unique jQuery selector for this element"),
-          text: z.string().describe("Text content (truncated if needed)"),
-        })
-      ),
-      parameters: z.object({
-        maxTokensPerElement: z.number(),
-        includeHidden: z.boolean(),
-        skipEmptyElements: z.boolean(),
-      }),
       error: z.string().optional(),
     }),
   },

@@ -3,19 +3,35 @@
 
 import $ from 'jquery';
 import { finder } from '@medv/finder';
+import { InferToolParams, InferToolResult } from '@gensx/core';
+import Europa from 'europa';
+
+import { toolbox } from '../shared/toolbox';
+
+const europa = new Europa();
+
+type OptionalPromise<T> = T | Promise<T>;
 
 // Tool implementations for Chrome extension context
-export const toolImplementations = {
-  fetchPageContent: async () => {
-    const pageContent = window.document.documentElement.outerHTML;
+export const toolImplementations: { [key in keyof typeof toolbox]: (params: InferToolParams<typeof toolbox, key>) => OptionalPromise<InferToolResult<typeof toolbox, key>> } = {
+  fetchPageText: () => {
+    const markdown = europa.convert(document.querySelector('html'));
+
     return {
       success: true,
       url: window.location.href ?? "unknown",
-      content: pageContent,
+      content: markdown,
     };
   },
 
-  inspectElements: async (params: any) => {
+  getCurrentUrl: () => {
+    return {
+      success: true,
+      url: window.location.href ?? "unknown",
+    };
+  },
+
+  inspectElements: async (params) => {
     try {
       const inspections = params.elements.map((elementParams: any) => {
         try {
@@ -38,9 +54,9 @@ export const toolImplementations = {
               const data: {
                 text?: string;
                 value?: string;
-                attributes?: Record<string, unknown>;
-                css?: Record<string, unknown>;
-                data?: Record<string, unknown>;
+                attributes?: Record<string, string>;
+                css?: Record<string, string>;
+                data?: Record<string, string>;
                 summary?: string;
                 children?: Array<{
                   tag: string;
@@ -141,7 +157,7 @@ export const toolImplementations = {
                 if (elementParams.attributeName) {
                   const attrValue = $el.attr(elementParams.attributeName);
                   data.attributes = {
-                    [elementParams.attributeName]: attrValue ?? "",
+                    [elementParams.attributeName]: (attrValue?.toString() ?? ""),
                   };
                 } else {
                   const attrs: Record<string, string> = {};
@@ -157,14 +173,14 @@ export const toolImplementations = {
                 if (elementParams.cssProperty) {
                   const cssValue = $el.css(elementParams.cssProperty);
                   data.css = {
-                    [elementParams.cssProperty]: cssValue ?? "",
+                    [elementParams.cssProperty]: (cssValue?.toString() ?? ""),
                   };
                 } else {
                   data.css = {};
                 }
               }
               if (elementParams.properties?.includes("data")) {
-                data.data = $el.data();
+                data.data = $el.data() as Record<string, string>;
               }
 
               return data;
@@ -1501,132 +1517,7 @@ export const toolImplementations = {
     }
   },
 
-  getPageText: async (params: any) => {
-    try {
-      const maxTokensPerElement = Math.min(Math.max(params.maxTokensPerElement || 50, 1), 500);
-      const includeHidden = params.includeHidden || false;
-      const skipEmptyElements = params.skipEmptyElements !== false; // Default true
-
-      // Helper to estimate token count (rough approximation: ~4 chars per token)
-      const estimateTokens = (text: string): number => {
-        return Math.ceil(text.length / 4);
-      };
-
-      // Helper to truncate text to token limit
-      const truncateToTokens = (text: string, maxTokens: number): string => {
-        const maxChars = maxTokens * 4;
-        if (text.length <= maxChars) return text;
-        return text.substring(0, maxChars - 3) + '...';
-      };
-
-      // Helper to check if element is visible
-      const isVisible = (el: HTMLElement): boolean => {
-        if (!includeHidden) {
-          const style = window.getComputedStyle(el);
-          if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-            return false;
-          }
-          const rect = el.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        }
-        return true;
-      };
-
-      const elements: {
-        selector: string;
-        text: string;
-      }[] = [];
-
-      // Get all text-containing elements, focusing on semantic and interactive elements
-      const textSelectors = [
-        'h1, h2, h3, h4, h5, h6', // Headings
-        'p', // Paragraphs
-        'span', // Inline text
-        'div', // Divs (common containers)
-        'a', // Links
-        'button', // Buttons
-        'label', // Form labels
-        'td, th', // Table cells
-        'li', // List items
-        'blockquote', // Quotes
-        'code, pre', // Code blocks
-        'strong, b, em, i', // Emphasis
-        'input[type="text"], input[type="email"], input[type="search"], textarea', // Text inputs
-        '[role="button"], [role="link"], [role="tab"], [role="menuitem"]' // ARIA roles
-      ];
-
-      textSelectors.forEach(selector => {
-        $(selector).each(function(this: HTMLElement) {
-          const element = this as HTMLElement;
-
-          // Skip if not visible and we're not including hidden elements
-          if (!isVisible(element)) return;
-
-          // Get text content
-          const $el = $(element);
-          let text = '';
-
-          // For input elements, get value instead of text
-          if (element.tagName.toLowerCase() === 'input' || element.tagName.toLowerCase() === 'textarea') {
-            text = ($el.val() as string) || $el.attr('placeholder') || '';
-          } else {
-            // Get only direct text content (not including children to avoid duplication)
-            text = $el.contents().filter(function() {
-              return this.nodeType === Node.TEXT_NODE;
-            }).text().trim();
-          }
-
-          // Skip empty elements if requested
-          if (skipEmptyElements && !text) return;
-
-          // Skip if text is too short to be useful (unless it's a button or link)
-          const tagName = element.tagName.toLowerCase();
-          const minLength = ['button', 'a', 'input', 'textarea'].includes(tagName) ? 1 : 3;
-          if (text.length < minLength) return;
-
-          // Truncate text if needed
-          const truncatedText = truncateToTokens(text, maxTokensPerElement);
-
-          elements.push({
-            selector: getUniqueSelector(element),
-            text: truncatedText
-          });
-        });
-      });
-
-      // Remove duplicates based on selector
-      const uniqueElements = elements.filter((element, index, array) =>
-        array.findIndex(e => e.selector === element.selector) === index
-      );
-
-      // Sort by text length (longer text first)
-      uniqueElements.sort((a, b) => b.text.length - a.text.length);
-
-      return {
-        success: true,
-        url: window.location.href,
-        title: document.title || undefined,
-        elementCount: uniqueElements.length,
-        elements: uniqueElements,
-        parameters: {
-          maxTokensPerElement,
-          includeHidden,
-          skipEmptyElements
-        }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        url: window.location.href,
-        title: document.title || undefined,
-        elementCount: 0,
-        elements: [],
-        error: error instanceof Error ? error.message : String(error)
-      };
-    }
-  },
-
-  navigate: async (params: any) => {
+  navigate: async (params) => {
     try {
       const startTime = Date.now();
       const previousUrl = window.location.href;
