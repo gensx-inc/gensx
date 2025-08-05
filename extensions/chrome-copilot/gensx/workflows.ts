@@ -3,13 +3,14 @@ import { useBlob } from "@gensx/storage";
 import { CoreMessage } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { serializeError } from "serialize-error";
-import { convert } from "html-to-text";
 
 import { Agent } from "./agent";
-import { asToolSet, generateText } from "@gensx/vercel-ai";
+import { asToolSet } from "@gensx/vercel-ai";
 import { toolbox } from "../shared/toolbox";
 import { z } from "zod";
-import { queryPageTool } from "./query";
+import { queryPageTool } from "./tools/query";
+import { webSearchTool } from "./tools/search";
+import { createTodoList } from "./tools/todolist";
 
 type ThreadData = {
   messages: CoreMessage[];
@@ -28,11 +29,13 @@ export const copilotWorkflow = gensx.Workflow(
     threadId,
     userId,
     url,
+    recursionDepth = 0,
   }: {
     prompt: string;
     threadId: string;
     userId: string;
-    url: string;
+      url: string;
+    recursionDepth?: number
   }): Promise<{ response: string; messages: CoreMessage[] }> => {
     try {
       // Get blob instance for chat history storage
@@ -78,7 +81,7 @@ export const copilotWorkflow = gensx.Workflow(
       // Check if this is a new thread (no messages yet)
       const isNewThread = existingMessages.length === 0;
 
-      const todoList = threadData.todoList;
+      const initialTodoList = threadData.todoList;
 
       if (isNewThread || existingMessages[0].role !== "system") {
         const systemMessage: CoreMessage = {
@@ -88,9 +91,10 @@ export const copilotWorkflow = gensx.Workflow(
 ## CORE WORKFLOW
 When helping users:
 1. ALWAYS start by making a plan and creating a todo list. This should be detailed steps like 1) navigate to X 2) fill in search bar 3) click on search button 4) read results 5) etc
-2. Use queryPage to find information, content, or actions that can be taken.
+2. Use queryPage to find information, content, or actions that can be taken. You should generally use the queryPage tool unless you have already tried multiple times and it did not work.
 3. Keep the todo list updated as you complete steps, learn more about the page, the actions that can be taken, and the information available.
-4. Always verify the results of your actions
+4. Continue working until the todo list is complete.
+5. Always verify the results of your actions
 
 ## USER PREFERENCES MANAGEMENT
 User preferences are orthogonal to application details - they focus on the user's personal context and how you should interact with them, not on the application's functionality.
@@ -176,19 +180,7 @@ You MUST actively listen for and identify user preferences throughout conversati
 - removeTodoItem: Remove a todo item from the list
 - getTodoList: Get the current todo list
 - queryPage: Query the current page to find information, content, and actions that can be taken. Use natural language to describe what you need for the current step in the task.
-- fetchPageText: Fetch the html content of the current page
-- findInteractiveElements: Show interactive elements on the page (buttons, links, inputs, etc.)
-- inspectElements: Inspect multiple elements on the page using jQuery selectors and get their properties
-- clickElements: Click on multiple elements using jQuery selectors in sequence with automatic delays for React state updates
-- fillTextInputs: Fill multiple text inputs and textareas with values, with automatic delays for React state updates
-- selectOptions: Select options from multiple dropdown/select elements, with automatic delays for React state updates
-- toggleCheckboxes: Check or uncheck multiple checkbox and radio button elements, with automatic delays for React state updates
-- submitForms: Submit multiple forms using jQuery selectors with optional delays
-- highlightElements: Highlight multiple elements on the page to show the user what you're looking at
-- waitForElements: Wait for multiple elements to appear on the page
-- getPageOverview: Get a hierarchical overview of the page structure with reliable selectors for each section
-- inspectSection: Get detailed information about a specific section or element on the page
-- navigate: Navigate the browser using browser navigation (back, forward) or to a specific path
+${(Object.keys(toolbox) as (keyof typeof toolbox)[]).map((tool) => `- ${tool}: ${toolbox[tool].description}`).join("\n")}
 - updateUserPreferencesWorkingMemory: Update your persistent memory about this user's preferences
 
 ## CRITICAL REMINDERS
@@ -209,8 +201,8 @@ You MUST actively listen for and identify user preferences throughout conversati
 ${userPreferences}
 </userPreferences>
 
-${todoList.items.length > 0 ? `<todoList>
-${todoList.items.map((item) => `- ${item.title}`).join("\n")}
+${initialTodoList.items.length > 0 ? `<todoList>
+${initialTodoList.items.map((item) => `- ${item.title}`).join("\n")}
 </todoList>` : ""}`,
         };
 
@@ -240,7 +232,7 @@ ${userPreferences}
         existingMessages[0].content = existingMessages[0].content.replace(
           /<todoList>.*<\/todoList>/,
           `<todoList>
-${todoList.items.map((item) => `- ${item.title}`).join("\n")}
+${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.title}`).join("\n")}
 </todoList>`,
         );
       }
@@ -254,67 +246,30 @@ ${todoList.items.map((item) => `- ${item.title}`).join("\n")}
         },
       ];
 
+      const { tools: todoListTools, getFinalTodoList } = createTodoList(initialTodoList);
+
       const tools = {
         ...asToolSet(toolbox),
-        addTodoItem: {
-          execute: async (params: { title: string, index?: number }) => {
-            const { title, index } = params;
-            todoList.items.splice(index ?? todoList.items.length, 0, { title, completed: false });
-            return { success: true };
-          },
-          parameters: z.object({
-            title: z.string().describe("The title of the todo item"),
-            index: z.number().describe("The index position to insert the item at. If omitted, the item will be added to the end of the list.").optional(),
-          }),
-          description: "Add a new todo item to the list",
-        },
-        completeTodoItem: {
-          execute: async (params: { index: number }) => {
-            const { index } = params;
-            todoList.items[index].completed = true;
-            return { success: true };
-          },
-          parameters: z.object({
-            index: z.number().describe("The index of the todo item to complete"),
-          }),
-          description: "Mark a todo item as completed",
-        },
-        removeTodoItem: {
-          execute: async (params: { index: number }) => {
-            const { index } = params;
-            todoList.items.splice(index, 1);
-            return { success: true };
-          },
-          parameters: z.object({
-            index: z.number().describe("The index of the todo item to remove"),
-          }),
-          description: "Remove a todo item from the list",
-        },
-        getTodoList: {
-          execute: async () => {
-            return { success: true, items: todoList.items };
-          },
-          parameters: z.object({}),
-          description: "Get the current todo list",
-        },
+        search: webSearchTool,
+        ...todoListTools,
         queryPage: queryPageTool,
-        updateUserPreferencesWorkingMemory: {
+        updateUserPreference: {
           execute: async (params: { content: string }) => {
             const { content } = params;
 
             try {
-              await userPreferences.putString(content);
+              await userPreferencesBlob.putString(content);
               return {
                 success: true,
               };
             } catch (error) {
               console.error(
-                "Error in updateUserPreferencesWorkingMemory",
+                "Error updating user preferences",
                 error,
               );
               return {
                 success: false,
-                error: "Error in updateUserPreferencesWorkingMemory",
+                error: "Error updating user preferences",
               };
             }
           },
@@ -322,11 +277,11 @@ ${todoList.items.map((item) => `- ${item.title}`).join("\n")}
             content: z
               .string()
               .describe(
-                "The complete working memory content for user preferences. This replaces the entire scratchpad.",
+                "The complete content for user preferences. This replaces the entire content. Write it as a readable block of text that you can reference later.",
               ),
           }),
           description:
-            "Update your working memory scratchpad for user preferences. This is your persistent memory about how the user likes to interact, their preferences, constraints, and personal context. Write it as a readable block of text that you can reference later.",
+            "Update your working memory for user preferences. This is your persistent memory about how the user likes to interact, their preferences, constraints, and personal context. Write it as a readable block of text that you can reference later.",
         },
       };
 
@@ -351,33 +306,36 @@ ${todoList.items.map((item) => `- ${item.title}`).join("\n")}
         //   : undefined,
       });
 
-      let recurse = false;
+      let continueForTools = false;
       const lastMessage = result.messages[result.messages.length - 1];
       if (
         typeof lastMessage.content === "string" &&
-        lastMessage.content.trim().endsWith("<|tool_calls_section_end|>")
+        (lastMessage.content.trim().endsWith("<|tool_calls_section_end|>") || lastMessage.content.trim().endsWith("<|tool_calls_section_begin|>"))
       ) {
-        // sometimes the k2 model will end the message with a tool call section end marker, remove it.
-        lastMessage.content = lastMessage.content.replace(
-          "<|tool_calls_section_end|>",
-          "",
-        );
-        lastMessage.content = lastMessage.content.replace(
-          "<|tool_calls_section_begin|>",
-          "",
-        );
-
-        recurse = true;
+        // sometimes the k2 model will end the message with a tool call section begin or end marker and stop, so we need to continue for tools
+        continueForTools = true;
       }
 
-      await saveThreadData({ messages: result.messages, todoList: { items: [] } });
+      const finalTodoList = getFinalTodoList();
+      await saveThreadData({ messages: result.messages, todoList: finalTodoList });
 
-      if (recurse) {
+      if (continueForTools && recursionDepth < 5) {
         return await copilotWorkflow({
           prompt: "continue",
           threadId,
           userId,
           url,
+          recursionDepth: recursionDepth + 1,
+        });
+      }
+
+      if (finalTodoList.items.filter((item) => !item.completed).length > 0 && recursionDepth < 5) {
+        return await copilotWorkflow({
+          prompt: "todo list is not complete, continue working on it.",
+          threadId,
+          userId,
+          url,
+          recursionDepth: recursionDepth + 1,
         });
       }
 
@@ -391,90 +349,6 @@ ${todoList.items.map((item) => `- ${item.title}`).join("\n")}
     }
   },
 );
-
-const extractMeaningfulContent = (html: string): string => {
-  // Extract title separately
-  const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-  const title = titleMatch ? titleMatch[1].trim() : '';
-
-  // Use html-to-text with optimized configuration
-  const textContent = convert(html, {
-    // Word wrapping options
-    wordwrap: false,
-
-    selectors: [
-      // Skip these elements entirely
-      { selector: 'script', format: 'skip' },
-      { selector: 'style', format: 'skip' },
-      { selector: 'noscript', format: 'skip' },
-      { selector: 'svg', format: 'skip' },
-      { selector: 'head', format: 'skip' },
-    ],
-
-    // Base elements to preserve
-    baseElements: {
-      selectors: ['body', 'main', 'article', 'section'],
-    },
-
-    // Remove excessive whitespace
-    preserveNewlines: false,
-
-    // Character limits and formatting
-    limits: {
-      maxInputLength: 1000000, // 1MB limit
-      ellipsis: '...'
-    }
-  });
-
-  // Clean up the extracted text
-  const cleanedContent = textContent
-    // Remove excessive line breaks
-    .replace(/\n\s*\n\s*\n/g, '\n\n')
-    // Remove leading/trailing whitespace from lines
-    .replace(/^[ \t]+|[ \t]+$/gm, '')
-    // Remove excessive spaces
-    .replace(/[ \t]+/g, ' ')
-    .trim();
-
-  // Combine title and content
-  const result = title ? `Page Title: ${title}\n\nPage Content:\n${cleanedContent}` : cleanedContent;
-
-  return result;
-};
-
-const SummarizePageContent = async (pageContent: string) => {
-  // Extract only meaningful content before sending to model
-  const meaningfulContent = extractMeaningfulContent(pageContent);
-
-  // use a fast light model to summarize the page content
-  const groqClient = createOpenAI({
-    apiKey: process.env.GROQ_API_KEY!,
-    baseURL: "https://api.groq.com/openai/v1",
-  });
-
-  // Keep the content under the 131,000 token limit (assume 4 characters per token)
-  let processedContent = meaningfulContent;
-  if (processedContent.length > 131000 * 4) {
-    console.warn("Extracted content is still too long, truncating to 131,000 tokens");
-    processedContent = processedContent.slice(0, 131000 * 4);
-  }
-
-  const model = groqClient("moonshotai/kimi-k2-instruct");
-  const result = await generateText({
-    model,
-    prompt: `Analyze the following webpage content and provide a comprehensive summary. Focus on:
-1. The main purpose and type of the page
-2. Key sections and their layout structure
-3. Important interactive elements (forms, buttons, links)
-4. Navigation structure
-5. Main content areas and their organization
-6. Any notable IDs, classes, or selectors that would be useful for automation
-
-Content to analyze:
-${processedContent}`,
-  });
-  return result.text;
-};
 
 function chatHistoryBlobPath(userId: string, threadId: string): string {
   return `chat-history/${userId}/${threadId}.json`;
@@ -494,62 +368,12 @@ export const getChatHistoryWorkflow = gensx.Workflow(
 
       // Handle old format (array of messages) - convert to new format
       if (Array.isArray(data)) {
-        return { messages: data };
+        return { messages: data, todoList: { items: [] } };
       }
 
-      return data ?? { messages: [] };
+      return data ?? { messages: [], todoList: { items: [] } };
     };
 
     return await loadThreadData();
-  },
-);
-
-function websiteKnowledgeBaseBlobPath(userId: string, domain: string): string {
-  return `website-knowledge-base/${userId}/${domain}`;
-}
-
-export const getWebsiteKnowledgeBaseWorkflow = gensx.Workflow(
-  "getWebsiteKnowledgeBase",
-  async ({ userId, domain }: { userId: string; domain: string }) => {
-    // Get blob instance for website knowledge base storage
-    const knowledgeBaseBlob = useBlob<string>(
-      websiteKnowledgeBaseBlobPath(userId, domain),
-    );
-
-    try {
-      const knowledgeBase = await knowledgeBaseBlob.getString();
-      return {
-        content: knowledgeBase || "",
-        exists: !!knowledgeBase,
-      };
-    } catch (error) {
-      return {
-        content: "",
-        exists: false,
-      };
-    }
-  },
-);
-
-export const deleteWebsiteKnowledgeBaseWorkflow = gensx.Workflow(
-  "deleteWebsiteKnowledgeBase",
-  async ({ userId, domain }: { userId: string; domain: string }) => {
-    // Get blob instance for website knowledge base storage
-    const knowledgeBaseBlob = useBlob<string>(
-      websiteKnowledgeBaseBlobPath(userId, domain),
-    );
-
-    try {
-      await knowledgeBaseBlob.delete();
-      return {
-        success: true,
-        message: `Website knowledge base deleted for ${domain}`,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: `Failed to delete website knowledge base: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      };
-    }
   },
 );

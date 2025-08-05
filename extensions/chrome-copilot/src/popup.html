@@ -12,8 +12,8 @@
     }
 
     body {
-      width: 400px;
-      height: 600px;
+      width: 100%;
+      height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       background: white;
       display: flex;
@@ -70,48 +70,13 @@
       height: 16px;
     }
 
-    /* Tabs */
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid #e5e7eb;
-      background: white;
-      flex-shrink: 0;
-    }
 
-    .tab {
-      flex: 1;
-      padding: 12px 16px;
-      background: transparent;
-      border: none;
-      font-size: 14px;
-      font-weight: 500;
-      color: #6b7280;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s ease;
-    }
-
-    .tab:hover {
-      color: #2563eb;
-      background: #f9fafb;
-    }
-
-    .tab.active {
-      color: #2563eb;
-      border-bottom-color: #2563eb;
-      background: white;
-    }
-
-    /* Tab Content */
+    /* Chat Content */
     .tab-content {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-    }
-
-    .tab-content.hidden {
-      display: none;
     }
 
     .messages {
@@ -373,89 +338,6 @@
       font-size: 13px;
     }
 
-    /* Knowledge Tab */
-    .knowledge-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .knowledge-header {
-      padding: 16px;
-      border-bottom: 1px solid #e5e7eb;
-      flex-shrink: 0;
-    }
-
-    .knowledge-header h4 {
-      font-size: 16px;
-      font-weight: 600;
-      color: #374151;
-      margin: 0 0 4px 0;
-    }
-
-    .knowledge-header p {
-      font-size: 12px;
-      color: #6b7280;
-      margin: 0;
-    }
-
-    .knowledge-body {
-      flex: 1;
-      padding: 16px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .knowledge-textarea {
-      width: 100%;
-      height: 100%;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      padding: 12px;
-      font-size: 13px;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      line-height: 1.5;
-      background: #f9fafb;
-      color: #374151;
-      resize: none;
-      outline: none;
-    }
-
-    .knowledge-textarea:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-    }
-
-    .knowledge-actions {
-      padding: 16px;
-      border-top: 1px solid #e5e7eb;
-      flex-shrink: 0;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .delete-button {
-      padding: 8px 16px;
-      background: #dc2626;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background-color 0.2s ease;
-    }
-
-    .delete-button:hover {
-      background: #b91c1c;
-    }
-
-    .delete-button:disabled {
-      background: #9ca3af;
-      cursor: not-allowed;
-    }
 
     /* Reconnection status */
     .reconnection-status {
@@ -473,6 +355,137 @@
       display: flex;
       align-items: center;
       gap: 8px;
+    }
+
+    /* Todo List */
+    .todo-list-container {
+      max-height: 30%;
+      overflow-y: auto;
+      border-top: 1px solid #e5e7eb;
+      background: #f9fafb;
+      display: none;
+    }
+
+    .todo-list-container.has-items {
+      display: block;
+    }
+
+    .todo-list-header {
+      padding: 8px 12px;
+      background: #f3f4f6;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .todo-list-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .todo-list-title svg {
+      width: 14px;
+      height: 14px;
+      color: #6b7280;
+    }
+
+    .todo-list-count {
+      background: #d1d5db;
+      color: #374151;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .todo-list-items {
+      padding: 8px 0;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: #374151;
+      transition: background-color 0.2s ease;
+    }
+
+    .todo-item:hover {
+      background: #f3f4f6;
+    }
+
+    .todo-item.completed {
+      opacity: 0.6;
+    }
+
+    .todo-item.completed .todo-item-title {
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+
+    .todo-checkbox {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #d1d5db;
+      border-radius: 3px;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .todo-checkbox.checked {
+      background: #2563eb;
+      border-color: #2563eb;
+    }
+
+    .todo-checkbox.checked::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 1px;
+    }
+
+    .todo-item-title {
+      flex: 1;
+      word-wrap: break-word;
+      line-height: 1.3;
+    }
+
+    .todo-list-empty {
+      padding: 12px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* Scrollbar for todo list */
+    .todo-list-container::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .todo-list-container::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .todo-list-container::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .todo-list-container::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
     }
   </style>
 </head>
@@ -499,21 +512,33 @@
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" data-tab="chat">Chat</button>
-    <button class="tab" data-tab="knowledge">Knowledge</button>
-  </div>
 
-  <div class="tab-content" id="chatTab">
+  <div class="tab-content" id="chatTab" style="display: flex;">
     <div class="messages" id="messages">
       <!-- Messages will be dynamically inserted here -->
     </div>
 
+    <!-- Todo List Container -->
+    <div class="todo-list-container" id="todoListContainer">
+      <div class="todo-list-header">
+        <div class="todo-list-title">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Todo List
+          <span class="todo-list-count" id="todoListCount">0</span>
+        </div>
+      </div>
+      <div class="todo-list-items" id="todoListItems">
+        <!-- Todo items will be dynamically inserted here -->
+      </div>
+    </div>
+
     <form class="input-form" id="inputForm">
       <div class="input-container">
-        <textarea 
-          class="input" 
-          id="messageInput" 
+        <textarea
+          class="input"
+          id="messageInput"
           placeholder="Ask me to interact with the current page..."
           rows="1"
           style="resize: none; height: auto; min-height: 36px; max-height: 100px;"
@@ -525,25 +550,6 @@
     </form>
   </div>
 
-  <div class="tab-content hidden" id="knowledgeTab">
-    <div class="knowledge-content">
-      <div class="knowledge-header">
-        <h4>Website Knowledge Base</h4>
-        <p id="knowledgeDomain">No domain selected</p>
-      </div>
-      <div class="knowledge-body">
-        <textarea 
-          id="knowledgeText" 
-          class="knowledge-textarea" 
-          readonly
-          placeholder="No website knowledge available yet. The AI will build knowledge as you interact with this website."
-        ></textarea>
-      </div>
-      <div class="knowledge-actions">
-        <button id="deleteKnowledge" class="delete-button">Delete Knowledge</button>
-      </div>
-    </div>
-  </div>
 
   <script src="popup.js"></script>
 </body>

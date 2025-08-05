@@ -5,6 +5,7 @@ import {
   TabInfo,
   WorkflowMessage,
   SettingsManager,
+  TodoList,
 } from "./types/copilot";
 import { GenSX } from "@gensx/client";
 import { applyObjectPatches } from "./utils/workflow-state";
@@ -14,11 +15,16 @@ import { type CoreMessage } from "ai";
 let currentWorkflowTabId: number | null = null;
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("GenSX Copilot extension installed");
+  console.log('✅ GenSX Copilot extension installed');
 });
 
-// Store for managing ongoing workflow requests
-const pendingRequests = new Map<string, (response: any) => void>();
+// Handle extension icon click to open side panel
+chrome.action.onClicked.addListener(async (tab) => {
+  if (tab.id) {
+    console.log('📋 Opening side panel for tab:', tab.id);
+    await chrome.sidePanel.open({ tabId: tab.id });
+  }
+});
 
 const getClient = async () => {
   const settings = await SettingsManager.get();
@@ -114,7 +120,7 @@ async function handleWorkflowRequest(
 
   try {
     console.log("Executing workflow for request:", requestId);
-    
+
     // Store the tab ID for this workflow to avoid "no active tab" issues
     if (data.tabId) {
       currentWorkflowTabId = data.tabId;
@@ -179,12 +185,12 @@ async function handleGetThreadHistory(
     console.log("Getting thread history for:", userId, threadId);
 
     const gensx = await getClient();
-    
+
     console.log("Running fetchChatHistory workflow...");
     const { output: threadData } = await gensx.run<{ messages: CoreMessage[] }>("fetchChatHistory", {
       inputs: { userId, threadId }
     });
-    
+
     console.log("fetchChatHistory workflow output:", threadData);
 
     let messages: CoreMessage[] = [];
@@ -234,12 +240,12 @@ async function handleGetWebsiteKnowledge(
     console.log("Getting website knowledge for:", userId, domain);
 
     const gensx = await getClient();
-    
+
     console.log("Running getWebsiteKnowledgeBase workflow...");
     const { output: knowledgeData } = await gensx.run<{ content: string; exists: boolean }>("getWebsiteKnowledgeBase", {
       inputs: { userId, domain }
     });
-    
+
     console.log("getWebsiteKnowledgeBase workflow output:", knowledgeData);
 
     sendResponse({
@@ -272,12 +278,12 @@ async function handleDeleteWebsiteKnowledge(
     console.log("Deleting website knowledge for:", userId, domain);
 
     const gensx = await getClient();
-    
+
     console.log("Running deleteWebsiteKnowledgeBase workflow...");
     const { output: deleteResult } = await gensx.run<{ success: boolean; message: string }>("deleteWebsiteKnowledgeBase", {
       inputs: { userId, domain }
     });
-    
+
     console.log("deleteWebsiteKnowledgeBase workflow output:", deleteResult);
 
     sendResponse({
@@ -352,6 +358,7 @@ async function processStreamingResponse(
 
   let executionId: string | undefined;
   let messagesState: any = {}; // Track the full messages object state
+  let todoListState: TodoList = { items: [] }; // Track the todo list state
 
   try {
     while (!isComplete) {
@@ -397,7 +404,13 @@ async function processStreamingResponse(
               console.log("Updated messages state:", messagesState);
             }
 
-            await processStreamingEvent(executionId, event, requestId, sender, messagesState);
+            // Update todo list state if this is a todoList object update
+            if (event.type === "object" && event.label === "todoList") {
+              todoListState = applyObjectPatches(event.patches, todoListState) as TodoList;
+              console.log("Updated todo list state:", todoListState);
+            }
+
+            await processStreamingEvent(executionId, event, requestId, sender, messagesState, todoListState);
           } catch (parseError) {
             console.warn("Failed to parse streaming event:", line, parseError);
           }
@@ -441,6 +454,7 @@ async function processStreamingEvent(
   requestId: string,
   sender: chrome.runtime.MessageSender,
   messagesState: any,
+  todoListState: TodoList,
 ) {
   // Handle external tool calls
   if (event.type === "external-tool") {
@@ -479,17 +493,17 @@ async function processStreamingEvent(
         });
       } catch (connectionError) {
         console.warn("Content script connection failed, attempting to inject:", connectionError);
-        
+
         // Try to inject the content script manually
         try {
           await chrome.scripting.executeScript({
             target: { tabId: tabId },
             files: ['content.js']
           });
-          
+
           // Wait a bit for the script to initialize
           await new Promise(resolve => setTimeout(resolve, 500));
-          
+
           // Retry the message
           toolResponse = await chrome.tabs.sendMessage(tabId, {
             type: "EXTERNAL_TOOL_CALL",
@@ -537,6 +551,22 @@ async function processStreamingEvent(
 
     // Send to popup and other extension contexts
     chrome.runtime.sendMessage(messageData).catch(() => {
+      // Ignore errors if popup is not open
+    });
+  }
+
+  // Send todo list updates to popup
+  if (event.type === "object" && event.label === "todoList") {
+    const todoListData = {
+      type: "WORKFLOW_TODO_LIST_UPDATE",
+      requestId,
+      data: {
+        todoList: todoListState
+      }
+    };
+
+    // Send to popup and other extension contexts
+    chrome.runtime.sendMessage(todoListData).catch(() => {
       // Ignore errors if popup is not open
     });
   }

@@ -7,7 +7,8 @@
     "activeTab",
     "storage",
     "tabs",
-    "scripting"
+    "scripting",
+    "sidePanel"
   ],
   "host_permissions": [
     "http://*/*",
@@ -24,8 +25,10 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
     "default_title": "GenSX Copilot"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
   },
   "options_page": "options.html",
   "icons": {

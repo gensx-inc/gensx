@@ -7,12 +7,12 @@ export interface CopilotSettings {
   org: string;
   project: string;
   environment: string;
-  
+
   // Copilot Behavior
   autoOpen: boolean;
   enableShortcuts: boolean;
   defaultWidth: number;
-  
+
   // User Preferences
   userName: string;
   userContext: string;
@@ -28,6 +28,15 @@ export interface CopilotState {
   isStreaming: boolean;
   userId: string;
   threadId: string;
+}
+
+export interface TodoItem {
+  title: string;
+  completed: boolean;
+}
+
+export interface TodoList {
+  items: TodoItem[];
 }
 
 export interface CopilotMessage {
@@ -70,7 +79,7 @@ export interface ToolCall {
 }
 
 export interface ExtensionMessage {
-  type: 'GET_TAB_INFO' | 'EXECUTE_TOOL' | 'SEND_MESSAGE' | 'TOGGLE_COPILOT' | 'WORKFLOW_REQUEST' | 'WORKFLOW_RESPONSE' | 'WORKFLOW_ERROR' | 'WORKFLOW_STREAM_UPDATE' | 'WORKFLOW_STREAM_COMPLETE' | 'WORKFLOW_MESSAGES_UPDATE' | 'WORKFLOW_RECONNECT' | 'WORKFLOW_EXECUTION_STARTED' | 'EXTERNAL_TOOL_CALL' | 'EXTERNAL_TOOL_RESPONSE' | 'GET_THREAD_HISTORY' | 'GET_WEBSITE_KNOWLEDGE' | 'DELETE_WEBSITE_KNOWLEDGE' | 'CONTENT_SCRIPT_READY' | 'UPDATE_CURRENT_TAB';
+  type: 'GET_TAB_INFO' | 'EXECUTE_TOOL' | 'SEND_MESSAGE' | 'TOGGLE_COPILOT' | 'WORKFLOW_REQUEST' | 'WORKFLOW_RESPONSE' | 'WORKFLOW_ERROR' | 'WORKFLOW_STREAM_UPDATE' | 'WORKFLOW_STREAM_COMPLETE' | 'WORKFLOW_MESSAGES_UPDATE' | 'WORKFLOW_TODO_LIST_UPDATE' | 'WORKFLOW_RECONNECT' | 'WORKFLOW_EXECUTION_STARTED' | 'EXTERNAL_TOOL_CALL' | 'EXTERNAL_TOOL_RESPONSE' | 'GET_THREAD_HISTORY' | 'GET_WEBSITE_KNOWLEDGE' | 'DELETE_WEBSITE_KNOWLEDGE' | 'CONTENT_SCRIPT_READY' | 'UPDATE_CURRENT_TAB';
   data?: any;
   tabId?: number;
   requestId?: string;
@@ -156,6 +165,14 @@ export interface WorkflowMessagesUpdateMessage {
   };
 }
 
+export interface WorkflowTodoListUpdateMessage {
+  type: 'WORKFLOW_TODO_LIST_UPDATE';
+  requestId: string;
+  data: {
+    todoList: TodoList;
+  };
+}
+
 export interface TabInfo {
   url: string;
   title: string;
@@ -180,7 +197,7 @@ export interface WorkflowResponse {
 // Settings storage utilities
 export class SettingsManager {
   private static readonly DEFAULT_SETTINGS: CopilotSettings = {
-    apiEndpoint: 'http://localhost:3000',
+    apiEndpoint: 'http://localhost:1337',
     apiKey: '',
     org: 'gensx',
     project: 'chrome-copilot',

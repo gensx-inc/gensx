@@ -1,16 +1,16 @@
 // GenSX Copilot Popup Script - Full Chat Interface
 
-import { 
-  CopilotMessage, 
-  ToolCall, 
-  ExtensionMessage, 
-  SettingsManager, 
-  WorkflowMessage, 
-  WorkflowStreamUpdateMessage, 
-  WorkflowStreamCompleteMessage, 
+import {
+  CopilotMessage,
+  ToolCall,
+  ExtensionMessage,
+  SettingsManager,
+  WorkflowMessage,
+  WorkflowStreamUpdateMessage,
+  WorkflowStreamCompleteMessage,
   WorkflowMessagesUpdateMessage,
-  ExternalToolCallMessage,
-  ExternalToolResponseMessage
+  WorkflowTodoListUpdateMessage, TodoList,
+  TodoItem
 } from './types/copilot';
 
 interface PopupState {
@@ -28,6 +28,7 @@ interface PopupState {
   websiteKnowledge: string;
   domain: string;
   knowledgeBaseLoaded: boolean;
+  todoList: TodoList;
 }
 
 class PopupChatInterface {
@@ -41,10 +42,9 @@ class PopupChatInterface {
     optionsButton: HTMLButtonElement;
     currentPageElement: HTMLElement;
     chatTab: HTMLElement;
-    knowledgeTab: HTMLElement;
-    knowledgeDomain: HTMLElement;
-    knowledgeText: HTMLTextAreaElement;
-    deleteKnowledgeButton: HTMLButtonElement;
+    todoListContainer: HTMLElement;
+    todoListItems: HTMLElement;
+    todoListCount: HTMLElement;
   };
   private currentStreamingRequestId: string | null = null;
   private currentStreamingMessageIndex: number = -1;
@@ -61,6 +61,7 @@ class PopupChatInterface {
       websiteKnowledge: '',
       domain: '',
       knowledgeBaseLoaded: false,
+      todoList: { items: [] },
     };
 
     // Get DOM elements
@@ -73,16 +74,16 @@ class PopupChatInterface {
       optionsButton: document.getElementById('openOptions') as HTMLButtonElement,
       currentPageElement: document.getElementById('currentPage')!,
       chatTab: document.getElementById('chatTab')!,
-      knowledgeTab: document.getElementById('knowledgeTab')!,
-      knowledgeDomain: document.getElementById('knowledgeDomain')!,
-      knowledgeText: document.getElementById('knowledgeText') as HTMLTextAreaElement,
-      deleteKnowledgeButton: document.getElementById('deleteKnowledge') as HTMLButtonElement,
+      todoListContainer: document.getElementById('todoListContainer')!,
+      todoListItems: document.getElementById('todoListItems')!,
+      todoListCount: document.getElementById('todoListCount')!,
     };
 
     this.initializeEventListeners();
     this.loadPersistedState();
     this.updateCurrentPageInfo();
     this.updateBackgroundCurrentTab();
+    this.renderTodoList(); // Initial render of todo list
   }
 
   private generateUserId(): string {
@@ -123,18 +124,6 @@ class PopupChatInterface {
       chrome.runtime.openOptionsPage();
     });
 
-    // Tab navigation
-    document.querySelectorAll('.tab').forEach(tabButton => {
-      tabButton.addEventListener('click', (e) => {
-        const tab = (e.target as HTMLElement).getAttribute('data-tab') as 'chat' | 'knowledge';
-        this.switchTab(tab);
-      });
-    });
-
-    // Delete knowledge button
-    this.elements.deleteKnowledgeButton.addEventListener('click', () => {
-      this.deleteWebsiteKnowledge();
-    });
 
     // Message listener for background script responses
     chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
@@ -152,24 +141,24 @@ class PopupChatInterface {
     try {
       // Load user and thread state from chrome.storage.local
       const stored = await chrome.storage.local.get(['userState', 'activeExecution']);
-      
+
       // Load or create user/thread identifiers
       if (stored.userState) {
         this.state.userId = stored.userState.userId || this.state.userId;
         this.state.threadId = stored.userState.threadId || this.state.threadId;
       }
-      
+
       // Save user state if it was just created
       await this.persistUserState();
-      
+
       // Load thread history
       await this.loadThreadHistory();
-      
+
       // Check for active execution and reconnect if needed
       if (stored.activeExecution && stored.activeExecution.executionId) {
         this.state.activeExecutionId = stored.activeExecution.executionId;
         this.state.activeRequestId = stored.activeExecution.requestId;
-        
+
         console.log('Found active execution, attempting to reconnect:', this.state.activeExecutionId);
         await this.reconnectToExecution();
       }
@@ -181,7 +170,7 @@ class PopupChatInterface {
   private async loadThreadHistory(): Promise<void> {
     try {
       console.log('Loading thread history for userId:', this.state.userId, 'threadId:', this.state.threadId);
-      
+
       // Request thread history from background script (which will use blob API)
       const response = await chrome.runtime.sendMessage({
         type: 'GET_THREAD_HISTORY',
@@ -190,9 +179,9 @@ class PopupChatInterface {
           threadId: this.state.threadId
         }
       });
-      
+
       console.log('Thread history response:', response);
-      
+
       if (response && response.success && response.messages) {
         // Only load non-system messages for UI display
         this.state.messages = response.messages.filter((msg: any) => msg.role !== 'system');
@@ -247,7 +236,7 @@ class PopupChatInterface {
 
     try {
       console.log('Reconnecting to execution:', this.state.activeExecutionId);
-      
+
       // Set reconnection state to show we're reconnecting
       this.state.isReconnecting = true;
       this.state.isStreaming = true;
@@ -288,13 +277,13 @@ class PopupChatInterface {
     this.state.activeRequestId = undefined;
     this.state.isStreaming = false;
     this.state.isReconnecting = false;
-    
+
     // Clear reconnection timeout if it exists
     if ((this as any).reconnectionTimeout) {
       clearTimeout((this as any).reconnectionTimeout);
       (this as any).reconnectionTimeout = null;
     }
-    
+
     // Clear only execution state, not thread messages
     chrome.storage.local.remove(['activeExecution']).catch(error => {
       console.warn('Failed to clear execution state:', error);
@@ -307,13 +296,13 @@ class PopupChatInterface {
       if (tab && tab.id && tab.url) {
         this.state.currentTabId = tab.id;
         this.state.currentUrl = tab.url;
-        
+
         const domain = new URL(tab.url).hostname;
         this.state.domain = domain;
         this.elements.currentPageElement.textContent = domain;
-        
-        // Load website knowledge when page info updates
-        await this.loadWebsiteKnowledge();
+
+            // Load website knowledge when page info updates - removed since method was deleted
+    // await this.loadWebsiteKnowledge();
       } else {
         this.elements.currentPageElement.textContent = 'No active page';
         this.state.domain = '';
@@ -323,7 +312,7 @@ class PopupChatInterface {
       this.elements.currentPageElement.textContent = 'Unknown page';
       this.state.domain = '';
     }
-    
+
     // Render after all initialization is complete
     this.render();
   }
@@ -339,118 +328,7 @@ class PopupChatInterface {
     }
   }
 
-  private async switchTab(tab: 'chat' | 'knowledge'): Promise<void> {
-    this.state.activeTab = tab;
-    
-    // Update tab buttons
-    document.querySelectorAll('.tab').forEach(tabButton => {
-      tabButton.classList.remove('active');
-      if (tabButton.getAttribute('data-tab') === tab) {
-        tabButton.classList.add('active');
-      }
-    });
-    
-    // Update tab content
-    this.elements.chatTab.classList.toggle('hidden', tab !== 'chat');
-    this.elements.knowledgeTab.classList.toggle('hidden', tab !== 'knowledge');
-    
-    // If switching to knowledge tab, refetch and update the display
-    if (tab === 'knowledge') {
-      await this.loadWebsiteKnowledge();
-      this.updateKnowledgeDisplay();
-    }
-  }
-
-  private updateKnowledgeDisplay(): void {
-    this.elements.knowledgeDomain.textContent = this.state.domain || 'No domain selected';
-    this.elements.knowledgeText.value = this.state.websiteKnowledge;
-    
-    // Enable/disable delete button based on whether knowledge exists
-    const hasKnowledge = this.state.websiteKnowledge.trim().length > 0;
-    this.elements.deleteKnowledgeButton.disabled = !hasKnowledge;
-  }
-
-  private async loadWebsiteKnowledge(): Promise<void> {
-    if (!this.state.domain) {
-      this.state.knowledgeBaseLoaded = true;
-      return;
-    }
-
-    try {
-      console.log('Loading website knowledge for domain:', this.state.domain);
-      
-      const response = await chrome.runtime.sendMessage({
-        type: 'GET_WEBSITE_KNOWLEDGE',
-        data: {
-          userId: this.state.userId,
-          domain: this.state.domain
-        }
-      });
-      
-      console.log('Website knowledge response:', response);
-      
-      if (response && response.success) {
-        this.state.websiteKnowledge = response.content || '';
-        console.log('Loaded website knowledge:', this.state.websiteKnowledge.length, 'characters');
-        
-        // Update knowledge display if we're on the knowledge tab
-        if (this.state.activeTab === 'knowledge') {
-          this.updateKnowledgeDisplay();
-        }
-      } else if (response && !response.success) {
-        console.warn('Failed to load website knowledge:', response.error);
-        this.state.websiteKnowledge = '';
-      } else {
-        console.log('No website knowledge found for domain:', this.state.domain);
-        this.state.websiteKnowledge = '';
-      }
-    } catch (error) {
-      console.warn('Failed to load website knowledge:', error);
-      this.state.websiteKnowledge = '';
-    } finally {
-      // Mark knowledge base as loaded regardless of success/failure
-      this.state.knowledgeBaseLoaded = true;
-      // Re-render to potentially show the init hint
-      this.render();
-    }
-  }
-
-  private async deleteWebsiteKnowledge(): Promise<void> {
-    if (!this.state.domain) {
-      return;
-    }
-
-    if (!confirm(`Are you sure you want to delete all website knowledge for ${this.state.domain}?`)) {
-      return;
-    }
-
-    try {
-      console.log('Deleting website knowledge for domain:', this.state.domain);
-      
-      const response = await chrome.runtime.sendMessage({
-        type: 'DELETE_WEBSITE_KNOWLEDGE',
-        data: {
-          userId: this.state.userId,
-          domain: this.state.domain
-        }
-      });
-      
-      console.log('Delete website knowledge response:', response);
-      
-      if (response && response.success) {
-        this.state.websiteKnowledge = '';
-        console.log('Successfully deleted website knowledge');
-        alert(response.message || 'Website knowledge deleted successfully');
-        this.updateKnowledgeDisplay();
-      } else {
-        console.error('Failed to delete website knowledge:', response?.message);
-        alert('Failed to delete website knowledge: ' + (response?.message || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Failed to delete website knowledge:', error);
-      alert('Failed to delete website knowledge: ' + (error instanceof Error ? error.message : 'Unknown error'));
-    }
-  }
+    // Knowledge-related methods removed since knowledge tab doesn't exist in current HTML
 
   private handleBackgroundMessage(message: ExtensionMessage): void {
     switch (message.type) {
@@ -463,6 +341,9 @@ class PopupChatInterface {
       case 'WORKFLOW_MESSAGES_UPDATE':
         this.handleMessagesUpdate(message as WorkflowMessagesUpdateMessage);
         break;
+      case 'WORKFLOW_TODO_LIST_UPDATE':
+        this.handleTodoListUpdate(message as WorkflowTodoListUpdateMessage);
+        break;
       case 'WORKFLOW_STREAM_COMPLETE':
         this.handleStreamingComplete(message as WorkflowStreamCompleteMessage);
         break;
@@ -474,7 +355,7 @@ class PopupChatInterface {
 
   private handleExecutionStarted(message: any): void {
     const { requestId, data } = message;
-    
+
     if (this.currentStreamingRequestId === requestId) {
       this.state.activeExecutionId = data.executionId;
       console.log('Workflow execution started:', data.executionId);
@@ -484,17 +365,17 @@ class PopupChatInterface {
 
   private handleStreamingUpdate(message: WorkflowStreamUpdateMessage): void {
     const { requestId, data } = message;
-    
+
     if (this.currentStreamingRequestId === requestId) {
       // Clear reconnection state since we're now receiving updates
       this.state.isReconnecting = false;
-      
+
       // Clear reconnection timeout if it exists
       if ((this as any).reconnectionTimeout) {
         clearTimeout((this as any).reconnectionTimeout);
         (this as any).reconnectionTimeout = null;
       }
-      
+
       // Update or create the assistant message
       if (this.currentStreamingMessageIndex >= 0 && this.state.messages[this.currentStreamingMessageIndex]) {
         this.state.messages[this.currentStreamingMessageIndex].content = data.text;
@@ -506,7 +387,7 @@ class PopupChatInterface {
         this.state.messages.push(assistantMessage);
         this.currentStreamingMessageIndex = this.state.messages.length - 1;
       }
-      
+
       this.render();
       this.scrollToBottom();
     }
@@ -514,38 +395,56 @@ class PopupChatInterface {
 
   private handleMessagesUpdate(message: WorkflowMessagesUpdateMessage): void {
     const { requestId, data } = message;
-    
+
     if (this.currentStreamingRequestId === requestId) {
       // Clear reconnection state since we're now receiving updates
       this.state.isReconnecting = false;
-      
+
       // Clear reconnection timeout if it exists
       if ((this as any).reconnectionTimeout) {
         clearTimeout((this as any).reconnectionTimeout);
         (this as any).reconnectionTimeout = null;
       }
-      
+
       this.state.messages = data.messages;
       this.render();
       this.scrollToBottom();
     }
   }
 
+  private handleTodoListUpdate(message: WorkflowTodoListUpdateMessage): void {
+    const { requestId, data } = message;
+
+    if (this.currentStreamingRequestId === requestId) {
+      // Clear reconnection state since we're now receiving updates
+      this.state.isReconnecting = false;
+
+      // Clear reconnection timeout if it exists
+      if ((this as any).reconnectionTimeout) {
+        clearTimeout((this as any).reconnectionTimeout);
+        (this as any).reconnectionTimeout = null;
+      }
+
+      this.state.todoList = data.todoList;
+      this.renderTodoList();
+    }
+  }
+
   private handleStreamingComplete(message: WorkflowStreamCompleteMessage): void {
     const { requestId, data } = message;
-    
+
     if (this.currentStreamingRequestId === requestId) {
       if (this.currentStreamingMessageIndex >= 0 && this.state.messages[this.currentStreamingMessageIndex]) {
         this.state.messages[this.currentStreamingMessageIndex].content = data.finalMessage;
       }
-      
+
       this.state.isStreaming = false;
       this.currentStreamingRequestId = null;
       this.currentStreamingMessageIndex = -1;
-      
+
       // Clear execution state when workflow completes
       this.clearExecutionState();
-      
+
       this.render();
       this.scrollToBottom();
       this.persistState();
@@ -554,20 +453,20 @@ class PopupChatInterface {
 
   private handleWorkflowError(message: any): void {
     const { requestId, error } = message;
-    
+
     if (this.currentStreamingRequestId === requestId) {
       this.state.messages.push({
         role: 'assistant',
         content: `Error: ${error}. Make sure the GenSX workflow server is running.`
       });
-      
+
       this.state.isStreaming = false;
       this.currentStreamingRequestId = null;
       this.currentStreamingMessageIndex = -1;
-      
+
       // Clear execution state on error
       this.clearExecutionState();
-      
+
       this.render();
       this.scrollToBottom();
       this.persistState();
@@ -583,13 +482,13 @@ class PopupChatInterface {
     this.state.isStreaming = true;
     this.elements.messageInput.value = '';
     this.autoResizeTextarea();
-    
+
     this.render();
     this.scrollToBottom();
 
     try {
       const settings = await SettingsManager.get();
-      
+
       // Generate unique request ID
       const requestId = 'popup_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
       this.currentStreamingRequestId = requestId;
@@ -597,7 +496,7 @@ class PopupChatInterface {
 
       // Store request ID for potential reconnection
       this.state.activeRequestId = requestId;
-      
+
       const workflowMessage: WorkflowMessage = {
         type: 'WORKFLOW_REQUEST',
         requestId,
@@ -617,15 +516,15 @@ class PopupChatInterface {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      
+
       this.state.isStreaming = false;
       this.currentStreamingRequestId = null;
-      
+
       this.state.messages.push({
         role: 'assistant',
         content: `Error: ${(error as Error).message}. Make sure the GenSX workflow server is running.`
       });
-      
+
       this.render();
       this.scrollToBottom();
     }
@@ -635,16 +534,16 @@ class PopupChatInterface {
     // Generate new thread ID
     this.state.threadId = this.generateThreadId();
     this.state.messages = [];
-    
+
     // Clear any active execution
     this.clearExecutionState();
-    
+
     // Persist new thread ID
     await this.persistUserState();
-    
+
     // Re-render with empty messages
     this.render();
-    
+
     console.log('Started new thread:', this.state.threadId);
   }
 
@@ -659,33 +558,36 @@ class PopupChatInterface {
 
   private render(): void {
     this.elements.messagesContainer.innerHTML = '';
-    
+
     // Render messages
     this.state.messages.forEach((message, index) => {
       if (message.role === 'system' && message.content === 'hint_dismissed') {
         return; // Skip system messages
       }
-      
+
       const messageElement = this.renderMessage(message, index);
       this.elements.messagesContainer.appendChild(messageElement);
     });
-    
+
     // Render hint if no messages and knowledge base is empty
     if (this.state.messages.length === 0 && this.shouldShowInitHint()) {
       const hintElement = this.renderInitHint();
       this.elements.messagesContainer.appendChild(hintElement);
     }
-    
+
     // Show reconnection status if reconnecting
     if (this.state.isReconnecting) {
       const reconnectElement = this.renderReconnectionStatus();
       this.elements.messagesContainer.appendChild(reconnectElement);
     }
-    
+
+    // Update todo list
+    this.renderTodoList();
+
     // Update UI state
     this.elements.messageInput.disabled = this.state.isStreaming;
     this.elements.sendButton.disabled = this.state.isStreaming;
-    
+
     if (this.state.isReconnecting) {
       this.elements.sendButton.innerHTML = '<div class="loading"></div> Reconnecting...';
     } else if (this.state.isStreaming) {
@@ -698,32 +600,32 @@ class PopupChatInterface {
   private renderMessage(message: CopilotMessage, index: number): HTMLElement {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${message.role}`;
-    
+
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
-    
+
     if (message.role === 'user') {
       const content = typeof message.content === 'string' ? message.content :
         Array.isArray(message.content) ? message.content.map(part =>
           typeof part === 'string' ? part : 'text' in part ? part.text : ''
         ).join('') : '';
-      
+
       contentDiv.textContent = content;
     } else if (message.role === 'assistant') {
       const { textContent, toolCalls } = this.parseAssistantMessage(message);
-      
+
       if (textContent) {
         const textDiv = document.createElement('div');
         textDiv.textContent = textContent;
         contentDiv.appendChild(textDiv);
       }
-      
+
       if (toolCalls.length > 0) {
         const toolCallsElement = this.renderToolCalls(toolCalls);
         contentDiv.appendChild(toolCallsElement);
       }
     }
-    
+
     messageDiv.appendChild(contentDiv);
     return messageDiv;
   }
@@ -745,8 +647,8 @@ class PopupChatInterface {
             m.content.find((c: any) => c.type === 'tool-result' && c.toolCallId === part.toolCallId)
           );
 
-          const resultContent = toolResult ? 
-            (toolResult.content as any[]).find((c: any) => c.type === 'tool-result' && c.toolCallId === part.toolCallId)?.result : 
+          const resultContent = toolResult ?
+            (toolResult.content as any[]).find((c: any) => c.type === 'tool-result' && c.toolCallId === part.toolCallId)?.result :
             undefined;
 
           toolCalls.push({
@@ -777,11 +679,11 @@ class PopupChatInterface {
   private renderToolCalls(toolCalls: ToolCall[]): HTMLElement {
     const toolCallsDiv = document.createElement('div');
     toolCallsDiv.className = 'tool-calls';
-    
+
     toolCalls.forEach(call => {
       const toolCallDiv = document.createElement('div');
       toolCallDiv.className = 'tool-call';
-      
+
       const headerDiv = document.createElement('div');
       headerDiv.className = 'tool-call-header';
       headerDiv.innerHTML = `
@@ -790,55 +692,55 @@ class PopupChatInterface {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
       `;
-      
+
       headerDiv.addEventListener('click', () => {
         this.toggleTool(call.toolCallId);
       });
-      
+
       toolCallDiv.appendChild(headerDiv);
-      
+
       if (this.state.expandedTools.has(call.toolCallId)) {
         const contentDiv = document.createElement('div');
         contentDiv.className = 'tool-call-content';
-        
+
         const inputSection = document.createElement('div');
         inputSection.className = 'tool-call-section';
-        
+
         const inputLabel = document.createElement('div');
         inputLabel.className = 'tool-call-label';
         inputLabel.textContent = 'Input:';
-        
+
         const inputCode = document.createElement('pre');
         inputCode.className = 'tool-call-code';
         inputCode.textContent = JSON.stringify(call.args, null, 2);
-        
+
         inputSection.appendChild(inputLabel);
         inputSection.appendChild(inputCode);
         contentDiv.appendChild(inputSection);
-        
+
         if (call.result !== undefined) {
           const outputSection = document.createElement('div');
           outputSection.className = 'tool-call-section';
-          
+
           const outputLabel = document.createElement('div');
           outputLabel.className = 'tool-call-label';
           outputLabel.textContent = 'Output:';
-          
+
           const outputCode = document.createElement('pre');
           outputCode.className = 'tool-call-code';
           outputCode.textContent = JSON.stringify(call.result, null, 2);
-          
+
           outputSection.appendChild(outputLabel);
           outputSection.appendChild(outputCode);
           contentDiv.appendChild(outputSection);
         }
-        
+
         toolCallDiv.appendChild(contentDiv);
       }
-      
+
       toolCallsDiv.appendChild(toolCallDiv);
     });
-    
+
     return toolCallsDiv;
   }
 
@@ -855,20 +757,20 @@ class PopupChatInterface {
         </div>
       </div>
     `;
-    
+
     const tryInitButton = hintDiv.querySelector('#tryInit') as HTMLButtonElement;
     const dismissButton = hintDiv.querySelector('#dismissHint') as HTMLButtonElement;
-    
+
     tryInitButton.addEventListener('click', () => {
       this.elements.messageInput.value = '/init';
       this.sendMessage();
     });
-    
+
     dismissButton.addEventListener('click', () => {
       this.state.messages.push({ role: 'system', content: 'hint_dismissed' });
       this.render();
     });
-    
+
     return hintDiv;
   }
 
@@ -887,6 +789,62 @@ class PopupChatInterface {
       </div>
     `;
     return statusDiv;
+  }
+
+  private renderTodoList(): void {
+    const { todoList } = this.state;
+    const { todoListContainer, todoListItems, todoListCount } = this.elements;
+
+    // Update count
+    const totalItems = todoList.items.length;
+    todoListCount.textContent = totalItems.toString();
+
+    // Show/hide container based on whether there are items
+    if (totalItems > 0) {
+      todoListContainer.classList.add('has-items');
+    } else {
+      todoListContainer.classList.remove('has-items');
+    }
+
+    // Clear existing items
+    todoListItems.innerHTML = '';
+
+    if (totalItems === 0) {
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'todo-list-empty';
+      emptyDiv.textContent = 'No todo items yet';
+      todoListItems.appendChild(emptyDiv);
+      return;
+    }
+
+    // Render todo items
+    todoList.items.forEach((item: TodoItem, index: number) => {
+      const todoItemDiv = document.createElement('div');
+      todoItemDiv.className = `todo-item ${item.completed ? 'completed' : ''}`;
+
+      const checkboxDiv = document.createElement('div');
+      checkboxDiv.className = `todo-checkbox ${item.completed ? 'checked' : ''}`;
+      checkboxDiv.addEventListener('click', () => {
+        this.toggleTodoItem(index);
+      });
+
+      const titleDiv = document.createElement('div');
+      titleDiv.className = 'todo-item-title';
+      titleDiv.textContent = item.title;
+
+      todoItemDiv.appendChild(checkboxDiv);
+      todoItemDiv.appendChild(titleDiv);
+      todoListItems.appendChild(todoItemDiv);
+    });
+  }
+
+  private toggleTodoItem(index: number): void {
+    // This would typically send a message to the workflow to update the todo item
+    // For now, we'll just update the local state
+    if (index >= 0 && index < this.state.todoList.items.length) {
+      this.state.todoList.items[index].completed = !this.state.todoList.items[index].completed;
+      this.renderTodoList();
+    }
   }
 
   private scrollToBottom(): void {

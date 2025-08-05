@@ -40,7 +40,14 @@ export const Agent = gensx.Component(
 
     const publishMessages = () => {
       gensx.publishObject("messages", {
-        messages: JSON.parse(JSON.stringify(allMessages)),
+        messages: JSON.parse(JSON.stringify(allMessages.map(m => {
+          if (typeof m.content !== "string") {
+            return m;
+          }
+
+          m.content = m.content.replace(/<|tool_calls_section_begin|>/g, "").replace(/<|tool_calls_section_end|>/g, "");
+          return m;
+        }))),
       });
     };
 
@@ -274,7 +281,7 @@ export const Agent = gensx.Component(
         contentParts.length = 0;
       },
       onError: (error) => {
-        throw new Error("Error in Agent", { cause: error });
+        throw error;
       },
       onFinish: () => {
         // Final publish when stream is complete
