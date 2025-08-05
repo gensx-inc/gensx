@@ -2,18 +2,23 @@ import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
 import { CoreMessage } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
 import { serializeError } from "serialize-error";
 import { convert } from "html-to-text";
 
 import { Agent } from "./agent";
 import { asToolSet, generateText } from "@gensx/vercel-ai";
-import { toolbox } from "./tools/toolbox";
+import { toolbox } from "../shared/toolbox";
 import { z } from "zod";
-import { initPrompt } from "./slashcommands/init";
+import { queryPageTool } from "./query";
 
 type ThreadData = {
   messages: CoreMessage[];
+  todoList: {
+    items: {
+      title: string;
+      completed: boolean;
+    }[];
+  };
 };
 
 export const copilotWorkflow = gensx.Workflow(
@@ -23,15 +28,11 @@ export const copilotWorkflow = gensx.Workflow(
     threadId,
     userId,
     url,
-    userName,
-    userContext,
   }: {
     prompt: string;
     threadId: string;
     userId: string;
     url: string;
-    userName?: string;
-    userContext?: string;
   }): Promise<{ response: string; messages: CoreMessage[] }> => {
     try {
       // Get blob instance for chat history storage
@@ -39,23 +40,14 @@ export const copilotWorkflow = gensx.Workflow(
         chatHistoryBlobPath(userId, threadId),
       );
 
-      const domain = new URL(url).hostname;
       const path = new URL(url).pathname;
-      const websiteKnowledgeBase = useBlob(
-        websiteKnowledgeBaseBlobPath(userId, domain),
-      );
-      const userPreferences = useBlob(`user-preferences/${userId}`);
+      const userPreferencesBlob = useBlob(`user-preferences/${userId}`);
 
       // Function to load thread data
       const loadThreadData = async (): Promise<ThreadData> => {
         const data = await chatHistoryBlob.getJSON();
 
-        // Handle old format (array of messages) - convert to new format
-        if (Array.isArray(data)) {
-          return { messages: data };
-        }
-
-        return data ?? { messages: [] };
+        return data ?? { messages: [], todoList: { items: [] } };
       };
 
       // Function to save thread data
@@ -66,134 +58,39 @@ export const copilotWorkflow = gensx.Workflow(
       const threadData = await loadThreadData();
       const existingMessages = threadData.messages;
 
-      // Load working memory scratchpads
-      let websiteKnowledgeBaseContent = "";
-      let userPreferencesWorkingMemory = "";
+      let userPreferences = "";
 
       try {
-        // Load website knowledge base
-        const knowledgeExists = await websiteKnowledgeBase.exists();
-        if (knowledgeExists) {
-          websiteKnowledgeBaseContent =
-            (await websiteKnowledgeBase.getString()) ?? "";
-        }
-
         // Load user preferences working memory scratchpad
-        const userPrefsExists = await userPreferences.exists();
+        const userPrefsExists = await userPreferencesBlob.exists();
         if (userPrefsExists) {
-          userPreferencesWorkingMemory =
-            (await userPreferences.getString()) ?? "";
+          userPreferences =
+            (await userPreferencesBlob.getString()) ?? "";
         }
       } catch (error) {
         console.error("Error loading working memory", error);
       }
 
-      let needInit = false;
-      if (!websiteKnowledgeBaseContent.trim() && !prompt.startsWith("/init")) {
-        websiteKnowledgeBaseContent =
-          "No website knowledge stored yet. It is imperative that you ask the user to use the '/init' slash command to initialize the website knowledge base.";
-        needInit = true;
-      }
-
-      if (!userPreferencesWorkingMemory.trim()) {
-        userPreferencesWorkingMemory = "No user preferences stored yet.";
+      if (!userPreferences.trim()) {
+        userPreferences = "No user preferences stored yet.";
       }
 
       // Check if this is a new thread (no messages yet)
       const isNewThread = existingMessages.length === 0;
 
+      const todoList = threadData.todoList;
+
       if (isNewThread || existingMessages[0].role !== "system") {
         const systemMessage: CoreMessage = {
           role: "system",
-          content: `You are a helpful AI assistant with the ability to interact with web pages using jQuery-based tools.
-You can inspect elements, click buttons, fill forms, and help users navigate and interact with web applications.
-
-${
-  userName
-    ? `## User Information
-The user's name is: ${userName}
-${userContext ? `Additional context about the user: ${userContext}` : ""}
-
-`
-    : ""
-}${needInit ? "## IMPORTANT: The user has not initialized the website knowledge base. You must ask the user to use the '/init' slash command to initialize the website knowledge base." : ""}
+          content: `You are an expert at helping users use their web browser to take actions and complete tasks or find information. You have the power to query the current page, navigate, open tabs, and more.
 
 ## CORE WORKFLOW
 When helping users:
-1. ALWAYS start by searching website knowledge base to find existing knowledge about where actions can be performed and which pages contain the features you need
-2. Use getPageOverview to get a hierarchical understanding of the current page structure
-3. Search user preferences to understand the user's personal context, preferences, and how they like to be assisted
-4. Use the information from website knowledge base to identify the best pages to navigate to for completing the user's request
-5. Use inspectSection to drill down into specific sections for detailed analysis
-6. Use inspectElements to get details about individual elements
-7. Use highlightElements to show users what you're looking at
-8. Perform actions like clicking (clickElements), filling forms (fillTextInputs), or submitting forms (submitForms) as requested
-9. Always verify the results of your actions
-10. ALWAYS update website knowledge base with what you discover
-
-## WEBSITE KNOWLEDGE BASE MANAGEMENT
-You MUST be extremely proactive about maintaining the website knowledge base. This is your primary knowledge base for navigating and understanding the website.
-
-### When to Update Website Knowledge Base:
-- ALWAYS update website knowledge base when you discover new pages, features, or functionality
-- Store information about buttons, forms, links, and interactive elements you find
-- Record the location and purpose of important UI elements
-- Document navigation patterns and page structures
-- Save information about form fields, their purposes, and validation requirements
-- Store details about error messages and their solutions
-- Record successful workflows and the steps taken to complete them
-- Store information about which pages contain specific features or actions
-- Document the relationship between user requests and the pages/features needed to fulfill them
-
-### What to Store in Website Knowledge Base:
-- Page paths and their purposes
-- Button locations and their functions
-- Form field names, types, and validation rules
-- Navigation menus and their structure
-- Error messages and their solutions
-- Feature locations and how to access them
-- Workflow steps for common tasks
-- UI element selectors and their reliability
-- Which pages contain specific features or actions
-- The relationship between user goals and the pages/features needed to achieve them
-- Navigation paths to reach specific functionality
-- Common user requests and the pages/actions needed to fulfill them
-
-### How to Use Website Knowledge Base:
-- ALWAYS search website knowledge base before starting any task to find existing knowledge about where actions can be performed
-- Use website knowledge base to identify which pages contain the features needed for the user's request
-- Use website knowledge base to find the most efficient navigation path to reach the required functionality
-- Reference stored information to avoid rediscovering known features and workflows
-- Use website knowledge base to understand the website's structure and capabilities
-- Leverage stored workflows to complete similar tasks efficiently
-- Use website knowledge base to proactively suggest the best pages to navigate to for completing user requests
-- Search for patterns in how similar requests were handled in the past
-
-## PROACTIVE ACTION IDENTIFICATION
-You should actively use website knowledge base to identify the best ways to take action and which pages you need to be on.
-
-### How to Use Website Knowledge Base for Action Planning:
-- Search website knowledge base to find which pages contain the features needed for the user's request
-- Use website knowledge base to identify the most efficient navigation path to reach required functionality
-- Reference stored workflows to understand how similar requests were handled in the past
-- Use website knowledge base to proactively suggest the best pages to navigate to
-- Search for patterns in how similar user requests were fulfilled
-- Use website knowledge base to avoid rediscovering known features and workflows
-
-### When to Navigate Based on Website Knowledge Base:
-- When website knowledge base indicates that a specific page contains the feature needed
-- When stored workflows show that a particular page is required for the user's request
-- When website knowledge base shows that the current page doesn't have the required functionality
-- When you need to follow a specific navigation path to reach the target functionality
-- When website knowledge base suggests a more efficient way to complete the user's request
-
-### How to Update Website Knowledge Base for Action Planning:
-- Store information about which pages contain specific features or actions
-- Document the relationship between user requests and the pages/features needed to fulfill them
-- Store information about common user requests and the pages/actions needed to fulfill them
-- Document which pages are most efficient for different types of tasks
-- Use the knowledge base as a map and guide for navigating and identifying sources of different types of information on the different pages of the site
-- Do not store specific information that is available on the site itself, always reference the site for any information. Use this knowledge base to store information about the layout of the site and how to navigate it.
+1. ALWAYS start by making a plan and creating a todo list. This should be detailed steps like 1) navigate to X 2) fill in search bar 3) click on search button 4) read results 5) etc
+2. Use queryPage to find information, content, or actions that can be taken.
+3. Keep the todo list updated as you complete steps, learn more about the page, the actions that can be taken, and the information available.
+4. Always verify the results of your actions
 
 ## USER PREFERENCES MANAGEMENT
 User preferences are orthogonal to application details - they focus on the user's personal context and how you should interact with them, not on the application's functionality.
@@ -273,32 +170,13 @@ You MUST actively listen for and identify user preferences throughout conversati
 - Build a comprehensive picture of how they like to work
 - Maintain consistency across sessions using stored preferences
 
-## WORKING MEMORY SYSTEM
-You have two working memory scratchpads that persist across conversations:
-
-### Website Knowledge Base
-- Contains your knowledge about THIS specific website
-- Includes page structures, navigation patterns, UI components, feature locations
-- Updated using 'updateWebsiteKnowledgeBase' tool
-- Read what you currently know in the '<websiteKnowledgeBase>' section below
-- This is your primary knowledge base for navigating and understanding how to use the website.
-- This knowledge base is not a place to store specific information that is available on the site itself, always reference the site for any information. Use this knowledge base to store information about the layout of the site and how to navigate it.
-
-### User Preferences Working Memory
-- Contains personal information about THIS specific user
-- Includes their name, communication preferences, interaction style, constraints
-- Updated using 'updateUserPreferencesWorkingMemory' tool
-- Read what you currently know in the '<userPreferencesWorkingMemory>' section below
-
-**How to use working memory:**
-1. **Read** your current working memory from the sections below before starting tasks
-2. **Update** working memory whenever you discover new information
-3. **Write** working memory as readable text blocks
-4. **Replace** the entire scratchpad content when updating (it's not appended)
-5. **Keep** website knowledge separate from user preferences
-
 ## AVAILABLE TOOLS
-- fetchPageContent: Fetch the html content of the current page
+- addTodoItem: Add a new todo item to the list
+- completeTodoItem: Mark a todo item as completed
+- removeTodoItem: Remove a todo item from the list
+- getTodoList: Get the current todo list
+- queryPage: Query the current page to find information, content, and actions that can be taken. Use natural language to describe what you need for the current step in the task.
+- fetchPageText: Fetch the html content of the current page
 - findInteractiveElements: Show interactive elements on the page (buttons, links, inputs, etc.)
 - inspectElements: Inspect multiple elements on the page using jQuery selectors and get their properties
 - clickElements: Click on multiple elements using jQuery selectors in sequence with automatic delays for React state updates
@@ -311,7 +189,6 @@ You have two working memory scratchpads that persist across conversations:
 - getPageOverview: Get a hierarchical overview of the page structure with reliable selectors for each section
 - inspectSection: Get detailed information about a specific section or element on the page
 - navigate: Navigate the browser using browser navigation (back, forward) or to a specific path
-- updateWebsiteKnowledgeBase: Update your persistent memory about this website
 - updateUserPreferencesWorkingMemory: Update your persistent memory about this user's preferences
 
 ## CRITICAL REMINDERS
@@ -328,13 +205,13 @@ You have two working memory scratchpads that persist across conversations:
 
 <path>The current path is ${path}. However, this may change as you interact with the page.</path>
 
-<websiteKnowledgeBase>
-${websiteKnowledgeBaseContent}
-</websiteKnowledgeBase>
+<userPreferences>
+${userPreferences}
+</userPreferences>
 
-<userPreferencesWorkingMemory>
-${userPreferencesWorkingMemory}
-</userPreferencesWorkingMemory>`,
+${todoList.items.length > 0 ? `<todoList>
+${todoList.items.map((item) => `- ${item.title}`).join("\n")}
+</todoList>` : ""}`,
         };
 
         existingMessages.unshift(systemMessage);
@@ -351,31 +228,21 @@ ${userPreferencesWorkingMemory}
           /<path>.*<\/path>/,
           `<path>The current path is ${path}. However, this may change as you interact with the page.</path>`,
         );
-        // Update application working memory
-        existingMessages[0].content = existingMessages[0].content.replace(
-          /<applicationWorkingMemory>.*<\/applicationWorkingMemory>/,
-          `<websiteKnowledgeBase>
-${websiteKnowledgeBaseContent}
-</websiteKnowledgeBase>`,
-        );
 
         // Update user preferences working memory
         existingMessages[0].content = existingMessages[0].content.replace(
           /<userPreferencesWorkingMemory>.*<\/userPreferencesWorkingMemory>/,
           `<userPreferencesWorkingMemory>
-${userPreferencesWorkingMemory}
+${userPreferences}
 </userPreferencesWorkingMemory>`,
         );
-      }
 
-      // Handle slash commands
-      let userPrompt = prompt;
-      if (prompt.startsWith("/")) {
-        const command = prompt.split(" ")[0].substring(1); // Remove the '/'
-
-        if (command === "init") {
-          userPrompt = initPrompt;
-        }
+        existingMessages[0].content = existingMessages[0].content.replace(
+          /<todoList>.*<\/todoList>/,
+          `<todoList>
+${todoList.items.map((item) => `- ${item.title}`).join("\n")}
+</todoList>`,
+        );
       }
 
       // Add the new user message
@@ -383,43 +250,54 @@ ${userPreferencesWorkingMemory}
         ...(existingMessages as CoreMessage[]),
         {
           role: "user",
-          content: userPrompt,
+          content: prompt,
         },
       ];
 
       const tools = {
-        ...Object.fromEntries(
-          Object.entries(asToolSet(toolbox)).filter(
-            ([key]) => key !== "fetchPageContent",
-          ),
-        ),
-        updateWebsiteKnowledgeBase: {
-          execute: async (params: { content: string }) => {
-            const { content } = params;
-
-            try {
-              await websiteKnowledgeBase.putString(content);
-              return {
-                success: true,
-              };
-            } catch (error) {
-              console.error("Error in updateWebsiteKnowledgeBase", error);
-              return {
-                success: false,
-                error: "Error in updateWebsiteKnowledgeBase",
-              };
-            }
+        ...asToolSet(toolbox),
+        addTodoItem: {
+          execute: async (params: { title: string, index?: number }) => {
+            const { title, index } = params;
+            todoList.items.splice(index ?? todoList.items.length, 0, { title, completed: false });
+            return { success: true };
           },
           parameters: z.object({
-            content: z
-              .string()
-              .describe(
-                "The complete website knowledge base content. This replaces the entire knowledge base.",
-              ),
+            title: z.string().describe("The title of the todo item"),
+            index: z.number().describe("The index position to insert the item at. If omitted, the item will be added to the end of the list.").optional(),
           }),
-          description:
-            "Update your website knowledge base. This is your persistent memory about the website's structure, features, and how to navigate it. Write it as a readable block of text that you can reference later.",
+          description: "Add a new todo item to the list",
         },
+        completeTodoItem: {
+          execute: async (params: { index: number }) => {
+            const { index } = params;
+            todoList.items[index].completed = true;
+            return { success: true };
+          },
+          parameters: z.object({
+            index: z.number().describe("The index of the todo item to complete"),
+          }),
+          description: "Mark a todo item as completed",
+        },
+        removeTodoItem: {
+          execute: async (params: { index: number }) => {
+            const { index } = params;
+            todoList.items.splice(index, 1);
+            return { success: true };
+          },
+          parameters: z.object({
+            index: z.number().describe("The index of the todo item to remove"),
+          }),
+          description: "Remove a todo item from the list",
+        },
+        getTodoList: {
+          execute: async () => {
+            return { success: true, items: todoList.items };
+          },
+          parameters: z.object({}),
+          description: "Get the current todo list",
+        },
+        queryPage: queryPageTool,
         updateUserPreferencesWorkingMemory: {
           execute: async (params: { content: string }) => {
             const { content } = params;
@@ -450,31 +328,6 @@ ${userPreferencesWorkingMemory}
           description:
             "Update your working memory scratchpad for user preferences. This is your persistent memory about how the user likes to interact, their preferences, constraints, and personal context. Write it as a readable block of text that you can reference later.",
         },
-        getPageSummary: {
-          execute: async () => {
-            const pageContent = await gensx.executeExternalTool(
-              toolbox,
-              "fetchPageContent",
-              {},
-            );
-
-            const summary = await SummarizePageContent(pageContent.content);
-            return {
-              success: true,
-              summary,
-            };
-          },
-          parameters: z.object({
-            dummy: z
-              .string()
-              .optional()
-              .describe(
-                "This is a dummy parameter to pass through to the tool.",
-              ),
-          }),
-          description:
-            "Get a summary of the page, useful for getting a complete overview of the page and details necessary to select specific elements on the page using classes or ids for a deeper inspection.",
-        },
       };
 
       const groqClient = createOpenAI({
@@ -482,9 +335,9 @@ ${userPreferencesWorkingMemory}
         baseURL: "https://api.groq.com/openai/v1",
       });
 
-      const model = anthropic("claude-3-7-sonnet-latest");
+      // const model = anthropic("claude-3-7-sonnet-latest");
 
-      // const model = groqClient("moonshotai/kimi-k2-instruct");
+      const model = groqClient("moonshotai/kimi-k2-instruct");
       const result = await Agent({
         messages,
         tools,
@@ -517,7 +370,7 @@ ${userPreferencesWorkingMemory}
         recurse = true;
       }
 
-      await saveThreadData({ messages: result.messages });
+      await saveThreadData({ messages: result.messages, todoList: { items: [] } });
 
       if (recurse) {
         return await copilotWorkflow({
