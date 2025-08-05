@@ -1,4 +1,4 @@
-// GenSX Copilot Popup Script - Full Chat Interface
+// Genie Popup Script - Full Chat Interface
 
 import {
   CopilotMessage,

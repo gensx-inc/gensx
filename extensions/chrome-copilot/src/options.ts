@@ -1,4 +1,4 @@
-// GenSX Copilot Options Script
+// Genie Options Script
 
 import { CopilotSettings } from './types/copilot';
 

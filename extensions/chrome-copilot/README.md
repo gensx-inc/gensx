@@ -1,6 +1,6 @@
-# GenSX Copilot Chrome Extension
+# Genie Chrome Extension
 
-A Chrome extension that brings the power of GenSX AI workflows directly to any webpage. This extension creates a right-hand pane that allows you to interact with web pages using AI-powered tools, similar to the GenSX Copilot example but as a browser extension.
+A Chrome extension that brings the power of GenSX AI workflows directly to any webpage. This extension creates a right-hand pane that allows you to interact with web pages using AI-powered tools, similar to the Genie example but as a browser extension.
 
 ## Features
 
@@ -47,14 +47,14 @@ A Chrome extension that brings the power of GenSX AI workflows directly to any w
    This creates a `gensx-copilot-extension.zip` file ready for distribution.
 
 2. **Install from Chrome Web Store** (when published):
-   - Search for "GenSX Copilot" in the Chrome Web Store
+   - Search for "Genie" in the Chrome Web Store
    - Click "Add to Chrome"
 
 ## Usage
 
 ### Getting Started
 
-1. **Open the extension**: Click the GenSX Copilot icon in your browser toolbar or use the keyboard shortcut `Ctrl+Shift+G` (or `Cmd+Shift+G` on Mac)
+1. **Open the extension**: Click the Genie icon in your browser toolbar or use the keyboard shortcut `Ctrl+Shift+G` (or `Cmd+Shift+G` on Mac)
 
 2. **Initialize page discovery**: Click "Try /init now" or type `/init` to have the AI explore and understand the current webpage
 

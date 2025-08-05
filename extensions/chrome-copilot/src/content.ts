@@ -1,4 +1,4 @@
-// GenSX Copilot Chrome Extension Content Script - Tool Execution Only
+// Genie Chrome Extension Content Script - Tool Execution Only
 
 import { ExtensionMessage, ExternalToolCallMessage } from './types/copilot';
 import { toolImplementations } from './tool-implementations';
@@ -15,12 +15,12 @@ declare global {
 
   // Prevent multiple injections
   if (window.gensxCopilotInjected) {
-    console.log('🔄 GenSX Copilot already injected, skipping');
+    console.log('🔄 Genie already injected, skipping');
     return;
   }
   window.gensxCopilotInjected = true;
-  console.log('🚀 GenSX Copilot content script loading on:', window.location.href);
-  
+  console.log('🚀 Genie content script loading on:', window.location.href);
+
   // Notify background script that content script is ready
   try {
     chrome.runtime.sendMessage({
@@ -34,7 +34,7 @@ declare global {
 
   // Set up message listener for tool execution
   chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendResponse) => {
-    console.log('GenSX Copilot content script received message:', message);
+    console.log('Genie content script received message:', message);
 
     if (message.type === 'EXTERNAL_TOOL_CALL') {
       // Handle external tool calls from background script
@@ -93,5 +93,5 @@ declare global {
     }
   }
 
-  console.log('✅ GenSX Copilot content script initialization complete - Tool execution ready');
+  console.log('✅ Genie content script initialization complete - Tool execution ready');
 })();

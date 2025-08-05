@@ -1,4 +1,4 @@
-// TypeScript type definitions for the GenSX Copilot Chrome Extension
+// TypeScript type definitions for the Genie Chrome Extension
 
 export interface CopilotSettings {
   // API Configuration
