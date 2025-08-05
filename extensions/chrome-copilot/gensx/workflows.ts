@@ -180,6 +180,7 @@ You MUST actively listen for and identify user preferences throughout conversati
 - removeTodoItem: Remove a todo item from the list
 - getTodoList: Get the current todo list
 - queryPage: Query the current page to find information, content, and actions that can be taken. Use natural language to describe what you need for the current step in the task.
+- search: Search the web to find information or websites that might be relevant to the current task.
 ${(Object.keys(toolbox) as (keyof typeof toolbox)[]).map((tool) => `- ${tool}: ${toolbox[tool].description}`).join("\n")}
 - updateUserPreferencesWorkingMemory: Update your persistent memory about this user's preferences
 
@@ -202,7 +203,7 @@ ${userPreferences}
 </userPreferences>
 
 ${initialTodoList.items.length > 0 ? `<todoList>
-${initialTodoList.items.map((item) => `- ${item.title}`).join("\n")}
+${initialTodoList.items.map((item, index) => `- ${index}. [${item.completed ? "x" : " "}] ${item.title}`).join("\n")}
 </todoList>` : ""}`,
         };
 
@@ -320,6 +321,7 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
       await saveThreadData({ messages: result.messages, todoList: finalTodoList });
 
       if (continueForTools && recursionDepth < 5) {
+        console.warn("continuing for tools", finalTodoList);
         return await copilotWorkflow({
           prompt: "continue",
           threadId,
@@ -330,6 +332,7 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
       }
 
       if (finalTodoList.items.filter((item) => !item.completed).length > 0 && recursionDepth < 5) {
+        console.warn("todo list is not complete, continuing", finalTodoList);
         return await copilotWorkflow({
           prompt: "todo list is not complete, continue working on it.",
           threadId,

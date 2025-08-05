@@ -5,6 +5,8 @@ import { toolbox } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
 
+const readonlyTools: (keyof typeof toolbox)[] = ["fetchPageText", "findElementsByText", "getCurrentUrl", "inspectElements", "findInteractiveElements"];
+
 const queryPage = gensx.Component("queryPage", async ({ query }: { query: string }) => {
   const groqClient = createOpenAI({
     apiKey: process.env.GROQ_API_KEY!,
@@ -16,18 +18,38 @@ const queryPage = gensx.Component("queryPage", async ({ query }: { query: string
   const model = groqClient("moonshotai/kimi-k2-instruct");
 
   const result = await generateText({
-    tools: asToolSet(toolbox),
+    tools: {
+      // Give the readonly tools to the model so it can use them to answer the question
+      ...asToolSet(Object.fromEntries(Object.entries(toolbox).filter(([key]) => readonlyTools.includes(key as keyof typeof toolbox)))),
+    },
     model,
     maxSteps: 10,
-    prompt: `
-      You are a helpful assistant that can answer questions about the current page. Your goal is to identify the most relevant information or actions on the page and return them in a structured format, including CSS selectors.
+    prompt: `You are a web page analysis assistant. Your task is to quickly and effectively answer questions about the current page by providing structured, actionable information.
 
-      Use the tools provided to fetch the content of the page, and do further inspection of the page content in various ways to answer the question.
+USER QUERY: ${query}
 
-      The user has asked: ${query}
+INSTRUCTIONS:
+1. First, fetch the page content to understand the current page structure
+2. Use the available tools to inspect elements and find relevant information
+3. Provide a concise, direct answer to the user's question
+4. If applicable, identify specific elements that are relevant to the query
+5. Always include CSS selectors for any elements you mention so they can be programmatically accessed
 
-      Please answer the question based on the content of the current page.
-    `,
+RESPONSE FORMAT:
+Answer: [Direct answer to the user's question based on page content]
+
+Relevant Elements: [List of elements with CSS selectors that are useful for the query, if any]
+- Element description: [CSS selector]
+- Element description: [CSS selector]
+
+Additional Context: [Any additional relevant information from the page]
+
+GUIDELINES:
+- Be concise but thorough
+- Focus on the most relevant information for the user's specific query
+- Always provide CSS selectors for elements you identify
+- If no specific elements are relevant, state "No specific elements identified"
+- Use the tools efficiently to gather necessary information`,
   });
 
   return result.text;
