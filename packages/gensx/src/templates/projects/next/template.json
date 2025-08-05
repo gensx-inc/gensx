@@ -7,7 +7,7 @@
     "@gensx/core",
     "@gensx/react",
     "@gensx/storage",
-    "@gensx/vercel-ai",
+    "@gensx/vercel-ai@0.3.3",
     "@radix-ui/react-slot",
     "ai",
     "class-variance-authority",
