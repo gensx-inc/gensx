@@ -160,7 +160,7 @@ async function handleGetThreadHistory(
     const gensx = await getClient();
 
     console.log("Running fetchChatHistory workflow...");
-    const { output: threadData } = await gensx.run<{ messages: CoreMessage[] }>("fetchChatHistory", {
+    const { output: threadData } = await gensx.run<{ messages: CoreMessage[]; todoList: { items: { title: string, completed: boolean }[] } }>("fetchChatHistory", {
       inputs: { userId, threadId }
     });
 
@@ -171,7 +171,13 @@ async function handleGetThreadHistory(
       messages = threadData.messages;
     }
 
-    console.log("Retrieved thread history:", messages.length, "messages");
+    // Extract todoList, defaulting to empty list if not present
+    let todoList: TodoList = { items: [] };
+    if (threadData?.todoList && threadData.todoList.items && Array.isArray(threadData.todoList.items)) {
+      todoList = threadData.todoList;
+    }
+
+    console.log("Retrieved thread history:", messages.length, "messages", todoList.items.length, "todo items");
 
     // Convert GenSX messages to popup-compatible format
     const convertedMessages = messages
@@ -187,7 +193,8 @@ async function handleGetThreadHistory(
 
     sendResponse({
       success: true,
-      messages: convertedMessages
+      messages: convertedMessages,
+      todoList: todoList
     });
 
   } catch (error) {
@@ -195,7 +202,8 @@ async function handleGetThreadHistory(
     sendResponse({
       success: false,
       error: error instanceof Error ? error.message : "Failed to retrieve thread history",
-      messages: []
+      messages: [],
+      todoList: { items: [] }
     });
   }
 }
@@ -452,7 +460,7 @@ async function processStreamingEvent(
         console.log("Using specified tab for tool execution:", toolTabId, tab.url);
       } catch (tabError) {
         console.warn("Tab no longer exists:", toolTabId, tabError);
-        
+
         // Resume workflow with error indicating tab was closed
         const gensx = await getClient();
         await gensx.resume({
@@ -522,7 +530,7 @@ async function processStreamingEvent(
       });
     } catch (error) {
       console.error("Tool execution failed:", error);
-      
+
       // Resume workflow with error information
       try {
         const gensx = await getClient();

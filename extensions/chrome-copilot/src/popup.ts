@@ -276,8 +276,15 @@ class PopupChatInterface {
       if (response && response.success && response.messages) {
         // Only load non-system messages for UI display
         this.state.messages = response.messages.filter((msg: any) => msg.role !== 'system');
+        
+        // Load todo list if present
+        if (response.todoList && response.todoList.items) {
+          this.state.todoList = response.todoList;
+          console.log('Loaded todo list:', this.state.todoList.items.length, 'items');
+        }
+        
         console.log('Loaded thread history:', this.state.messages.length, 'messages');
-        this.render(); // Re-render to show loaded messages
+        this.render(); // Re-render to show loaded messages and todo list
       } else if (response && !response.success) {
         console.warn('Failed to load thread history:', response.error);
       } else {
