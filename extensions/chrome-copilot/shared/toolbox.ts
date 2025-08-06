@@ -412,6 +412,29 @@ export const toolbox = createToolBox({
       error: z.string().optional().describe("Error message if geolocation failed"),
     }),
   },
+
+  openTab: {
+    description: "Open a new browser tab with a specified URL. Use this to show information or results to the user. You can also use this when you need to access a specific application that is not available in the selected tabs.",
+    params: z.object({
+      url: z
+        .string()
+        .describe("The URL to open in the new tab. Must be a valid HTTP/HTTPS URL."),
+      active: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("Whether to make the new tab active (focused). Default is true."),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      tabId: z.number().optional().describe("The ID of the newly created tab"),
+      url: z.string().optional().describe("The URL that was opened"),
+      title: z.string().optional().describe("The title of the new tab"),
+      domain: z.string().optional().describe("The domain of the new tab"),
+      message: z.string().optional().describe("Success or error message"),
+      error: z.string().optional().describe("Error message if tab creation failed"),
+    }),
+  },
 });
 
 export type ToolBox = typeof toolbox;

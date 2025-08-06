@@ -437,6 +437,9 @@ class PopupChatInterface {
       case 'WORKFLOW_ERROR':
         this.handleWorkflowError(message);
         break;
+      case 'TAB_OPENED_ADD_TO_SELECTED':
+        this.handleTabOpenedAddToSelected(message);
+        break;
     }
   }
 
@@ -1388,6 +1391,47 @@ class PopupChatInterface {
   private expandTodoList(): void {
     const container = this.elements.todoListContainer;
     container.classList.remove('collapsed');
+  }
+
+  private handleTabOpenedAddToSelected(message: ExtensionMessage): void {
+    if (!message.data) return;
+    
+    const { tabId, url, title, domain, favicon, isActive } = message.data;
+    
+    console.log('Adding newly opened tab to selected tabs:', { tabId, title, domain });
+    
+    // Create TabContext for the new tab
+    const newTabContext: TabContext = {
+      tabId: tabId,
+      url: url,
+      title: title,
+      domain: domain,
+      favicon: favicon,
+      isActive: isActive || false
+    };
+    
+    // Add to selected tabs if not already there
+    const existingTabIndex = this.state.selectedTabs.findIndex(tab => tab.tabId === tabId);
+    if (existingTabIndex === -1) {
+      this.state.selectedTabs.push(newTabContext);
+      console.log('New tab added to selected tabs, total:', this.state.selectedTabs.length);
+      
+      // Re-render to show the new tab
+      this.render();
+      
+      // Persist the updated state
+      this.persistState();
+      
+      // Show the selected tabs area if it was hidden
+      if (this.elements.selectedTabsContainer.style.display === 'none') {
+        this.elements.selectedTabsContainer.style.display = 'block';
+      }
+    } else {
+      console.log('Tab already in selected tabs, updating info');
+      // Update existing tab info in case title/domain changed
+      this.state.selectedTabs[existingTabIndex] = newTabContext;
+      this.render();
+    }
   }
 }
 
