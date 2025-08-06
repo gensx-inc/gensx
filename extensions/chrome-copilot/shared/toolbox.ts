@@ -32,7 +32,7 @@ export const toolbox = createToolBox({
       "Show interactive elements on a specific tab (buttons, links, inputs, etc.).",
     params: z.object({
       tabId: z.number().describe("The ID of the tab to search in."),
-      textToFilter: z.string().describe("The text to filter the elements by").optional(),
+      textToFilter: z.array(z.string()).describe("Return only elements that contain any of the text in this array.").optional(),
     }),
     result: z.object({
       success: z.boolean(),
@@ -44,9 +44,13 @@ export const toolbox = createToolBox({
             text: z.string(),
             href: z.string().optional(),
             value: z.string().optional(),
+            role: z.string().optional().describe("ARIA role attribute indicating element purpose"),
+            ariaAttributes: z.record(z.string()).optional().describe("ARIA attributes for accessibility (aria-label, aria-describedby, etc.)"),
+            title: z.string().optional().describe("Title attribute for additional context"),
+            alt: z.string().optional().describe("Alt text for images"),
           }),
         )
-        .describe("The interactive elements on the page").optional(),
+        .describe("The interactive elements on the page with ARIA and accessibility information").optional(),
       error: z.string().optional().describe("Error message if operation failed"),
     }),
   },

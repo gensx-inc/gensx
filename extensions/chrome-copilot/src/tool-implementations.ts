@@ -378,6 +378,38 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
               | HTMLInputElement
               | HTMLTextAreaElement;
 
+            // Check if element is disabled or readonly
+            if (inputElement.disabled) {
+              results.push({
+                selector: input.selector,
+                filled: false,
+                error: "Element is disabled",
+              });
+              continue;
+            }
+
+            if (inputElement.readOnly) {
+              results.push({
+                selector: input.selector,
+                filled: false,
+                error: "Element is readonly",
+              });
+              continue;
+            }
+
+            // Check if element is visible and interactable
+            if (inputElement.offsetParent === null && inputElement.style.position !== 'fixed') {
+              results.push({
+                selector: input.selector,
+                filled: false,
+                error: "Element is not visible",
+              });
+              continue;
+            }
+
+            const originalValue = inputElement.value;
+            const targetValue = input.value;
+
             // Use native value setter to bypass React's controlled component
             if (inputElement instanceof HTMLInputElement) {
               const nativeInputValueSetter =
@@ -387,9 +419,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                 )?.set;
 
               if (nativeInputValueSetter) {
-                nativeInputValueSetter.call(inputElement, input.value);
+                nativeInputValueSetter.call(inputElement, targetValue);
               } else {
-                inputElement.value = input.value;
+                inputElement.value = targetValue;
               }
             } else if (inputElement instanceof HTMLTextAreaElement) {
               const nativeTextAreaValueSetter =
@@ -399,13 +431,13 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                 )?.set;
 
               if (nativeTextAreaValueSetter) {
-                nativeTextAreaValueSetter.call(inputElement, input.value);
+                nativeTextAreaValueSetter.call(inputElement, targetValue);
               } else {
-                inputElement.value = input.value;
+                inputElement.value = targetValue;
               }
             } else {
               // Fallback for other elements
-              (inputElement as HTMLInputElement).value = input.value;
+              (inputElement as HTMLInputElement).value = targetValue;
             }
 
             // Trigger React's synthetic events
@@ -416,12 +448,21 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
               const changeEvent = new Event("change", { bubbles: true });
               inputElement.dispatchEvent(changeEvent);
             }
-          }
 
-          results.push({
-            selector: input.selector,
-            filled: true,
-          });
+            // Wait a moment for events to process and verify the value was actually set
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Verify the value was actually set
+            const actualValue = inputElement.value;
+            const wasSuccessfullyFilled = actualValue === targetValue;
+
+            results.push({
+              selector: input.selector,
+              filled: wasSuccessfullyFilled,
+              error: wasSuccessfullyFilled ? undefined : 
+                `Value not set correctly. Expected: "${targetValue}", Got: "${actualValue}"`,
+            });
+          }
         } catch (err) {
           results.push({
             selector: input.selector,
@@ -740,20 +781,20 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         if (foundElements.size >= maxResults) return;
         
         try {
-          $(selector).each((_, element) => {
+          $(selector).each((_, element): false | void => {
             if (foundElements.size >= maxResults) return false;
             
             const el = element as HTMLElement;
             
             // Quick visibility check first
             if (el.offsetParent === null && el.style.position !== 'fixed') {
-              return; // Element is hidden
+              return; // Continue to next element
             }
             
             // Check if this element's text contains our search text
             const elementText = el.textContent?.toLowerCase().trim() || '';
             if (!elementText.includes(searchText)) {
-              return;
+              return; // Continue to next element
             }
             
             // Check if any direct children contain the text (to find deepest)
@@ -780,6 +821,8 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                 foundElements.add(element);
               }
             }
+            
+            return; // Explicitly return void to continue
           });
         } catch (e) {
           // Skip problematic selectors
@@ -791,13 +834,17 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
     return {
       success: true,
       elements: Array.from(foundElements).slice(0, maxResults).map(element => ({
-        selector: getUniqueSelector(element),
+        selector: getUniqueSelector(element as HTMLElement),
       })),
     };
   },
 
   findInteractiveElements: async (params) => {
     try {
+      // Extract parameters (tabId is not used in content script context, textToFilter is used for post-processing)
+      const { tabId, textToFilter } = params;
+      console.log('findInteractiveElements called with tabId:', tabId, 'textToFilter:', textToFilter);
+      
       const batchSize = 20; // Smaller batches for more responsive UI
       const yieldInterval = 2; // Yield every 2 batches (every 40 elements)
       const maxResults = 100; // Early termination limit
@@ -852,8 +899,22 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         // Bonus for test attributes (likely important for automation)
         if (el.hasAttribute('data-testid') || el.hasAttribute('data-cy')) score += 8;
         
-        // Bonus for accessible attributes
-        if (el.hasAttribute('aria-label') || el.getAttribute('role') === 'button') score += 5;
+        // Bonus for ARIA attributes (prioritize accessible elements)
+        const ariaAttributeCount = Array.from(el.attributes).filter(attr => 
+          attr.name.startsWith('aria-')).length;
+        if (ariaAttributeCount > 0) score += 8; // Higher priority for ARIA attributes
+        
+        // Bonus for semantic roles
+        const role = el.getAttribute('role');
+        if (role) {
+          score += 7; // Role attribute indicates semantic purpose
+          
+          // Extra bonus for interactive roles
+          const interactiveRoles = ['button', 'link', 'tab', 'menuitem', 'option', 'checkbox', 'radio', 'slider', 'switch', 'textbox'];
+          if (interactiveRoles.includes(role)) {
+            score += 5; // These roles clearly indicate interactive elements
+          }
+        }
 
         // Bonus for cursor:pointer (passed as parameter to avoid getComputedStyle)
         if (hasCursorPointer) {
@@ -885,6 +946,26 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         // Quick visibility check (avoid getComputedStyle if possible)
         if (el.hidden || el.style.display === 'none' || el.style.visibility === 'hidden') {
           return false;
+        }
+
+        // Early text filtering - skip processing if element doesn't match any filter text
+        if (textToFilter && textToFilter.length > 0) {
+          const textContent = el.textContent?.toLowerCase().trim() || '';
+          const ariaLabel = el.getAttribute('aria-label')?.toLowerCase() || '';
+          const title = el.getAttribute('title')?.toLowerCase() || '';
+          const alt = el.getAttribute('alt')?.toLowerCase() || '';
+          
+          const matchesFilter = textToFilter.some(filterText => {
+            const lowerFilterText = filterText.toLowerCase();
+            return textContent.includes(lowerFilterText) ||
+                   ariaLabel.includes(lowerFilterText) ||
+                   title.includes(lowerFilterText) ||
+                   alt.includes(lowerFilterText);
+          });
+          
+          if (!matchesFilter) {
+            return false; // Skip this element entirely - doesn't match text filter
+          }
         }
 
         // Check basic interactivity
@@ -1066,18 +1147,37 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             console.warn('Selector generation failed for element:', el, error);
           }
 
+          // Collect ARIA attributes
+          const ariaAttributes: Record<string, string> = {};
+          Array.from(el.attributes).forEach(attr => {
+            if (attr.name.startsWith('aria-')) {
+              ariaAttributes[attr.name] = attr.value;
+            }
+          });
+
+          // Get role attribute
+          const role = el.getAttribute('role');
+
+          // Get other useful accessibility attributes
+          const title = el.getAttribute('title');
+          const altText = el.getAttribute('alt');
+
           return {
             type: el.tagName.toLowerCase(),
             selector,
             text: (el.textContent?.trim() || '').substring(0, 200), // Limit text length
             value: (el as HTMLInputElement).value ? String((el as HTMLInputElement).value).trim().substring(0, 100) : undefined,
             href: (el as HTMLAnchorElement).href,
+            role: role || undefined,
+            ariaAttributes: Object.keys(ariaAttributes).length > 0 ? ariaAttributes : undefined,
+            title: title || undefined,
+            alt: altText || undefined,
           };
         });
 
       const endTime = performance.now();
       const duration = Math.round(endTime - startTime);
-      console.log(`findInteractiveElements took ${duration}ms to process ${processedCount} elements and find ${sortedElements.length} interactive elements`);
+      console.log(`findInteractiveElements took ${duration}ms to process ${processedCount} elements and find ${sortedElements.length} interactive elements${textToFilter && textToFilter.length > 0 ? ' (with text filtering applied)' : ''}`);
 
       return {
         success: true,

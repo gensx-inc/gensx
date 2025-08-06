@@ -17,7 +17,7 @@ const chunkContent = (content: string, maxChunkSize: number): string[] => {
 
   while (currentPos < content.length) {
     let chunkEnd = Math.min(currentPos + maxChunkSize, content.length);
-    
+
     // If we're not at the end of the content, try to find a good break point
     if (chunkEnd < content.length) {
       // Look backwards for good breaking points (paragraph breaks, headers, list items)
@@ -42,7 +42,7 @@ const chunkContent = (content: string, maxChunkSize: number): string[] => {
     if (chunk) {
       chunks.push(chunk);
     }
-    
+
     currentPos = chunkEnd;
   }
 
@@ -64,14 +64,8 @@ const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query:
     return `Error fetching page content: ${pageContent.error || "Unknown error"}`;
   }
 
-  // Always get interactive elements first (single call for entire page)
-  const interactiveElements = await gensx.executeExternalTool(toolbox, "findInteractiveElements", { 
-    tabId,
-    textToFilter: query // Filter elements by query relevance
-  });
-
-  // Check if content is too long and needs chunking
-  if (pageContent.content.length <= 20000) {
+  // Check if content is too long and needs chunking (131000 token limit, ~4 characters per token)
+  if (pageContent.content.length <= 131000 * 3.5) {
     // Content is manageable, analyze directly with full context
     const result = await generateText({
       tools: asToolSet(getReadonlyTools()), // Available: fetchPageText, getCurrentUrl, getGeolocation, inspectElements, findElementsByText
@@ -82,30 +76,39 @@ const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query:
 TARGET TAB ID: ${tabId}
 USER QUERY: ${query}
 
-INTERACTIVE ELEMENTS FOUND:
-${interactiveElements.success ? 
-  JSON.stringify(interactiveElements.elements?.slice(0, 20) || [], null, 2) : 'No interactive elements found'}
-
 PAGE CONTENT:
 ${pageContent.content}
 
 INSTRUCTIONS:
 1. Answer the user query directly based on the page content
-2. Match relevant content to the interactive elements already discovered above
+2. Use the findInteractiveElements tool to find interactive elements that are relevant to the query
 3. Use inspectElements tool (tabId: ${tabId}) ONLY if you need detailed properties of specific elements
 4. Use findElementsByText tool (tabId: ${tabId}) ONLY if you need to locate elements by specific text content
-5. Do NOT use findInteractiveElements - elements are already provided above
 
 RESPONSE FORMAT:
-Answer: [Direct answer to the user query]
+You MUST return a structured JSON response in this exact format:
 
-Relevant Interactive Elements:
-- [Element description]: [CSS selector from above list] - [What action it enables]
-- [Element description]: [CSS selector from above list] - [What action it enables]
+{
+  "answer": "[Direct answer to the user query]",
+  "relevantElements": [
+    {
+      "description": "[What this element does]",
+      "selector": "[CSS selector from interactive elements list]",
+      "action": "[What action this enables - click, fill, select, etc.]",
+      "role": "[ARIA role if available]",
+      "ariaLabel": "[aria-label if available]",
+      "text": "[visible text content]",
+      "purpose": "[Why this element is relevant to the query]"
+    }
+  ],
+  "context": "[Additional information and recommended approach]",
+  "suggestedWorkflow": [
+    "[Step 1: What to do first]",
+    "[Step 2: What to do next]"
+  ]
+}
 
-Additional Context: [Any other relevant information, forms, or navigation options]
-
-Focus on being precise and actionable using the pre-discovered interactive elements.`,
+Focus on being precise and actionable. Only include elements that are relevant to answering the query.`,
     });
 
     return result.text;
@@ -129,12 +132,10 @@ Focus on being precise and actionable using the pre-discovered interactive eleme
           getCurrentUrl: getReadonlyTools().getCurrentUrl
         }),
         model,
-        maxSteps: 2, // Limited steps for chunk analysis
+        maxSteps: 4, // Limited steps for chunk analysis
         prompt: `Analyzing chunk ${i + 1}/${chunks.length} of a web page for user query: "${query}"
 
 TAB ID: ${tabId}
-PRE-DISCOVERED INTERACTIVE ELEMENTS: ${interactiveElements.success ? 
-  JSON.stringify(interactiveElements.elements?.slice(0, 15) || []) : 'None found'}
 
 CONTENT CHUNK ${i + 1}/${chunks.length}:
 ${chunk}
@@ -142,7 +143,7 @@ ${chunk}
 AVAILABLE TOOLS: inspectElements, findElementsByText, getCurrentUrl
 - Use inspectElements ONLY if you need detailed properties of elements mentioned in this chunk
 - Use findElementsByText ONLY if you need to locate specific text mentioned in this chunk
-- Do NOT use findInteractiveElements (elements already discovered)
+- Do NOT use findInteractiveElements
 
 TASK: Find content in this chunk relevant to "${query}". Reference the pre-discovered interactive elements list.
 
@@ -162,28 +163,49 @@ ${isLastChunk ? 'FINAL CHUNK - Provide summary of findings from this chunk.' : '
 
 TAB ID: ${tabId}
 
-INTERACTIVE ELEMENTS (PRE-DISCOVERED):
-${interactiveElements.success ? 
-  JSON.stringify(interactiveElements.elements?.slice(0, 20) || [], null, 2) : 'No interactive elements found'}
-
 CONTENT ANALYSIS FROM CHUNKS:
 ${chunkAnalyses.map((analysis, i) => `[Chunk ${i + 1}] ${analysis}`).join('\n\n')}
 
 FINAL SYNTHESIS:
-Combine the pre-discovered interactive elements with content analysis to provide:
+Combine the content analysis to provide a structured JSON response. Use the findInteractiveElements tool to find interactive elements that are relevant to the query.
 
-Answer: [Direct answer to "${query}"]
+You MUST return a structured JSON response in this exact format:
 
-Actionable Elements:
-- [Description]: [CSS selector from interactive elements list] - [Action]
-- [Description]: [CSS selector from interactive elements list] - [Action]
+{
+  "answer": "[Direct answer to '${query}' based on all chunk analyses]",
+  "relevantElements": [
+    {
+      "description": "[What this element does]",
+      "selector": "[CSS selector from pre-discovered interactive elements list]",
+      "action": "[What action this enables - click, fill, select, etc.]",
+      "role": "[ARIA role from interactive elements list if available]",
+      "ariaLabel": "[aria-label from ariaAttributes if available]",
+      "text": "[visible text content from interactive elements list]",
+      "purpose": "[Why this element is relevant to the query based on chunk analysis]"
+    }
+  ],
+  "context": "[Key information synthesized from all chunks]",
+  "suggestedWorkflow": [
+    "[Step 1: What to do first based on the analysis]",
+    "[Step 2: What to do next]",
+    "[Additional steps as needed]"
+  ]
+}
 
-Context: [Key information and recommended next steps]
-
-Use only the CSS selectors from the pre-discovered interactive elements list above.`,
+IMPORTANT:
+- Use CSS selectors from the discovered interactive elements list above
+- Extract role and ariaLabel information from the interactive elements data
+- Base the analysis on insights from all chunk analyses
+- Focus on actionable steps that directly address the user query`,
   });
 
-  return finalResult.text;
+  // Try to parse JSON response, fall back to text if parsing fails
+  try {
+    const jsonResponse = JSON.parse(finalResult.text);
+    return JSON.stringify(jsonResponse, null, 2);
+  } catch {
+    return finalResult.text; // Return as-is if not valid JSON
+  }
 });
 
 export const queryPageTool = tool({
