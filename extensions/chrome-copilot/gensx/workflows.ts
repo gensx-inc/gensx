@@ -30,14 +30,26 @@ export const copilotWorkflow = gensx.Workflow(
     prompt,
     threadId,
     userId,
-    url,
+    userName,
+    userContext,
+    selectedTabs = [],
+    conversationMode = "general",
     recursionDepth = 0,
   }: {
     prompt: string;
     threadId: string;
     userId: string;
+    userName?: string;
+    userContext?: string;
+    selectedTabs?: Array<{
+      tabId: number;
       url: string;
-    recursionDepth?: number
+      title: string;
+      domain: string;
+      favicon?: string;
+    }>;
+    conversationMode?: "general" | "single-tab" | "multi-tab";
+    recursionDepth?: number;
   }): Promise<{ response: string; messages: CoreMessage[] }> => {
     try {
       // Get blob instance for chat history storage
@@ -45,7 +57,6 @@ export const copilotWorkflow = gensx.Workflow(
         chatHistoryBlobPath(userId, threadId),
       );
 
-      const path = new URL(url).pathname;
       const userPreferencesBlob = useBlob(`user-preferences/${userId}`);
 
       // Function to load thread data
@@ -88,11 +99,26 @@ export const copilotWorkflow = gensx.Workflow(
       const toolsForModel = getFilteredTools(toolsToRemove);
 
       if (isNewThread || existingMessages[0].role !== "system") {
+        // Determine tab context for system message
+        const tabContextInfo = `## TAB CONTEXT
+You are working with ${conversationMode} mode:
+${selectedTabs.length === 1 ?
+  `- **Single Tab Mode**: Focus on "${selectedTabs[0].title}" (${selectedTabs[0].domain})`
+  : selectedTabs.length > 1 ?
+  `- **Multi-Tab Mode**: Working with ${selectedTabs.length} tabs. These tabs have been selected by the user for this task:
+${selectedTabs.map(tab => `  [tabId: ${tab.tabId}] "${tab.title}" (${tab.domain})`).join('\n')}`
+  : '- **General Mode**: No tabs selected, you cannot use page inspection tools or navigation/interaction tools. You can still use any tools that do not require a tabId.'
+}
+
+When using inspection tools, you target specific tabs by providing the tabId parameter.
+
+`;
+
         const systemMessage: CoreMessage = {
           role: "system",
           content: `You are an expert at helping users use their web browser to take actions and complete tasks or find information. You have the power to query the current page, navigate, open tabs, and more.
 
-## TODO LIST MANAGEMENT
+${tabContextInfo}## TODO LIST MANAGEMENT
 You MUST use the todo list as your primary task management system for all tasks.
 
 ### Workflow:
@@ -159,9 +185,11 @@ ${(Object.keys(toolsForModel) as (keyof typeof toolbox)[]).map((tool) => `- ${to
 
 <date>The current date and time is ${new Date().toLocaleString()}.</date>
 
-<path>The current path is ${path}. However, this may change as you interact with the page.</path>
-
 <userPreferences>
+User Name: ${userName || "Unknown"}
+User Context:
+${userContext || "No user context provided"}
+
 ${userPreferences}
 </userPreferences>
 
@@ -180,17 +208,17 @@ ${initialTodoList.items.map((item, index) => `- ${index}. [${item.completed ? "x
           /<date>.*<\/date>/,
           `<date>The current date and time is ${new Date().toLocaleString()}.</date>`,
         );
-        existingMessages[0].content = existingMessages[0].content.replace(
-          /<path>.*<\/path>/,
-          `<path>The current path is ${path}. However, this may change as you interact with the page.</path>`,
-        );
 
         // Update user preferences working memory
         existingMessages[0].content = existingMessages[0].content.replace(
-          /<userPreferencesWorkingMemory>.*<\/userPreferencesWorkingMemory>/,
-          `<userPreferencesWorkingMemory>
+          /<userPreferences>.*<\/userPreferences>/,
+          `<userPreferences>
+User Name: ${userName || "Unknown"}
+User Context:
+${userContext || "No user context provided"}
+
 ${userPreferences}
-</userPreferencesWorkingMemory>`,
+</userPreferences>`,
         );
 
         existingMessages[0].content = existingMessages[0].content.replace(
@@ -289,7 +317,10 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
           prompt: "continue",
           threadId,
           userId,
-          url,
+          userName,
+          userContext,
+          selectedTabs,
+          conversationMode,
           recursionDepth: recursionDepth + 1,
         });
       }
@@ -300,7 +331,10 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
           prompt: "todo list is not complete, continue working on it.",
           threadId,
           userId,
-          url,
+          userName,
+          userContext,
+          selectedTabs,
+          conversationMode,
           recursionDepth: recursionDepth + 1,
         });
       }

@@ -11,8 +11,7 @@ import { GenSX } from "@gensx/client";
 import { applyObjectPatches } from "./utils/workflow-state";
 import { type CoreMessage } from "ai";
 
-// Store the current workflow's tab ID to avoid "no active tab" issues when browser is not focused
-let currentWorkflowTabId: number | null = null;
+// Legacy: currentWorkflowTabId removed - now using explicit tab selection
 
 // Offscreen document management for geolocation
 const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
@@ -90,25 +89,6 @@ chrome.runtime.onMessage.addListener(
       return true; // Indicates we will send a response asynchronously
     }
 
-    if (message.type === "UPDATE_CURRENT_TAB") {
-      // Update the current workflow tab ID (called when popup opens)
-      (async () => {
-        try {
-          const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-          if (activeTab && activeTab.id) {
-            currentWorkflowTabId = activeTab.id;
-            console.log("Updated current workflow tab ID:", currentWorkflowTabId);
-            sendResponse({ success: true, tabId: currentWorkflowTabId });
-          } else {
-            sendResponse({ success: false, error: "No active tab found" });
-          }
-        } catch (error) {
-          console.warn("Failed to update current tab:", error);
-          sendResponse({ success: false, error: error instanceof Error ? error.message : String(error) });
-        }
-      })();
-      return true; // Indicates we will send a response asynchronously
-    }
 
     if (message.type === "GET_GEOLOCATION") {
       handleGeolocationRequest(message, sender, sendResponse);
@@ -130,23 +110,6 @@ async function handleWorkflowRequest(
   try {
     console.log("Executing workflow for request:", requestId);
 
-    // Store the tab ID for this workflow to avoid "no active tab" issues
-    if (data.tabId) {
-      currentWorkflowTabId = data.tabId;
-      console.log("Stored workflow tab ID:", currentWorkflowTabId);
-    } else {
-      // Fallback to trying to get active tab if no tab ID provided
-      try {
-        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (activeTab && activeTab.id) {
-          currentWorkflowTabId = activeTab.id;
-          console.log("Fallback: stored active tab ID:", currentWorkflowTabId);
-        }
-      } catch (error) {
-        console.warn("Could not determine tab ID for workflow:", error);
-      }
-    }
-
     // Create GenSX client
     const gensx = await getClient();
 
@@ -156,9 +119,10 @@ async function handleWorkflowRequest(
         prompt: data.prompt,
         threadId: data.threadId,
         userId: data.userId,
-        url: data.url,
         userName: data.userName,
         userContext: data.userContext,
+        selectedTabs: data.selectedTabs || [],
+        conversationMode: data.conversationMode || "general",
       },
     });
 
@@ -474,40 +438,38 @@ async function processStreamingEvent(
 
     console.log("External tool call detected:", event);
 
-    // Send tool call to content script for execution
-    // Use the stored workflow tab ID with fallback to active tab
+    // Get tab ID from tool parameters (all tools now require tabId)
+    const toolTabId = event.params?.tabId;
+    if (!toolTabId) {
+      throw new Error("Tool execution requires tabId parameter, but none provided");
+    }
+
     try {
-      let tabId = currentWorkflowTabId;
-      let tab: chrome.tabs.Tab | null = null;
-
-      // Try to get the stored workflow tab first
-      if (tabId) {
-        try {
-          tab = await chrome.tabs.get(tabId);
-          console.log("Using stored workflow tab:", tabId, tab.url);
-        } catch (error) {
-          console.warn("Stored workflow tab no longer exists:", tabId, error);
-          tabId = null; // Clear invalid tab ID
-        }
-      }
-
-      // Fallback to current active tab if stored tab is unavailable
-      if (!tabId || !tab) {
-        const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (activeTab && activeTab.id) {
-          tabId = activeTab.id;
-          tab = activeTab;
-          currentWorkflowTabId = tabId; // Update stored tab ID
-          console.log("Falling back to active tab:", tabId, tab.url);
-        } else {
-          throw new Error("No available tab for tool execution");
-        }
+      // Verify the specified tab exists
+      let tab;
+      try {
+        tab = await chrome.tabs.get(toolTabId);
+        console.log("Using specified tab for tool execution:", toolTabId, tab.url);
+      } catch (tabError) {
+        console.warn("Tab no longer exists:", toolTabId, tabError);
+        
+        // Resume workflow with error indicating tab was closed
+        const gensx = await getClient();
+        await gensx.resume({
+          executionId,
+          nodeId: event.nodeId,
+          data: {
+            success: false,
+            error: `Tab ${toolTabId} is no longer available (may have been closed)`
+          }
+        });
+        return;
       }
 
       // Try to send message to content script, with fallback to inject if needed
       let toolResponse;
       try {
-        toolResponse = await chrome.tabs.sendMessage(tabId, {
+        toolResponse = await chrome.tabs.sendMessage(toolTabId, {
           type: "EXTERNAL_TOOL_CALL",
           requestId,
           data: {
@@ -524,7 +486,7 @@ async function processStreamingEvent(
         // Try to inject the content script manually
         try {
           await chrome.scripting.executeScript({
-            target: { tabId: tabId },
+            target: { tabId: toolTabId },
             files: ['content.js']
           });
 
@@ -532,7 +494,7 @@ async function processStreamingEvent(
           await new Promise(resolve => setTimeout(resolve, 500));
 
           // Retry the message
-          toolResponse = await chrome.tabs.sendMessage(tabId, {
+          toolResponse = await chrome.tabs.sendMessage(toolTabId, {
             type: "EXTERNAL_TOOL_CALL",
             requestId,
             data: {
@@ -560,6 +522,21 @@ async function processStreamingEvent(
       });
     } catch (error) {
       console.error("Tool execution failed:", error);
+      
+      // Resume workflow with error information
+      try {
+        const gensx = await getClient();
+        await gensx.resume({
+          executionId,
+          nodeId: event.nodeId,
+          data: {
+            success: false,
+            error: error instanceof Error ? error.message : "Tool execution failed"
+          }
+        });
+      } catch (resumeError) {
+        console.error("Failed to resume workflow with error:", resumeError);
+      }
     }
     return;
   }

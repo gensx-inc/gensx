@@ -10,8 +10,16 @@ import {
   WorkflowStreamCompleteMessage,
   WorkflowMessagesUpdateMessage,
   WorkflowTodoListUpdateMessage, TodoList,
-  TodoItem
+  TodoItem, TabContext
 } from './types/copilot';
+
+interface MentionState {
+  isActive: boolean;
+  position: { start: number; end: number };
+  query: string;
+  selectedIndex: number;
+  filteredTabs: TabContext[];
+}
 
 interface PopupState {
   messages: CopilotMessage[];
@@ -29,6 +37,9 @@ interface PopupState {
   domain: string;
   knowledgeBaseLoaded: boolean;
   todoList: TodoList;
+  mentionState: MentionState;
+  availableTabs: TabContext[];
+  selectedTabs: TabContext[];
 }
 
 class PopupChatInterface {
@@ -43,8 +54,20 @@ class PopupChatInterface {
     currentPageElement: HTMLElement;
     chatTab: HTMLElement;
     todoListContainer: HTMLElement;
+    todoListHeader: HTMLElement;
+    todoListToggle: HTMLButtonElement;
+    todoListContent: HTMLElement;
     todoListItems: HTMLElement;
     todoListCount: HTMLElement;
+    mentionDropdown: HTMLElement;
+    mentionItems: HTMLElement;
+    mentionLoading: HTMLElement;
+    mentionEmpty: HTMLElement;
+    selectedTabsContainer: HTMLElement;
+    selectedTabsHeader: HTMLElement;
+    selectedTabsToggle: HTMLButtonElement;
+    selectedTabsContent: HTMLElement;
+    selectedTabsList: HTMLElement;
   };
   private currentStreamingRequestId: string | null = null;
   private currentStreamingMessageIndex: number = -1;
@@ -62,6 +85,15 @@ class PopupChatInterface {
       domain: '',
       knowledgeBaseLoaded: false,
       todoList: { items: [] },
+      mentionState: {
+        isActive: false,
+        position: { start: 0, end: 0 },
+        query: '',
+        selectedIndex: 0,
+        filteredTabs: []
+      },
+      availableTabs: [],
+      selectedTabs: [],
     };
 
     // Get DOM elements
@@ -75,15 +107,28 @@ class PopupChatInterface {
       currentPageElement: document.getElementById('currentPage')!,
       chatTab: document.getElementById('chatTab')!,
       todoListContainer: document.getElementById('todoListContainer')!,
+      todoListHeader: document.getElementById('todoListHeader')!,
+      todoListToggle: document.getElementById('todoListToggle') as HTMLButtonElement,
+      todoListContent: document.getElementById('todoListContent')!,
       todoListItems: document.getElementById('todoListItems')!,
       todoListCount: document.getElementById('todoListCount')!,
+      mentionDropdown: document.getElementById('mentionDropdown')!,
+      mentionItems: document.getElementById('mentionItems')!,
+      mentionLoading: document.getElementById('mentionLoading')!,
+      mentionEmpty: document.getElementById('mentionEmpty')!,
+      selectedTabsContainer: document.getElementById('selectedTabsContainer')!,
+      selectedTabsHeader: document.getElementById('selectedTabsHeader')!,
+      selectedTabsToggle: document.getElementById('selectedTabsToggle') as HTMLButtonElement,
+      selectedTabsContent: document.getElementById('selectedTabsContent')!,
+      selectedTabsList: document.getElementById('selectedTabsList')!,
     };
 
     this.initializeEventListeners();
     this.loadPersistedState();
     this.updateCurrentPageInfo();
-    this.updateBackgroundCurrentTab();
     this.renderTodoList(); // Initial render of todo list
+    this.initializeMentions(); // Initialize @ mention functionality
+    this.autoResizeTextarea(); // Set initial textarea height
   }
 
   private generateUserId(): string {
@@ -101,13 +146,18 @@ class PopupChatInterface {
       this.sendMessage();
     });
 
-    // Auto-resize textarea
-    this.elements.messageInput.addEventListener('input', () => {
+    // Auto-resize textarea and handle @ mentions
+    this.elements.messageInput.addEventListener('input', (e) => {
       this.autoResizeTextarea();
+      this.handleMentionInput(e);
     });
 
-    // Enter to send (Shift+Enter for new line)
+    // Enter to send (Shift+Enter for new line) and handle mention navigation
     this.elements.messageInput.addEventListener('keydown', (e) => {
+      if (this.handleMentionKeydown(e)) {
+        return; // Mention handler consumed the event
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         this.sendMessage();
@@ -124,6 +174,26 @@ class PopupChatInterface {
       chrome.runtime.openOptionsPage();
     });
 
+    // Selected tabs toggle
+    this.elements.selectedTabsToggle.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      this.toggleSelectedTabs();
+    });
+
+    // Allow clicking header to toggle as well
+    this.elements.selectedTabsHeader.addEventListener('click', () => {
+      this.toggleSelectedTabs();
+    });
+
+    // Todo list toggle
+    this.elements.todoListToggle.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      this.toggleTodoList();
+    });
+    // Allow clicking header to toggle as well
+    this.elements.todoListHeader.addEventListener('click', () => {
+      this.toggleTodoList();
+    });
 
     // Message listener for background script responses
     chrome.runtime.onMessage.addListener((message: ExtensionMessage) => {
@@ -133,8 +203,29 @@ class PopupChatInterface {
 
   private autoResizeTextarea(): void {
     const textarea = this.elements.messageInput;
+    const minHeight = 36; // Minimum height from CSS
+    const maxHeight = 120; // Increased max height for better UX
+    const lineHeight = 20; // Approximate line height
+
+    // Reset height to auto to get accurate scrollHeight
     textarea.style.height = 'auto';
-    textarea.style.height = Math.min(textarea.scrollHeight, 100) + 'px';
+
+    // Calculate desired height based on content
+    let newHeight = Math.max(minHeight, textarea.scrollHeight);
+
+    // Limit to maxHeight
+    newHeight = Math.min(newHeight, maxHeight);
+
+    // Apply the new height
+    textarea.style.height = newHeight + 'px';
+
+    // Enable/disable scrolling based on content overflow
+    if (textarea.scrollHeight > maxHeight) {
+      textarea.style.overflowY = 'auto';
+    } else {
+      textarea.style.overflowY = 'hidden';
+    }
+
   }
 
   private async loadPersistedState(): Promise<void> {
@@ -317,18 +408,7 @@ class PopupChatInterface {
     this.render();
   }
 
-  private async updateBackgroundCurrentTab(): Promise<void> {
-    try {
-      // Tell the background script about the current tab ID
-      await chrome.runtime.sendMessage({
-        type: 'UPDATE_CURRENT_TAB'
-      });
-    } catch (error) {
-      console.warn('Failed to update background current tab:', error);
-    }
-  }
-
-    // Knowledge-related methods removed since knowledge tab doesn't exist in current HTML
+  // Knowledge-related methods removed since knowledge tab doesn't exist in current HTML
 
   private handleBackgroundMessage(message: ExtensionMessage): void {
     switch (message.type) {
@@ -477,11 +557,17 @@ class PopupChatInterface {
     const text = this.elements.messageInput.value.trim();
     if (!text || this.state.isStreaming) return;
 
+    // Use currently selected tabs
+    const mentionedTabs = this.state.selectedTabs;
+
     // Add user message
     this.state.messages.push({ role: 'user', content: text });
     this.state.isStreaming = true;
     this.elements.messageInput.value = '';
     this.autoResizeTextarea();
+
+    // Auto-collapse selected tabs area after sending message
+    this.collapseSelectedTabs();
 
     this.render();
     this.scrollToBottom();
@@ -504,10 +590,11 @@ class PopupChatInterface {
           prompt: text,
           threadId: this.state.threadId,
           userId: this.state.userId,
-          url: this.state.currentUrl || '',
           userName: settings.userName,
           userContext: settings.userContext,
-          tabId: this.state.currentTabId
+          selectedTabs: mentionedTabs,
+          conversationMode: mentionedTabs.length === 0 ? 'general' :
+                           mentionedTabs.length === 1 ? 'single-tab' : 'multi-tab'
         }
       };
 
@@ -535,9 +622,16 @@ class PopupChatInterface {
     this.state.threadId = this.generateThreadId();
     this.state.messages = [];
     this.state.todoList = { items: [] }; // Clear todo list state
+    this.state.selectedTabs = []; // Clear selected tabs
 
     // Clear any active execution
     this.clearExecutionState();
+
+    // Reset input and auto-select active tab
+    this.elements.messageInput.value = '';
+    this.elements.messageInput.placeholder = 'Ask me to interact with the current page...';
+    this.autoResizeTextarea(); // Reset textarea height
+    await this.autoSelectActiveTab();
 
     // Persist new thread ID
     await this.persistUserState();
@@ -584,6 +678,12 @@ class PopupChatInterface {
 
     // Update todo list
     this.renderTodoList();
+
+    // Update selected tabs display
+    this.renderSelectedTabs();
+
+    // Update header with selected tabs info
+    this.updateHeaderInfo();
 
     // Update UI state
     this.elements.messageInput.disabled = this.state.isStreaming;
@@ -796,9 +896,10 @@ class PopupChatInterface {
     const { todoList } = this.state;
     const { todoListContainer, todoListItems, todoListCount } = this.elements;
 
-    // Update count
+    // Update count with completed/total format
     const totalItems = todoList.items.length;
-    todoListCount.textContent = totalItems.toString();
+    const completedItems = todoList.items.filter(item => item.completed).length;
+    todoListCount.textContent = `${completedItems}/${totalItems}`;
 
     // Show/hide container based on whether there are items
     if (totalItems > 0) {
@@ -841,6 +942,445 @@ class PopupChatInterface {
     setTimeout(() => {
       this.elements.messagesContainer.scrollTop = this.elements.messagesContainer.scrollHeight;
     }, 0);
+  }
+
+  // @ Mention functionality
+  private async initializeMentions(): Promise<void> {
+    try {
+      // Load available tabs
+      await this.loadAvailableTabs();
+
+      // Auto-select active tab if accessible
+      await this.autoSelectActiveTab();
+    } catch (error) {
+      console.warn('Failed to initialize mentions:', error);
+    }
+  }
+
+  private async loadAvailableTabs(): Promise<void> {
+    try {
+      const tabs = await chrome.tabs.query({});
+      this.state.availableTabs = tabs
+        .filter(tab => tab.id && tab.url && !this.isInaccessibleTab(tab.url))
+        .map(tab => ({
+          tabId: tab.id!,
+          url: tab.url!,
+          title: tab.title || new URL(tab.url!).hostname,
+          domain: new URL(tab.url!).hostname,
+          favicon: tab.favIconUrl,
+          isActive: tab.active || false
+        }));
+    } catch (error) {
+      console.warn('Failed to load tabs:', error);
+      this.state.availableTabs = [];
+    }
+  }
+
+  private isInaccessibleTab(url: string): boolean {
+    return url.startsWith('chrome://') ||
+           url.startsWith('chrome-extension://') ||
+           url.startsWith('edge://') ||
+           url.startsWith('about:') ||
+           url === 'chrome://newtab/' ||
+           url === 'about:blank';
+  }
+
+  private async autoSelectActiveTab(): Promise<void> {
+    try {
+      const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (activeTab && activeTab.id && activeTab.url && !this.isInaccessibleTab(activeTab.url)) {
+        const tabContext: TabContext = {
+          tabId: activeTab.id,
+          url: activeTab.url,
+          title: activeTab.title || new URL(activeTab.url).hostname,
+          domain: new URL(activeTab.url).hostname,
+          favicon: activeTab.favIconUrl,
+          isActive: true
+        };
+
+        this.state.selectedTabs = [tabContext];
+
+        // Update placeholder to indicate tab context
+        this.elements.messageInput.placeholder = `Ask me about "${tabContext.title}"...`;
+      }
+    } catch (error) {
+      console.warn('Failed to auto-select active tab:', error);
+    }
+  }
+
+  private handleMentionInput(e: Event): void {
+    const textarea = this.elements.messageInput;
+    const text = textarea.value;
+    const cursorPos = textarea.selectionStart || 0;
+
+    const mention = this.detectMention(text, cursorPos);
+
+    if (mention) {
+      this.state.mentionState = {
+        isActive: true,
+        position: mention.position,
+        query: mention.query,
+        selectedIndex: 0,
+        filteredTabs: this.filterTabs(mention.query)
+      };
+      this.showMentionDropdown();
+    } else {
+      this.hideMentionDropdown();
+    }
+  }
+
+  private detectMention(text: string, cursorPos: number): { position: { start: number; end: number }; query: string } | null {
+    // Find the last @ symbol before the cursor
+    let atPos = -1;
+    for (let i = cursorPos - 1; i >= 0; i--) {
+      if (text[i] === '@') {
+        atPos = i;
+        break;
+      }
+      if (text[i] === ' ' || text[i] === '\n') {
+        break; // Hit whitespace before @, no active mention
+      }
+    }
+
+    if (atPos === -1) return null;
+
+    // Find the end of the mention (next space or end of string)
+    let endPos = cursorPos;
+    for (let i = atPos + 1; i < text.length; i++) {
+      if (text[i] === ' ' || text[i] === '\n' || text[i] === '@') {
+        endPos = i;
+        break;
+      }
+      endPos = i + 1;
+    }
+
+    // Only consider it an active mention if cursor is within the mention
+    if (cursorPos < atPos || cursorPos > endPos) return null;
+
+    const query = text.substring(atPos + 1, endPos);
+    return {
+      position: { start: atPos, end: endPos },
+      query
+    };
+  }
+
+  private filterTabs(query: string): TabContext[] {
+    // Get IDs of already selected tabs to exclude them
+    const selectedTabIds = new Set(this.state.selectedTabs.map(tab => tab.tabId));
+
+    // Filter out already selected tabs first
+    const availableUnselectedTabs = this.state.availableTabs
+      .filter(tab => !selectedTabIds.has(tab.tabId));
+
+    if (!query) return availableUnselectedTabs.slice(0, 10); // Show top 10 when no query
+
+    const lowQuery = query.toLowerCase();
+    return availableUnselectedTabs
+      .filter(tab =>
+        tab.domain.toLowerCase().includes(lowQuery) ||
+        tab.title.toLowerCase().includes(lowQuery) ||
+        tab.url.toLowerCase().includes(lowQuery)
+      )
+      .slice(0, 10); // Limit to 10 results
+  }
+
+  private handleMentionKeydown(e: KeyboardEvent): boolean {
+    if (!this.state.mentionState.isActive) return false;
+
+    const filteredTabs = this.state.mentionState.filteredTabs;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        this.state.mentionState.selectedIndex =
+          (this.state.mentionState.selectedIndex + 1) % filteredTabs.length;
+        this.renderMentionItems();
+        this.scrollToSelectedMentionItem();
+        return true;
+
+      case 'ArrowUp':
+        e.preventDefault();
+        this.state.mentionState.selectedIndex =
+          this.state.mentionState.selectedIndex === 0
+            ? filteredTabs.length - 1
+            : this.state.mentionState.selectedIndex - 1;
+        this.renderMentionItems();
+        this.scrollToSelectedMentionItem();
+        return true;
+
+      case 'Enter':
+        e.preventDefault();
+        if (filteredTabs[this.state.mentionState.selectedIndex]) {
+          this.selectMention(filteredTabs[this.state.mentionState.selectedIndex]);
+        }
+        return true;
+
+      case 'Escape':
+        e.preventDefault();
+        this.hideMentionDropdown();
+        return true;
+
+      case 'Backspace':
+        // If we're at the start of a mention and backspace, remove it
+        const textarea = this.elements.messageInput;
+        const cursorPos = textarea.selectionStart || 0;
+        if (cursorPos === this.state.mentionState.position.start + 1) {
+          // Remove the entire @mention
+          const text = textarea.value;
+          const newText = text.substring(0, this.state.mentionState.position.start) +
+                         text.substring(this.state.mentionState.position.end);
+          textarea.value = newText;
+          textarea.setSelectionRange(this.state.mentionState.position.start, this.state.mentionState.position.start);
+          this.hideMentionDropdown();
+          return true;
+        }
+        break;
+    }
+
+    return false;
+  }
+
+  private selectMention(tab: TabContext): void {
+    const textarea = this.elements.messageInput;
+    const text = textarea.value;
+    const { start, end } = this.state.mentionState.position;
+
+    // Remove the @mention from textarea
+    const newText = text.substring(0, start) + text.substring(end);
+    textarea.value = newText;
+    textarea.setSelectionRange(start, start);
+
+    // Add tab to selected tabs if not already there
+    if (!this.state.selectedTabs.find(t => t.tabId === tab.tabId)) {
+      this.state.selectedTabs.push(tab);
+    }
+
+    // Auto-resize textarea
+    this.autoResizeTextarea();
+
+    this.hideMentionDropdown();
+    textarea.focus();
+
+    // Re-render to show the new selected tab
+    this.render();
+  }
+
+  private showMentionDropdown(): void {
+    this.elements.mentionDropdown.style.display = 'block';
+    this.renderMentionItems();
+  }
+
+  private hideMentionDropdown(): void {
+    this.elements.mentionDropdown.style.display = 'none';
+    this.state.mentionState.isActive = false;
+  }
+
+  private renderMentionItems(): void {
+    const { filteredTabs, selectedIndex } = this.state.mentionState;
+    const { mentionItems, mentionLoading, mentionEmpty } = this.elements;
+
+    // Hide loading and empty states
+    mentionLoading.style.display = 'none';
+    mentionEmpty.style.display = 'none';
+
+    if (filteredTabs.length === 0) {
+      mentionEmpty.style.display = 'block';
+      mentionItems.innerHTML = '';
+      return;
+    }
+
+    mentionItems.innerHTML = '';
+
+    filteredTabs.forEach((tab, index) => {
+      const item = document.createElement('div');
+      item.className = `mention-item ${index === selectedIndex ? 'selected' : ''}`;
+
+      const favicon = document.createElement('div');
+      favicon.className = 'mention-favicon';
+      if (tab.favicon) {
+        favicon.innerHTML = `<img src="${tab.favicon}" alt="" style="width: 100%; height: 100%; object-fit: cover;">`;
+      } else {
+        favicon.textContent = tab.domain[0].toUpperCase();
+      }
+
+      const info = document.createElement('div');
+      info.className = 'mention-info';
+
+      const title = document.createElement('div');
+      title.className = 'mention-title';
+      title.textContent = tab.title;
+
+      const domain = document.createElement('div');
+      domain.className = 'mention-domain';
+      domain.textContent = tab.domain;
+
+      info.appendChild(title);
+      info.appendChild(domain);
+
+      if (tab.isActive) {
+        const activeTag = document.createElement('div');
+        activeTag.className = 'mention-tag';
+        activeTag.textContent = 'Active';
+        item.appendChild(activeTag);
+      }
+
+      item.appendChild(favicon);
+      item.appendChild(info);
+
+      item.addEventListener('click', () => {
+        this.selectMention(tab);
+      });
+
+      mentionItems.appendChild(item);
+    });
+  }
+
+  private parseMentionsFromText(text: string): TabContext[] {
+    const mentionRegex = /@(\S+)/g;
+    const mentions: TabContext[] = [];
+    let match;
+
+    while ((match = mentionRegex.exec(text)) !== null) {
+      const domain = match[1];
+      const tab = this.state.availableTabs.find(t => t.domain === domain);
+      if (tab && !mentions.find(m => m.tabId === tab.tabId)) {
+        mentions.push(tab);
+      }
+    }
+
+    return mentions;
+  }
+
+  private updateHeaderInfo(): void {
+    const selectedCount = this.state.selectedTabs.length;
+
+    if (selectedCount === 0) {
+      this.elements.currentPageElement.textContent = 'General conversation';
+    } else if (selectedCount === 1) {
+      const tab = this.state.selectedTabs[0];
+      // Truncate title if too long for header
+      const displayTitle = tab.title.length > 25 ? tab.title.substring(0, 22) + '...' : tab.title;
+      this.elements.currentPageElement.textContent = displayTitle;
+    } else {
+      this.elements.currentPageElement.textContent = `${selectedCount} tabs selected`;
+    }
+  }
+
+  private scrollToSelectedMentionItem(): void {
+    const selectedIndex = this.state.mentionState.selectedIndex;
+    const selectedItem = this.elements.mentionItems.children[selectedIndex] as HTMLElement;
+
+    if (selectedItem) {
+      selectedItem.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
+    }
+  }
+
+  private renderSelectedTabs(): void {
+    const { selectedTabsContainer, selectedTabsList } = this.elements;
+    const { selectedTabs } = this.state;
+
+    if (selectedTabs.length === 0) {
+      selectedTabsContainer.style.display = 'none';
+      return;
+    }
+
+    selectedTabsContainer.style.display = 'block';
+    selectedTabsList.innerHTML = '';
+
+    selectedTabs.forEach((tab, index) => {
+      const chip = document.createElement('div');
+      chip.className = `selected-tab-chip ${tab.isActive ? 'selected-tab-active' : ''}`;
+
+      // Favicon
+      const favicon = document.createElement('div');
+      favicon.className = 'selected-tab-favicon';
+      if (tab.favicon) {
+        favicon.innerHTML = `<img src="${tab.favicon}" alt="" style="width: 100%; height: 100%; object-fit: cover;">`;
+      } else {
+        favicon.textContent = tab.domain[0].toUpperCase();
+      }
+
+      // Tab info
+      const info = document.createElement('div');
+      info.className = 'selected-tab-info';
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'selected-tab-title';
+      titleEl.textContent = tab.title;
+      titleEl.title = `${tab.title} (${tab.domain})`; // Show full title and domain on hover
+
+      const domainEl = document.createElement('div');
+      domainEl.className = 'selected-tab-domain';
+      domainEl.textContent = tab.domain;
+
+      info.appendChild(titleEl);
+      info.appendChild(domainEl);
+
+      // Remove button
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'selected-tab-remove';
+      removeBtn.innerHTML = '×';
+      removeBtn.title = 'Remove tab';
+      removeBtn.addEventListener('click', () => {
+        this.removeSelectedTab(index);
+      });
+
+      chip.appendChild(favicon);
+      chip.appendChild(info);
+      chip.appendChild(removeBtn);
+
+      selectedTabsList.appendChild(chip);
+    });
+  }
+
+  private removeSelectedTab(index: number): void {
+    this.state.selectedTabs.splice(index, 1);
+    this.render(); // Re-render to update display
+  }
+
+  private toggleSelectedTabs(): void {
+    const container = this.elements.selectedTabsContainer;
+    const isCollapsed = container.classList.contains('collapsed');
+
+    if (isCollapsed) {
+      this.expandSelectedTabs();
+    } else {
+      this.collapseSelectedTabs();
+    }
+  }
+
+  private collapseSelectedTabs(): void {
+    const container = this.elements.selectedTabsContainer;
+    container.classList.add('collapsed');
+  }
+
+  private expandSelectedTabs(): void {
+    const container = this.elements.selectedTabsContainer;
+    container.classList.remove('collapsed');
+  }
+
+  private toggleTodoList(): void {
+    const container = this.elements.todoListContainer;
+    const isCollapsed = container.classList.contains('collapsed');
+
+    if (isCollapsed) {
+      this.expandTodoList();
+    } else {
+      this.collapseTodoList();
+    }
+  }
+
+  private collapseTodoList(): void {
+    const container = this.elements.todoListContainer;
+    container.classList.add('collapsed');
+  }
+
+  private expandTodoList(): void {
+    const container = this.elements.todoListContainer;
+    container.classList.remove('collapsed');
   }
 }
 

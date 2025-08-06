@@ -94,11 +94,20 @@ export interface WorkflowMessage {
     prompt: string;
     threadId: string;
     userId: string;
-    url: string;
     userName?: string;
     userContext?: string;
-    tabId?: number;
+    selectedTabs?: TabContext[];
+    conversationMode?: 'general' | 'single-tab' | 'multi-tab';
   };
+}
+
+export interface TabContext {
+  tabId: number;
+  url: string;
+  title: string;
+  domain: string;
+  favicon?: string;
+  isActive: boolean;
 }
 
 export interface WorkflowResponseMessage {

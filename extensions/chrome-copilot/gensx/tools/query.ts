@@ -5,7 +5,7 @@ import { getReadonlyTools } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
 
-const queryPage = gensx.Component("queryPage", async ({ query }: { query: string }) => {
+const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query: string; tabId: number }) => {
   const groqClient = createOpenAI({
     apiKey: process.env.GROQ_API_KEY!,
     baseURL: "https://api.groq.com/openai/v1",
@@ -19,14 +19,18 @@ const queryPage = gensx.Component("queryPage", async ({ query }: { query: string
     tools: asToolSet(getReadonlyTools()),
     model,
     maxSteps: 10,
-    prompt: `You are a web page analysis assistant. Answer questions about the current page by providing actionable information with CSS selectors.
+    prompt: `You are a web page analysis assistant. Answer questions about a specific tab by providing actionable information with CSS selectors.
+
+TARGET TAB ID: ${tabId}
 
 USER QUERY: ${query}
 
 WORKFLOW:
-1. Fetch page content to understand structure
-2. Use inspection tools to find relevant elements
+1. Fetch page content from the specified tab to understand structure
+2. Use inspection tools on the specified tab to find relevant elements
 3. Provide structured response with actionable details
+
+IMPORTANT: All tool calls must include tabId: ${tabId} parameter to target the correct tab.
 
 RESPONSE FORMAT:
 Answer: [Direct answer based on page content]
@@ -38,6 +42,7 @@ Relevant Elements:
 Additional Context: [Any other relevant information]
 
 REQUIREMENTS:
+- Always include tabId: ${tabId} in every tool call
 - Always include CSS selectors for mentioned elements
 - Be concise but complete
 - Focus on information directly relevant to the query
@@ -48,12 +53,13 @@ REQUIREMENTS:
 });
 
 export const queryPageTool = tool({
-  execute: async ({ query }: { query: string }) => {
-    const result = await queryPage({ query });
+  execute: async ({ query, tabId }: { query: string; tabId: number }) => {
+    const result = await queryPage({ query, tabId });
     return result;
   },
-  description: "Query the current page to find information, content, and actions that can be taken",
+  description: "Query a specific tab to find information, content, and actions that can be taken.",
   parameters: z.object({
-    query: z.string().describe("The query to ask about the current page"),
+    query: z.string().describe("The query to ask about the page"),
+    tabId: z.number().describe("The ID of the tab to query."),
   }),
 })
