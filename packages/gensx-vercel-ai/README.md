@@ -20,20 +20,22 @@ npm install @gensx/core
 
 ```tsx
 import * as gensx from "@gensx/core";
-import { generateText, streamText } from "@gensx/vercel-ai";
+import { generateText } from "@gensx/vercel-ai";
+import { openai } from "@ai-sdk/openai";
 
-@Component()
-async function ChatBot({ userInput }: { userInput: string }): Promise<string> {
-  const result = await generateText({
-    messages: [
-      { role: "system", content: "You are a helpful assistant." },
-      { role: "user", content: userInput },
-    ],
-    model: "gpt-4o",
-    temperature: 0.7,
-  });
-  return result.text;
-}
+export const BasicChat = gensx.Workflow(
+  "BasicChat",
+  async ({ userInput }: { userInput: string }): Promise<string> => {
+    const result = await generateText({
+      messages: [
+        { role: "system", content: "You are a helpful assistant." },
+        { role: "user", content: userInput },
+      ],
+      model: openai("gpt-4.1-mini"),
+    });
+    return result.text;
+  },
+);
 ```
 
 ## Using Frontend Tools with GenSX ToolBox
@@ -44,7 +46,7 @@ This package provides utilities to convert GenSX ToolBox definitions to Vercel A
 
 ```tsx
 import { createToolBox } from "@gensx/core";
-import { asToolSet, addAsToolSetMethod } from "@gensx/vercel-ai";
+import { asToolSet } from "@gensx/vercel-ai";
 import { generateText } from "@gensx/vercel-ai";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
@@ -73,9 +75,21 @@ const result = await generateText({
     },
     { role: "user", content: "What's the weather like in Seattle?" },
   ],
-  model: openai("gpt-4o-mini"),
+  model: openai("gpt-4.1-mini"),
   tools: toolSet, // Use the converted ToolSet
 });
 ```
 
 The `asToolSet` function converts GenSX ToolBox definitions to Vercel AI SDK Tool format, automatically handling the integration with GenSX's `executeExternalTool` function for proper workflow execution.
+
+## Available Functions
+
+This package provides many of the functions available in the [Vercel AI SDK](https://vercel.com/docs/ai-sdk).
+
+- **`generateText`** - Generate text responses from AI models
+- **`streamText`** - Stream text responses in real-time
+- **`generateObject`** - Generate structured JSON objects with schema validation
+- **`streamObject`** - Stream structured JSON objects in real-time
+- **`embed`** - Generate embeddings for text
+- **`embedMany`** - Generate embeddings for multiple texts
+- **`generateImage`** - Generate images from text prompts
