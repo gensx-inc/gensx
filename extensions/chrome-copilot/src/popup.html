@@ -204,6 +204,10 @@
       outline: none;
       resize: none;
       font-family: inherit;
+      line-height: 1.4;
+      transition: height 0.1s ease;
+      box-sizing: border-box;
+      background: white;
     }
 
     .input:focus {
@@ -360,14 +364,14 @@
     /* Todo List */
     .todo-list-container {
       max-height: 30%;
-      overflow-y: auto;
       border-top: 1px solid #e5e7eb;
       background: #f9fafb;
       display: none;
+      flex-direction: column;
     }
 
     .todo-list-container.has-items {
-      display: block;
+      display: flex;
     }
 
     .todo-list-header {
@@ -380,6 +384,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .todo-list-header:hover {
+      background-color: #f1f5f9;
     }
 
     .todo-list-title {
@@ -403,8 +414,52 @@
       font-weight: 500;
     }
 
+    .todo-list-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      transition: all 0.2s ease;
+    }
+
+    .todo-list-toggle:hover {
+      background-color: rgba(107, 114, 128, 0.1);
+      color: #4b5563;
+    }
+
+    .todo-toggle-icon {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .todo-list-container.collapsed .todo-toggle-icon {
+      transform: rotate(-90deg);
+    }
+
+    .todo-list-content {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.2s ease;
+      max-height: 300px;
+      opacity: 1;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .todo-list-container.collapsed .todo-list-content {
+      max-height: 0;
+      opacity: 0;
+    }
+
     .todo-list-items {
       padding: 8px 0;
+      overflow-y: auto;
+      height: 100%;
     }
 
     .todo-item {
@@ -486,6 +541,295 @@
     .todo-list-container::-webkit-scrollbar-thumb:hover {
       background: #9ca3af;
     }
+
+    /* @ Mention Dropdown */
+    .mention-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      overflow-y: auto;
+      margin-bottom: 4px;
+    }
+
+    .mention-item {
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .mention-item:last-child {
+      border-bottom: none;
+    }
+
+    .mention-item:hover,
+    .mention-item.selected {
+      background: #eff6ff;
+    }
+
+    .mention-favicon {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .mention-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mention-title {
+      font-weight: 500;
+      color: #374151;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mention-domain {
+      font-size: 12px;
+      color: #6b7280;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mention-tag {
+      background: #2563eb;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .mention-loading {
+      padding: 16px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .mention-empty {
+      padding: 16px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    /* Selected Tabs Area */
+    .selected-tabs-container {
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+
+    .selected-tabs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      cursor: pointer;
+      padding: 2px 0;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+
+    .selected-tabs-header:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .selected-tabs-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .selected-tabs-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      transition: all 0.2s ease;
+    }
+
+    .selected-tabs-toggle:hover {
+      background-color: rgba(100, 116, 139, 0.1);
+      color: #475569;
+    }
+
+    .toggle-icon {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .selected-tabs-container.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+
+    .selected-tabs-content {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.2s ease;
+      max-height: 200px;
+      opacity: 1;
+    }
+
+    .selected-tabs-container.collapsed .selected-tabs-content {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    .selected-tabs-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .selected-tab-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #2563eb;
+      color: white;
+      padding: 6px 8px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      max-width: 220px;
+      min-height: 28px;
+    }
+
+    .selected-tab-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .selected-tab-title {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .selected-tab-domain {
+      font-size: 10px;
+      opacity: 0.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.1;
+    }
+
+    .selected-tab-favicon {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+    }
+
+    .selected-tab-remove {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background-color 0.2s ease;
+    }
+
+    .selected-tab-remove:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .selected-tab-active {
+      background: #059669;
+    }
+
+    /* Input container positioning context */
+    .input-container {
+      position: relative;
+    }
+
+    /* Styled mention tags */
+    .mention-tag {
+      background: #2563eb;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-block;
+      margin: 0 1px;
+    }
+
+    .mention-tag-light {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+      padding: 1px 5px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-block;
+      margin: 0 1px;
+    }
+
+    /* Scrollbar for mention dropdown */
+    .mention-dropdown::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .mention-dropdown::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .mention-dropdown::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .mention-dropdown::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
   </style>
 </head>
 <body>
@@ -519,28 +863,65 @@
 
     <!-- Todo List Container -->
     <div class="todo-list-container" id="todoListContainer">
-      <div class="todo-list-header">
+      <div class="todo-list-header" id="todoListHeader">
         <div class="todo-list-title">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
           </svg>
           Todo List
-          <span class="todo-list-count" id="todoListCount">0</span>
+          <span class="todo-list-count" id="todoListCount">0/0</span>
         </div>
+        <button class="todo-list-toggle" id="todoListToggle" title="Toggle todo list visibility">
+          <svg class="todo-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
       </div>
-      <div class="todo-list-items" id="todoListItems">
-        <!-- Todo items will be dynamically inserted here -->
+      <div class="todo-list-content" id="todoListContent">
+        <div class="todo-list-items" id="todoListItems">
+          <!-- Todo items will be dynamically inserted here -->
+        </div>
       </div>
     </div>
 
     <form class="input-form" id="inputForm">
+      <!-- Selected Tabs Area -->
+      <div class="selected-tabs-container" id="selectedTabsContainer" style="display: none;">
+        <div class="selected-tabs-header" id="selectedTabsHeader">
+          <span class="selected-tabs-label">Selected tabs:</span>
+          <button class="selected-tabs-toggle" id="selectedTabsToggle" title="Toggle tabs visibility">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+        <div class="selected-tabs-content" id="selectedTabsContent">
+          <div class="selected-tabs-list" id="selectedTabsList">
+            <!-- Selected tab chips will be inserted here -->
+          </div>
+        </div>
+      </div>
+
       <div class="input-container">
+        <!-- @ Mention Dropdown -->
+        <div class="mention-dropdown" id="mentionDropdown" style="display: none;">
+          <div class="mention-loading" id="mentionLoading" style="display: none;">
+            <div class="loading"></div>
+            Loading tabs...
+          </div>
+          <div class="mention-empty" id="mentionEmpty" style="display: none;">
+            No matching tabs found
+          </div>
+          <div id="mentionItems"></div>
+        </div>
+        
+        <!-- Simplified input without overlay -->
         <textarea
           class="input"
           id="messageInput"
           placeholder="Ask me to interact with the current page..."
           rows="1"
-          style="resize: none; height: auto; min-height: 36px; max-height: 100px;"
+          style="resize: none; height: 36px; min-height: 36px; max-height: 120px; overflow-y: hidden;"
         ></textarea>
         <button type="submit" class="send-button" id="sendButton">
           Send

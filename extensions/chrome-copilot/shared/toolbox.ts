@@ -3,29 +3,35 @@ import { z } from "zod";
 
 export const toolbox = createToolBox({
   fetchPageText: {
-    description: "Fetch the content of the current page as markdown",
+    description: "Fetch the content of a page as markdown from a specific tab.",
     params: z.object({
+      tabId: z.number().describe("The ID of the tab to fetch content from."),
     }),
     result: z.object({
       success: z.boolean(),
-      url: z.string().describe("The url of the current page"),
-      content: z.string().describe("The markdown content of the current page"),
+      url: z.string().optional().describe("The url of the page"),
+      content: z.string().optional().describe("The markdown content of the page"),
+      error: z.string().optional().describe("Error message if operation failed"),
     }),
   },
 
   getCurrentUrl: {
-    description: "Get the current url of the page",
-    params: z.object({}),
+    description: "Get the current url of a specific tab.",
+    params: z.object({
+      tabId: z.number().describe("The ID of the tab to get URL from."),
+    }),
     result: z.object({
       success: z.boolean(),
-      url: z.string().describe("The url of the current page"),
+      url: z.string().optional().describe("The url of the page"),
+      error: z.string().optional().describe("Error message if operation failed"),
     }),
   },
 
   findInteractiveElements: {
     description:
-      "Show interactive elements on the page (buttons, links, inputs, etc.)",
+      "Show interactive elements on a specific tab (buttons, links, inputs, etc.).",
     params: z.object({
+      tabId: z.number().describe("The ID of the tab to search in."),
       textToFilter: z.string().describe("The text to filter the elements by").optional(),
     }),
     result: z.object({
@@ -40,14 +46,16 @@ export const toolbox = createToolBox({
             value: z.string().optional(),
           }),
         )
-        .describe("The interactive elements on the page"),
+        .describe("The interactive elements on the page").optional(),
+      error: z.string().optional().describe("Error message if operation failed"),
     }),
   },
 
   inspectElements: {
     description:
-      "Inspect multiple elements on the page using jQuery selectors and get their properties",
+      "Inspect multiple elements on a specific tab using jQuery selectors and get their properties.",
     params: z.object({
+      tabId: z.number().describe("The ID of the tab to inspect elements in."),
       elements: z
         .array(
           z.object({
@@ -96,15 +104,17 @@ export const toolbox = createToolBox({
           ),
           error: z.string().optional(),
         }),
-      ),
-      message: z.string(),
+      ).optional(),
+      message: z.string().optional(),
+      error: z.string().optional().describe("Error message if operation failed"),
     }),
   },
 
   clickElements: {
     description:
-      "Click on multiple elements using jQuery selectors in sequence with automatic delays for React state updates",
+      "Click on multiple elements using jQuery selectors in sequence with automatic delays for React state updates on a specific tab.",
     params: z.object({
+      tabId: z.number().describe("The ID of the tab to perform clicks in."),
       elements: z
         .array(
           z.object({
@@ -133,8 +143,9 @@ export const toolbox = createToolBox({
           clicked: z.boolean(),
           error: z.string().optional(),
         }),
-      ),
-      message: z.string(),
+      ).optional(),
+      message: z.string().optional(),
+      error: z.string().optional().describe("Error message if operation failed"),
     }),
   },
 
@@ -302,15 +313,17 @@ export const toolbox = createToolBox({
   },
 
   findElementsByText: {
-    description: "Find multiple elements on the page by text content",
+    description: "Find multiple elements on a specific tab by text content.",
     params: z.object({
+      tabId: z.number().describe("The ID of the tab to search in."),
       content: z.array(z.string()).describe("The content of the element to find"),
     }),
     result: z.object({
       success: z.boolean(),
       elements: z.array(z.object({
         selector: z.string(),
-      })),
+      })).optional(),
+      error: z.string().optional().describe("Error message if operation failed"),
     }),
   },
 
