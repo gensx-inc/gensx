@@ -15,8 +15,24 @@ type OptionalPromise<T> = T | Promise<T>;
 // Tool implementations for Chrome extension context
 export const toolImplementations: { [key in keyof typeof toolbox]: (params: InferToolParams<typeof toolbox, key>) => OptionalPromise<InferToolResult<typeof toolbox, key>> } = {
   fetchPageText: () => {
-    const markdown = europa.convert(document.querySelector('html')?.cloneNode(true) as HTMLElement);
+    // Clone the HTML to avoid modifying the original DOM
+    const htmlClone = document.querySelector('html')?.cloneNode(true) as HTMLElement;
+    if (!htmlClone) {
+      return {
+        success: false,
+        url: window.location.href ?? "unknown",
+        content: "",
+        error: "Could not access HTML content",
+      };
+    }
 
+    // Pre-process HTML to reduce content size and noise
+    preprocessHtmlForMarkdown(htmlClone);
+
+    // Convert to markdown
+    const markdown = europa.convert(htmlClone);
+
+    // No content truncation here - let the chunking approach handle large content
     return {
       success: true,
       url: window.location.href ?? "unknown",
@@ -703,285 +719,377 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
   },
 
   findElementsByText: (params) => {
-    const elements = $(`*`).filter((_idx, element) => {
-      const $el = $(element);
-      const text = $el.text().trim();
-      return params.content.some(content => text.includes(content));
+    const foundElements = new Set<Element>();
+    const maxResults = 50; // Limit results for performance
+    
+    // Pre-compile search patterns for better performance
+    const searchTexts = params.content.map(text => text.toLowerCase().trim());
+    
+    // Use a more targeted approach - start with likely text containers
+    const textContainerSelectors = [
+      'p', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
+      'li', 'td', 'th', 'label', 'button', 'a', 'strong', 'em',
+      '[class*="text"]', '[class*="title"]', '[class*="label"]', '[class*="content"]'
+    ];
+    
+    searchTexts.forEach(searchText => {
+      if (foundElements.size >= maxResults) return;
+      
+      // First pass: check likely text containers (much faster than *)
+      textContainerSelectors.forEach(selector => {
+        if (foundElements.size >= maxResults) return;
+        
+        try {
+          $(selector).each((_, element) => {
+            if (foundElements.size >= maxResults) return false;
+            
+            const el = element as HTMLElement;
+            
+            // Quick visibility check first
+            if (el.offsetParent === null && el.style.position !== 'fixed') {
+              return; // Element is hidden
+            }
+            
+            // Check if this element's text contains our search text
+            const elementText = el.textContent?.toLowerCase().trim() || '';
+            if (!elementText.includes(searchText)) {
+              return;
+            }
+            
+            // Check if any direct children contain the text (to find deepest)
+            let hasChildWithText = false;
+            for (const child of el.children) {
+              const childText = child.textContent?.toLowerCase().trim() || '';
+              if (childText.includes(searchText)) {
+                hasChildWithText = true;
+                break;
+              }
+            }
+            
+            // Include if it's a leaf node OR has its own text content
+            if (!hasChildWithText) {
+              foundElements.add(element);
+            } else {
+              // Check if this element has its own text (not just from children)
+              const childrenText = Array.from(el.children)
+                .map(child => child.textContent || '')
+                .join('').toLowerCase();
+              const ownText = elementText.replace(childrenText, '').trim();
+              
+              if (ownText.includes(searchText)) {
+                foundElements.add(element);
+              }
+            }
+          });
+        } catch (e) {
+          // Skip problematic selectors
+          console.warn('Selector failed:', selector, e);
+        }
+      });
     });
-
+    
     return {
       success: true,
-      elements: elements.map((_idx, element) => ({
+      elements: Array.from(foundElements).slice(0, maxResults).map(element => ({
         selector: getUniqueSelector(element),
-      })).toArray(),
+      })),
     };
   },
 
   findInteractiveElements: async (params) => {
     try {
-      const batchSize = 50; // Process elements in batches to avoid blocking
-      const yieldInterval = 10; // Yield every 10 batches
+      const batchSize = 20; // Smaller batches for more responsive UI
+      const yieldInterval = 2; // Yield every 2 batches (every 40 elements)
+      const maxResults = 100; // Early termination limit
       const startTime = performance.now();
 
-      const processedElements = new Set<HTMLElement>(); // Track processed elements to avoid duplicates
+      const foundElements = new Set<HTMLElement>(); // Track found elements to avoid duplicates
       const elementScores = new Map<HTMLElement, number>(); // Track element "importance" scores
+      let processedCount = 0;
 
-      // Helper function to check if an element has meaningful content (optimized)
-      const hasContent = (el: HTMLElement): boolean => {
-        const tagName = el.tagName.toLowerCase();
-
-        // Quick checks first
-        const text = el.textContent?.trim() || '';
-        const ariaLabel = el.getAttribute('aria-label')?.trim() || '';
-        const title = el.getAttribute('title')?.trim() || '';
-        const alt = el.getAttribute('alt')?.trim() || '';
-
-                // For input elements, check value, placeholder, or aria-label
-        if (['input', 'textarea', 'select'].includes(tagName)) {
-          const inputEl = el as HTMLInputElement;
-          const value = inputEl.value ? String(inputEl.value).trim() : '';
-          const placeholder = el.getAttribute('placeholder')?.trim() || '';
-          const label = document.querySelector(`label[for="${el.getAttribute('id')}"]`)?.textContent?.trim() || '';
-
-          return !!(value || placeholder || ariaLabel || label);
-        }
-
-        // Check for data attributes that might indicate functionality
-        const hasDataAttributes = el.getAttribute('data-testid') || el.getAttribute('data-cy') || el.getAttribute('data-action');
-
-        // Check for common icon/visual indicator classes (regex-free check)
-        const className = el.getAttribute('class') || '';
-        const hasIconClasses = className.includes('icon') || className.includes('fa-') ||
-                              className.includes('material-') || className.includes('mdi-') ||
-                              className.includes('glyphicon');
-
-        // Check if element itself is an image with alt text
-        const isImageWithAlt = tagName === 'img' && alt;
-
-        // Consider element as having content if it has:
-        // - Text content, labels, or titles
-        // - Is an image with alt text
-        // - Has icon classes
-        // - Has test/action data attributes
-        return !!(text || ariaLabel || title || alt || isImageWithAlt || hasIconClasses || hasDataAttributes);
+      // Helper function to yield control back to the browser
+      const yieldToBrowser = async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
       };
 
-            // Helper function to calculate element "importance" score
-      const calculateScore = (el: HTMLElement): number => {
-        let score = 0;
+      // Simplified content check for performance
+      const hasMinimalContent = (el: HTMLElement): boolean => {
         const tagName = el.tagName.toLowerCase();
+        
+        // Always include form elements and links
+        if (['button', 'a', 'input', 'select', 'textarea'].includes(tagName)) {
+          return true;
+        }
 
-        // Higher scores for more interactive elements
-        if (['button', 'a', 'input', 'select'].includes(tagName)) score += 10;
-        else if (['textarea', 'option'].includes(tagName)) score += 5;
-        else score += 1;
+        // Quick checks for other elements
+        const text = el.textContent?.trim();
+        if (text && text.length > 0) return true;
+        
+        // Check for important attributes
+        const hasImportantAttrs = el.hasAttribute('onclick') || 
+                                 el.hasAttribute('data-testid') ||
+                                 el.hasAttribute('aria-label') ||
+                                 el.hasAttribute('title') ||
+                                 el.getAttribute('role') === 'button';
+        
+        return hasImportantAttrs;
+      };
 
-        // Bonus for React-style clickable elements
+      // Simplified scoring system (without expensive getComputedStyle)
+      const calculateSimpleScore = (el: HTMLElement, hasCursorPointer = false): number => {
+        const tagName = el.tagName.toLowerCase();
+        let score = 0;
+
+        // Base scores for known interactive elements
+        if (tagName === 'button') score = 20;
+        else if (tagName === 'a') score = 15;
+        else if (['input', 'select', 'textarea'].includes(tagName)) score = 12;
+        else score = 5; // Default for other elements
+
+        // Bonus for explicit click handlers
+        if (el.hasAttribute('onclick') || el.hasAttribute('onClick')) score += 10;
+        
+        // Bonus for test attributes (likely important for automation)
+        if (el.hasAttribute('data-testid') || el.hasAttribute('data-cy')) score += 8;
+        
+        // Bonus for accessible attributes
+        if (el.hasAttribute('aria-label') || el.getAttribute('role') === 'button') score += 5;
+
+        // Bonus for cursor:pointer (passed as parameter to avoid getComputedStyle)
+        if (hasCursorPointer) {
+          score += 6; // Good indicator of interactivity
+          
+          // Extra bonus for cursor:pointer on common React patterns
+          const className = el.getAttribute('class') || '';
+          if (className.includes('card') || className.includes('item') || 
+              className.includes('row') || className.includes('tile') ||
+              ['div', 'span', 'li'].includes(tagName)) {
+            score += 4; // Likely a React clickable component
+          }
+        }
+
+        // Bonus for common interactive class patterns
         const className = el.getAttribute('class') || '';
-        const hasClickableClasses = className.includes('button') || className.includes('click') ||
-                                   className.includes('link') || className.includes('card') ||
-                                   className.includes('tile') || className.includes('item');
-
-        if (hasClickableClasses) score += 8;
-
-        // Bonus for elements with click handlers
-        if (el.hasAttribute('onclick') || el.hasAttribute('onClick') || el.hasAttribute('data-onclick')) {
+        if (className.includes('btn') || className.includes('button') || className.includes('click')) {
           score += 7;
         }
-
-        // Bonus for elements with tabindex (keyboard accessible)
-        if (el.hasAttribute('tabindex')) score += 6;
-
-        // Bonus for elements with pointer cursor
-        const style = window.getComputedStyle(el);
-        if (style.cursor === 'pointer') score += 5;
-
-        // Bonus for visible elements
-        if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
-          score += 2;
+        if (className.includes('card') || className.includes('item') || className.includes('tile')) {
+          score += 3; // Common React interactive patterns
         }
-
-        // Bonus for elements with text content
-        if (el.textContent?.trim()) score += 3;
-
-        // Bonus for elements with aria-label or title
-        if (el.getAttribute('aria-label') || el.getAttribute('title')) score += 2;
-
-        // Bonus for elements with data attributes
-        if (el.getAttribute('data-testid') || el.getAttribute('data-cy')) score += 2;
 
         return score;
       };
 
-      // Helper function to check if element is a descendant of already processed element
-      const isDescendantOfProcessed = (el: HTMLElement): boolean => {
-        let parent = el.parentElement;
-        while (parent) {
-          if (processedElements.has(parent)) {
-            return true;
-          }
-          parent = parent.parentElement;
+      // Fast element processing without expensive getComputedStyle in most cases
+      const processElement = (el: HTMLElement, hasCursorPointer = false): boolean => {
+        // Quick visibility check (avoid getComputedStyle if possible)
+        if (el.hidden || el.style.display === 'none' || el.style.visibility === 'hidden') {
+          return false;
         }
-        return false;
+
+        // Check basic interactivity
+        const interactivity = checkElementInteractivity(el);
+        if (!interactivity.isInteractive) {
+          return false;
+        }
+
+        // Check if element has meaningful content
+        if (!hasMinimalContent(el)) {
+          return false;
+        }
+
+        // Early termination check
+        if (foundElements.size >= maxResults) {
+          return false;
+        }
+
+        const score = calculateSimpleScore(el, hasCursorPointer);
+        foundElements.add(el);
+        elementScores.set(el, score);
+        return true;
       };
 
-      // Process elements in batches with yielding
-      const processElementBatch = async (elements: HTMLElement[], startIndex: number): Promise<void> => {
-        const endIndex = Math.min(startIndex + batchSize, elements.length);
-
-        for (let i = startIndex; i < endIndex; i++) {
-          const el = elements[i];
-
-          // Skip if already processed or is descendant of processed element
-          if (processedElements.has(el) || isDescendantOfProcessed(el)) {
-            continue;
-          }
-
-          // Quick visibility check
-          const style = window.getComputedStyle(el);
-          if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-            continue;
-          }
-
-          // Check if element is interactive
-          const isInteractive = checkElementInteractivity(el);
-          if (!isInteractive.isInteractive) {
-            continue;
-          }
-
-          // Check if element has content
-          if (!hasContent(el)) {
-            continue;
-          }
-
-          // Calculate score and store element
-          const score = calculateScore(el);
-          elementScores.set(el, score);
-          processedElements.add(el);
-        }
-
-        // Yield every few batches to prevent blocking
-        if ((startIndex / batchSize) % yieldInterval === 0) {
-          await new Promise(resolve => setTimeout(resolve, 0));
-        }
-      };
-
-      // Get interactive elements more efficiently
-      const interactiveSelectors = "button, input, select, textarea, a, option, datalist, [role='button'], [role='link'], [role='tab'], [role='menuitem'], [role='checkbox'], [role='radio'], [role='option']";
-      const interactiveElements = Array.from(document.querySelectorAll(interactiveSelectors)) as HTMLElement[];
-
-            // Get elements with pointer cursor (more targeted approach)
-      const clickableElements: HTMLElement[] = [];
-
-      // More efficient approach: target common React patterns
-      // Look for divs, spans, and other elements that might be clickable
-      const potentialClickableSelectors = [
-        'div[onclick]', 'div[onClick]', 'div[data-onclick]',
-        'span[onclick]', 'span[onClick]', 'span[data-onclick]',
-        'section[onclick]', 'section[onClick]', 'section[data-onclick]',
-        'article[onclick]', 'article[onClick]', 'article[data-onclick]',
-        'main[onclick]', 'main[onClick]', 'main[data-onclick]',
-        'aside[onclick]', 'aside[onClick]', 'aside[data-onclick]',
-        // Common React patterns
-        '[data-testid*="button"]', '[data-testid*="click"]', '[data-testid*="link"]',
-        '[data-cy*="button"]', '[data-cy*="click"]', '[data-cy*="link"]',
-        '[class*="button"]', '[class*="clickable"]', '[class*="link"]',
-        '[class*="card"]', '[class*="tile"]', '[class*="item"]',
-        // Common interactive patterns
-        '[tabindex]', '[role="button"]', '[role="link"]', '[role="tab"]',
-        '[aria-label*="button"]', '[aria-label*="click"]', '[aria-label*="link"]',
-        '[title*="button"]', '[title*="click"]', '[title*="link"]'
-      ];
-
-      // Get elements with explicit click handlers or interactive attributes
-      for (const selector of potentialClickableSelectors) {
-        try {
-          const elements = document.querySelectorAll(selector);
-          for (const el of elements) {
-            clickableElements.push(el as HTMLElement);
-          }
-        } catch (e) {
-          // Skip invalid selectors
-          continue;
-        }
-      }
-
-      // For cursor: pointer detection, use a more efficient approach
-      // Only check elements that are likely to be interactive based on their context
-      const cursorCheckSelectors = [
-        'div', 'span', 'section', 'article', 'main', 'aside', 'header', 'footer',
-        'li', 'td', 'th', 'figure', 'figcaption'
-      ];
-
-      for (const selector of cursorCheckSelectors) {
-        const elements = document.querySelectorAll(selector);
-
-        // Process in batches to avoid blocking
+      // Process elements in smaller, more frequent batches
+      const processBatch = async (elements: HTMLElement[]) => {
         for (let i = 0; i < elements.length; i += batchSize) {
-          const batch = Array.from(elements).slice(i, i + batchSize) as HTMLElement[];
+          // Early termination if we have enough results
+          if (foundElements.size >= maxResults) {
+            console.log(`Early termination: found ${foundElements.size} elements`);
+            break;
+          }
 
+          const batchEnd = Math.min(i + batchSize, elements.length);
+          const batch = elements.slice(i, batchEnd);
+
+          // Process batch
           for (const el of batch) {
-            // Quick checks before expensive getComputedStyle
-            const tagName = el.tagName.toLowerCase();
-            const className = el.getAttribute('class') || '';
-
-            // Skip elements that are clearly not interactive
-            if (tagName === 'div' && !className.includes('button') &&
-                !className.includes('click') && !className.includes('link') &&
-                !className.includes('card') && !className.includes('tile') &&
-                !className.includes('item') && !el.hasAttribute('onclick') &&
-                !el.hasAttribute('onClick') && !el.hasAttribute('tabindex') &&
-                !el.hasAttribute('role') && !el.hasAttribute('data-testid') &&
-                !el.hasAttribute('data-cy')) {
+            if (!processElement(el)) {
               continue;
             }
-
-            const style = window.getComputedStyle(el);
-            if (style.cursor === 'pointer') {
-              clickableElements.push(el);
-            }
           }
 
-          // Yield every few batches
-          if ((i / batchSize) % yieldInterval === 0) {
-            await new Promise(resolve => setTimeout(resolve, 0));
+          processedCount += batch.length;
+
+          // Yield more frequently to keep UI responsive
+          if (Math.floor(i / batchSize) % yieldInterval === 0) {
+            await yieldToBrowser();
+          }
+        }
+      };
+
+      // Step 1: Get obvious interactive elements (fast)
+      const obviousInteractiveSelectors = "button, a, input, select, textarea, [role='button'], [role='link'], [onclick], [data-testid*='button'], [data-testid*='click']";
+      const obviousElements = Array.from(document.querySelectorAll(obviousInteractiveSelectors)) as HTMLElement[];
+      
+      console.log(`Processing ${obviousElements.length} obvious interactive elements`);
+      await processBatch(obviousElements);
+
+      // Step 2: Check cursor:pointer on likely interactive elements (balanced approach)
+      if (foundElements.size < maxResults) {
+        console.log('Checking cursor:pointer on likely interactive elements');
+        
+        // Broader criteria for cursor:pointer candidates - include common React patterns
+        const cursorCandidateSelectors = [
+          // Elements that commonly use cursor:pointer in React apps
+          'div, span, li, section, article', 
+          // Elements with any interactive hints
+          '[class*="card"]', '[class*="item"]', '[class*="row"]', '[class*="tile"]',
+          '[class*="button"]', '[class*="btn"]', '[class*="click"]', '[class*="link"]',
+          // Elements with data attributes (often used in React)
+          '[data-*]', '[aria-*]',
+          // Elements with tabindex or roles
+          '[tabindex]', '[role]'
+        ];
+
+        const allCursorCandidates = new Set<HTMLElement>();
+        
+        // Collect cursor candidates from multiple selectors
+        for (const selector of cursorCandidateSelectors) {
+          try {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => allCursorCandidates.add(el as HTMLElement));
+          } catch (e) {
+            continue;
+          }
+        }
+
+        // Filter candidates to focus on those more likely to be interactive
+        const filteredCandidates = Array.from(allCursorCandidates).filter(el => {
+          if (foundElements.has(el)) return false;
+          
+          const tagName = el.tagName.toLowerCase();
+          const className = el.getAttribute('class') || '';
+          
+          // Include elements that are commonly interactive in React apps
+          return (
+            // Has text content (likely a clickable text element)
+            (el.textContent?.trim() && el.textContent.trim().length > 0) ||
+            // Has any class that might indicate interactivity
+            className.length > 0 ||
+            // Has data attributes (common in React)
+            el.hasAttribute('data-testid') || el.hasAttribute('data-cy') || 
+            Array.from(el.attributes).some(attr => attr.name.startsWith('data-')) ||
+            // Has aria attributes
+            Array.from(el.attributes).some(attr => attr.name.startsWith('aria-')) ||
+            // Has role or tabindex
+            el.hasAttribute('role') || el.hasAttribute('tabindex') ||
+            // Common interactive containers
+            ['li', 'section', 'article'].includes(tagName)
+          );
+        });
+
+        console.log(`Checking cursor:pointer on ${filteredCandidates.length} candidate elements`);
+
+        // Process cursor candidates in small batches
+        const cursorBatchSize = 15; // Smaller batches for expensive operations
+        for (let i = 0; i < filteredCandidates.length && foundElements.size < maxResults; i += cursorBatchSize) {
+          const batch = filteredCandidates.slice(i, i + cursorBatchSize);
+          
+          for (const el of batch) {
+            if (foundElements.has(el) || foundElements.size >= maxResults) break;
+
+            try {
+              const style = window.getComputedStyle(el);
+              if (style.cursor === 'pointer') {
+                processElement(el, true); // Pass hasCursorPointer=true
+              }
+            } catch (error) {
+              // Skip elements that cause getComputedStyle errors
+              continue;
+            }
+          }
+          
+          // Yield every batch when doing expensive operations
+          await yieldToBrowser();
+        }
+      }
+
+      // Step 3: If still need more, look for additional common interactive patterns
+      if (foundElements.size < Math.min(maxResults, 80)) {
+        const additionalSelectors = [
+          '[role="tab"]', '[role="menuitem"]', '[role="option"]',
+          '[class*="nav"]', '[class*="menu"]', '[class*="toggle"]',
+          '[class*="expand"]', '[class*="collapse"]', '[class*="dropdown"]'
+        ];
+
+        for (const selector of additionalSelectors) {
+          if (foundElements.size >= maxResults) break;
+          
+          try {
+            const elements = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
+            await processBatch(elements);
+          } catch (e) {
+            continue;
           }
         }
       }
 
-      // Combine and deduplicate elements efficiently
-      const allCandidates = [...interactiveElements, ...clickableElements];
-      const uniqueCandidates = new Set<HTMLElement>();
-
-      for (const el of allCandidates) {
-        uniqueCandidates.add(el);
-      }
-
-      // Process unique candidates in batches
-      const candidatesArray = Array.from(uniqueCandidates);
-      for (let i = 0; i < candidatesArray.length; i += batchSize) {
-        await processElementBatch(candidatesArray, i);
-      }
-
-      // Convert to result format, sorted by score (most important first)
+      // Convert to result format with optimized selector generation
       const sortedElements = Array.from(elementScores.entries())
         .sort((a, b) => b[1] - a[1]) // Sort by score descending
-        .map(([el]) => ({
-          type: el.tagName.toLowerCase(),
-          selector: getUniqueSelector(el),
-          text: el.textContent?.trim() ?? "",
-          value: (el as HTMLInputElement).value ? String((el as HTMLInputElement).value).trim() : undefined,
-          href: (el as HTMLAnchorElement).href,
-        }));
+        .slice(0, maxResults) // Limit results
+        .map(([el]) => {
+          let selector;
+          try {
+            // Try fast selector generation first
+            if (el.id) {
+              selector = `#${CSS.escape(el.id)}`;
+            } else if (el.getAttribute('data-testid')) {
+              selector = `[data-testid="${CSS.escape(el.getAttribute('data-testid')!)}"]`;
+            } else {
+              // Use slower but more reliable selector generation
+              selector = getUniqueSelector(el);
+            }
+          } catch (error) {
+            // Fallback selector
+            selector = el.tagName.toLowerCase();
+            console.warn('Selector generation failed for element:', el, error);
+          }
+
+          return {
+            type: el.tagName.toLowerCase(),
+            selector,
+            text: (el.textContent?.trim() || '').substring(0, 200), // Limit text length
+            value: (el as HTMLInputElement).value ? String((el as HTMLInputElement).value).trim().substring(0, 100) : undefined,
+            href: (el as HTMLAnchorElement).href,
+          };
+        });
 
       const endTime = performance.now();
-      console.log(`findInteractiveElements took ${endTime - startTime}ms to find ${sortedElements.length} elements`);
+      const duration = Math.round(endTime - startTime);
+      console.log(`findInteractiveElements took ${duration}ms to process ${processedCount} elements and find ${sortedElements.length} interactive elements`);
 
       return {
         success: true,
         elements: sortedElements,
+        performance: {
+          duration,
+          processedCount,
+          foundCount: sortedElements.length
+        }
       };
     } catch (error) {
+      console.error('findInteractiveElements error:', error);
       return {
         success: false,
         elements: [],
@@ -1170,14 +1278,99 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
   },
 };
 
-// Helper to check if an element is likely to be interactive
+// Helper functions for fetchPageText optimization
+const preprocessHtmlForMarkdown = (htmlElement: HTMLElement): void => {
+  // Remove elements that don't contribute to meaningful content
+  const elementsToRemove = [
+    'script', 'style', 'noscript', 'iframe', 'embed', 'object',
+    'meta', 'link[rel="stylesheet"]', 'link[rel="preload"]',
+    'svg', 'canvas', 'audio', 'video'
+  ];
+
+  elementsToRemove.forEach(selector => {
+    const elements = htmlElement.querySelectorAll(selector);
+    elements.forEach(el => el.remove());
+  });
+
+  // Truncate very long href attributes to prevent context bloat
+  const links = htmlElement.querySelectorAll('a[href]');
+  links.forEach((link: Element) => {
+    const href = link.getAttribute('href');
+    if (href && href.length > 100) {
+      // Keep the domain and first part of the path, truncate the rest
+      try {
+        const url = new URL(href, window.location.origin);
+        const truncatedPath = url.pathname.length > 50 
+          ? url.pathname.substring(0, 47) + '...'
+          : url.pathname;
+        const truncatedHref = url.origin + truncatedPath + 
+          (url.search ? (url.search.length > 20 ? '?...' : url.search) : '');
+        link.setAttribute('href', truncatedHref);
+      } catch {
+        // If URL parsing fails, just truncate the string
+        link.setAttribute('href', href.substring(0, 97) + '...');
+      }
+    }
+  });
+
+  // Truncate very long src attributes for images
+  const images = htmlElement.querySelectorAll('img[src]');
+  images.forEach((img: Element) => {
+    const src = img.getAttribute('src');
+    if (src && src.length > 150) {
+      img.setAttribute('src', src.substring(0, 147) + '...');
+    }
+  });
+
+  // Remove or truncate very long data attributes that might contain base64 or large JSON
+  const allElements = htmlElement.querySelectorAll('*');
+  allElements.forEach((el: Element) => {
+    Array.from(el.attributes).forEach(attr => {
+      if (attr.name.startsWith('data-') && attr.value.length > 200) {
+        if (attr.value.startsWith('data:') || attr.value.startsWith('{') || attr.value.startsWith('[')) {
+          // Likely base64 data or JSON, truncate heavily
+          el.setAttribute(attr.name, attr.value.substring(0, 50) + '... [truncated]');
+        } else if (attr.value.length > 500) {
+          // Other long data attributes, moderate truncation
+          el.setAttribute(attr.name, attr.value.substring(0, 197) + '...');
+        }
+      }
+    });
+  });
+
+  // Light whitespace normalization to prevent excessive whitespace
+  // but preserve content structure for chunking
+  const textNodes = document.createTreeWalker(
+    htmlElement,
+    NodeFilter.SHOW_TEXT,
+    null
+  );
+
+  const nodesToProcess: Text[] = [];
+  let textNode = textNodes.nextNode() as Text;
+  while (textNode) {
+    nodesToProcess.push(textNode);
+    textNode = textNodes.nextNode() as Text;
+  }
+
+  nodesToProcess.forEach(node => {
+    if (node.textContent) {
+      // Only normalize excessive whitespace, preserve structure
+      node.textContent = node.textContent
+        .replace(/[ \t]{3,}/g, ' ')  // Only collapse 3+ spaces/tabs to single space
+        .replace(/\n{4,}/g, '\n\n\n'); // Only collapse 4+ line breaks to max 3
+    }
+  });
+};
+
+
+// Helper to check if an element is likely to be interactive (optimized and more permissive)
 const checkElementInteractivity = (element: HTMLElement): { isInteractive: boolean; reason?: string } => {
   if (!element) {
     return { isInteractive: false, reason: "Element is null or undefined" };
   }
 
   const tagName = element.tagName.toLowerCase();
-  const $element = $(element);
 
   // Obviously interactive elements
   const interactiveTags = ['button', 'a', 'input', 'select', 'textarea', 'option'];
@@ -1193,13 +1386,7 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
   }
 
   // Check for click handlers
-  if (element.onclick || element.getAttribute('onclick')) {
-    return { isInteractive: true };
-  }
-
-  // Check CSS cursor
-  const cursor = $element.css('cursor');
-  if (cursor === 'pointer') {
+  if (element.onclick || element.getAttribute('onclick') || element.getAttribute('onClick')) {
     return { isInteractive: true };
   }
 
@@ -1209,29 +1396,46 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
     return { isInteractive: true };
   }
 
+  // Check for tabindex (keyboard accessible)
+  if (element.hasAttribute('tabindex')) {
+    return { isInteractive: true };
+  }
+
   // Check if element is disabled
   if (element.hasAttribute('disabled') || element.getAttribute('aria-disabled') === 'true') {
     return { isInteractive: false, reason: "Element is disabled" };
   }
 
-  // Check if element is hidden
-  const style = window.getComputedStyle(element);
-  if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+  // Quick visibility checks (avoid getComputedStyle)
+  if (element.hidden || element.style.display === 'none' || element.style.visibility === 'hidden') {
     return { isInteractive: false, reason: "Element is hidden" };
   }
 
-  // Check if element has zero dimensions
-  const rect = element.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) {
-    return { isInteractive: false, reason: "Element has zero dimensions" };
+  // For React components and common patterns, be more permissive
+  const className = element.getAttribute('class') || '';
+  
+  // Common interactive class patterns
+  const interactiveClassPatterns = ['button', 'btn', 'click', 'link', 'card', 'item', 'tile', 'row'];
+  if (interactiveClassPatterns.some(pattern => className.includes(pattern))) {
+    return { isInteractive: true };
   }
 
-  // For generic elements without obvious interactive indicators
-  if (['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'article'].includes(tagName)) {
-    return { isInteractive: false, reason: `${tagName} element without clear interactive indicators` };
+  // Elements that commonly have cursor:pointer in React apps
+  if (['div', 'span', 'li', 'section', 'article'].includes(tagName)) {
+    // Be more permissive for these elements - they might have cursor:pointer
+    // We'll let the cursor:pointer check in the main function determine final interactivity
+    if (element.textContent?.trim() || className.length > 0 || 
+        Array.from(element.attributes).some(attr => attr.name.startsWith('data-') || attr.name.startsWith('aria-'))) {
+      return { isInteractive: true };
+    }
   }
 
-  // Default to potentially interactive for other elements
+  // For generic elements without obvious interactive indicators, check more carefully
+  if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName) && !className && !element.textContent?.trim()) {
+    return { isInteractive: false, reason: `${tagName} element without content or interactive indicators` };
+  }
+
+  // Default to potentially interactive for other elements (err on the side of inclusion)
   return { isInteractive: true };
 };
 

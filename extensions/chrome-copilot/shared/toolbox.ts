@@ -151,8 +151,11 @@ export const toolbox = createToolBox({
 
   fillTextInputs: {
     description:
-      "Fill multiple text inputs and textareas with values, with automatic delays for React state updates",
+      "Fill multiple text inputs and textareas with values, with automatic delays for React state updates. Requires a tabId to specify which browser tab to interact with.",
     params: z.object({
+      tabId: z
+        .number()
+        .describe("REQUIRED: The ID of the browser tab containing the input elements to fill."),
       inputs: z
         .array(
           z.object({
@@ -184,8 +187,11 @@ export const toolbox = createToolBox({
 
   selectOptions: {
     description:
-      "Select options from multiple dropdown/select elements, with automatic delays for React state updates",
+      "Select options from multiple dropdown/select elements, with automatic delays for React state updates. Requires a tabId to specify which browser tab to interact with.",
     params: z.object({
+      tabId: z
+        .number()
+        .describe("REQUIRED: The ID of the browser tab containing the select elements."),
       selects: z
         .array(
           z.object({
@@ -219,8 +225,11 @@ export const toolbox = createToolBox({
 
   toggleCheckboxes: {
     description:
-      "Check or uncheck multiple checkbox and radio button elements, with automatic delays for React state updates",
+      "Check or uncheck multiple checkbox and radio button elements, with automatic delays for React state updates. Requires a tabId to specify which browser tab to interact with.",
     params: z.object({
+      tabId: z
+        .number()
+        .describe("REQUIRED: The ID of the browser tab containing the checkbox elements."),
       checkboxes: z
         .array(
           z.object({
@@ -250,8 +259,11 @@ export const toolbox = createToolBox({
 
   submitForms: {
     description:
-      "Submit multiple forms using jQuery selectors with optional delays",
+      "Submit multiple forms using jQuery selectors with optional delays. Requires a tabId to specify which browser tab to interact with.",
     params: z.object({
+      tabId: z
+        .number()
+        .describe("REQUIRED: The ID of the browser tab containing the form elements."),
       forms: z
         .array(
           z.object({
@@ -284,8 +296,11 @@ export const toolbox = createToolBox({
   },
 
   waitForElements: {
-    description: "Wait for multiple elements to appear on the page",
+    description: "Wait for multiple elements to appear on the page. Requires a tabId to specify which browser tab to monitor.",
     params: z.object({
+      tabId: z
+        .number()
+        .describe("REQUIRED: The ID of the browser tab to wait for elements in."),
       elements: z
         .array(
           z.object({
@@ -329,8 +344,11 @@ export const toolbox = createToolBox({
 
   navigate: {
     description:
-      "Navigate the browser to a specific page using a url or a relative path.",
+      "Navigate an existing browser tab to a specific page using a url or a relative path. Requires a tabId to specify which tab to navigate. Alternative: use openTab tool instead to open a new tab directly to the destination URL.",
     params: z.object({
+      tabId: z
+        .number()
+        .describe("REQUIRED: The ID of the existing browser tab to navigate. If you need a new tab, use openTab tool instead."),
       action: z
         .enum(["back", "forward", "path", "url"])
         .describe(
