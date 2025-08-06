@@ -252,6 +252,25 @@ class PopupChatInterface {
       if (stored.userState) {
         this.state.userId = stored.userState.userId || this.state.userId;
         this.state.threadId = stored.userState.threadId || this.state.threadId;
+        
+        // Restore selected tabs if they exist, but verify tabs are still open
+        if (stored.userState.selectedTabs && Array.isArray(stored.userState.selectedTabs)) {
+          const validTabs: TabContext[] = [];
+          
+          for (const storedTab of stored.userState.selectedTabs) {
+            try {
+              // Verify the tab still exists
+              await chrome.tabs.get(storedTab.tabId);
+              validTabs.push(storedTab);
+              console.log('Restored tab still open:', storedTab.title);
+            } catch (error) {
+              console.log('Skipping closed tab:', storedTab.title, storedTab.tabId);
+            }
+          }
+          
+          this.state.selectedTabs = validTabs;
+          console.log(`Restored ${validTabs.length} of ${stored.userState.selectedTabs.length} selected tabs`);
+        }
       }
 
       // Save user state if it was just created
@@ -316,6 +335,7 @@ class PopupChatInterface {
         userState: {
           userId: this.state.userId,
           threadId: this.state.threadId,
+          selectedTabs: this.state.selectedTabs, // Persist selected tabs
         }
       });
     } catch (error) {
@@ -1093,12 +1113,23 @@ class PopupChatInterface {
   }
 
   private scrollToBottom(): void {
-    setTimeout(() => {
-      // Only auto-scroll if user is already at or near the bottom
-      if (this.shouldAutoScroll()) {
-        this.elements.messagesContainer.scrollTop = this.elements.messagesContainer.scrollHeight;
+    // Check if we should auto-scroll BEFORE any DOM changes affect measurements
+    const shouldScroll = this.shouldAutoScroll();
+    
+    // Use requestAnimationFrame for better timing with DOM updates
+    requestAnimationFrame(() => {
+      if (shouldScroll) {
+        const container = this.elements.messagesContainer;
+        container.scrollTop = container.scrollHeight;
+        
+        // Double-check and correct if needed (handles dynamic content)
+        requestAnimationFrame(() => {
+          if (shouldScroll) {
+            container.scrollTop = container.scrollHeight;
+          }
+        });
       }
-    }, 0);
+    });
   }
 
   private shouldAutoScroll(): boolean {
@@ -1107,16 +1138,31 @@ class PopupChatInterface {
     const scrollHeight = container.scrollHeight;
     const clientHeight = container.clientHeight;
     
-    // Consider "at bottom" if within 100px of the bottom
-    // This accounts for small variations and partial scrolling
+    // If there's no scroll (content fits in view), always auto-scroll
+    if (scrollHeight <= clientHeight) {
+      return true;
+    }
+    
+    // Consider "at bottom" if within a smaller, more precise threshold
+    // Use 30px or 5% of client height, whichever is smaller - more precise than 100px
+    const threshold = Math.min(30, Math.max(10, clientHeight * 0.05));
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    return distanceFromBottom <= 100;
+    
+    // Also check if we're very close to bottom (within 1px) to catch edge cases
+    return distanceFromBottom <= threshold || Math.abs(distanceFromBottom) <= 1;
   }
 
   private forceScrollToBottom(): void {
-    setTimeout(() => {
-      this.elements.messagesContainer.scrollTop = this.elements.messagesContainer.scrollHeight;
-    }, 0);
+    // Force scroll immediately, then double-check after next frame
+    requestAnimationFrame(() => {
+      const container = this.elements.messagesContainer;
+      container.scrollTop = container.scrollHeight;
+      
+      // Double-check to handle dynamic content that might still be rendering
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    });
   }
 
   // @ Mention functionality
@@ -1328,6 +1374,7 @@ class PopupChatInterface {
     // Add tab to selected tabs if not already there
     if (!this.state.selectedTabs.find(t => t.tabId === tab.tabId)) {
       this.state.selectedTabs.push(tab);
+      this.persistUserState(); // Persist the updated selected tabs
     }
 
     // Auto-resize textarea
@@ -1520,6 +1567,7 @@ class PopupChatInterface {
   private removeSelectedTab(index: number): void {
     this.state.selectedTabs.splice(index, 1);
     this.render(); // Re-render to update display
+    this.persistUserState(); // Persist the updated selected tabs
   }
 
   private toggleSelectedTabs(): void {
@@ -1592,6 +1640,7 @@ class PopupChatInterface {
 
       // Persist the updated state
       this.persistState();
+      this.persistUserState(); // Also persist selected tabs
 
       // Show the selected tabs area if it was hidden
       if (this.elements.selectedTabsContainer.style.display === 'none') {

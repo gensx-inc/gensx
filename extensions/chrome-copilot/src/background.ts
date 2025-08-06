@@ -455,7 +455,20 @@ async function processStreamingEvent(
     // Get tab ID from tool parameters (most tools require tabId)
     const toolTabId = event.params?.tabId;
     if (!toolTabId) {
-      throw new Error("Tool execution requires tabId parameter, but none provided");
+      // Return proper error result instead of throwing, so the model can retry
+      const errorResult = {
+        success: false,
+        error: `Tool '${event.toolName}' requires a tabId parameter, but none was provided. Please include the tab ID of the browser tab you want to interact with.`,
+        message: `Missing required tabId parameter for ${event.toolName} tool`
+      };
+      
+      const gensx = await getClient();
+      await gensx.resume({
+        executionId,
+        nodeId: event.nodeId,
+        data: errorResult
+      });
+      return;
     }
 
     try {
@@ -589,18 +602,29 @@ async function processStreamingEvent(
     });
   }
 
-  // Handle workflow errors
+  // Handle workflow errors (only if execution actually failed)
   if (event.type === "error") {
     console.error("Workflow error received:", event);
     
-    // Send error to popup
-    chrome.runtime.sendMessage({
-      type: "WORKFLOW_ERROR",
-      requestId,
-      error: event.error || event.message || "Workflow execution failed"
-    }).catch(() => {
-      // Ignore errors if popup is not open
-    });
+    // Only treat as execution failure if executionStatus is explicitly "failed"
+    // Stream errors can occur during execution without indicating complete failure
+    if (event.executionStatus === "failed") {
+      console.error("Execution failed, notifying popup");
+      
+      // Send error to popup
+      chrome.runtime.sendMessage({
+        type: "WORKFLOW_ERROR",
+        requestId,
+        error: event.error || event.message || "Workflow execution failed"
+      }).catch(() => {
+        // Ignore errors if popup is not open
+      });
+    } else {
+      console.warn("Stream error occurred but execution not failed, continuing...", {
+        error: event.error || event.message,
+        executionStatus: event.executionStatus
+      });
+    }
     return;
   }
 }
@@ -636,11 +660,29 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
     
     console.log("Successfully created new tab:", newTab.id, newTab.url);
     
-    // Wait a moment for the tab to start loading to get better title/domain info
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait for the tab to start loading to get better title/domain info
+    // Try multiple times with increasing delays to get good tab info
+    let updatedTab = newTab;
+    let attempts = 0;
+    const maxAttempts = 3;
     
-    // Get updated tab info
-    const updatedTab = await chrome.tabs.get(newTab.id);
+    while (attempts < maxAttempts) {
+      await new Promise(resolve => setTimeout(resolve, attempts === 0 ? 300 : 800));
+      
+      try {
+        updatedTab = await chrome.tabs.get(newTab.id);
+        // If we got a meaningful title, break early
+        if (updatedTab.title && updatedTab.title !== 'New Tab' && !updatedTab.title.startsWith('chrome://')) {
+          console.log(`Got good tab info on attempt ${attempts + 1}:`, updatedTab.title);
+          break;
+        }
+      } catch (tabError) {
+        console.warn('Error getting updated tab info:', tabError);
+        break;
+      }
+      attempts++;
+    }
+    
     const domain = updatedTab.url ? new URL(updatedTab.url).hostname : '';
     
     const result = {
@@ -654,24 +696,27 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
     
     console.log("openTab tool result:", result);
     
-    // Notify popup to add this tab to selected tabs
+    // Always notify popup to add this tab to selected tabs, even with basic info
+    const tabData = {
+      tabId: updatedTab.id,
+      url: updatedTab.url || url,
+      title: updatedTab.title || domain || 'New Tab',
+      domain: domain,
+      favicon: updatedTab.favIconUrl,
+      isActive: active
+    };
+    
+    console.log('Sending TAB_OPENED_ADD_TO_SELECTED notification:', tabData);
+    
     try {
-      chrome.runtime.sendMessage({
+      await chrome.runtime.sendMessage({
         type: 'TAB_OPENED_ADD_TO_SELECTED',
-        data: {
-          tabId: updatedTab.id,
-          url: updatedTab.url || url,
-          title: updatedTab.title || domain || 'New Tab',
-          domain: domain,
-          favicon: updatedTab.favIconUrl,
-          isActive: active
-        }
-      }).catch(() => {
-        // Ignore errors if popup is not open
-        console.log('Popup not open, tab will be available in @ mentions');
+        data: tabData
       });
+      console.log('Successfully notified popup about new tab');
     } catch (notificationError) {
-      console.warn('Failed to notify popup about new tab:', notificationError);
+      // This might happen if popup is closed, but that's okay
+      console.log('Popup not open, but tab will be available in @ mentions:', notificationError);
     }
     
     // Resume workflow with success result

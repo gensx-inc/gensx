@@ -108,7 +108,7 @@ export const copilotWorkflow = gensx.Workflow(
         const tabContextInfo = `## TAB CONTEXT
 You are working with ${conversationMode} mode:
 ${selectedTabs.length === 1 ?
-  `- **Single Tab Mode**: Focus on "${selectedTabs[0].title}" (${selectedTabs[0].domain})`
+  `- **Single Tab Mode**: Focus on "${selectedTabs[0].title}" (${selectedTabs[0].domain}) (tabId: ${selectedTabs[0].tabId})`
   : selectedTabs.length > 1 ?
   `- **Multi-Tab Mode**: Working with ${selectedTabs.length} tabs. These tabs have been selected by the user for this task:
 ${selectedTabs.map(tab => `  [tabId: ${tab.tabId}] "${tab.title}" (${tab.domain})`).join('\n')}`
@@ -202,6 +202,8 @@ ${initialTodoList.items.length > 0 ? `<todoList>
 ${initialTodoList.items.map((item, index) => `- ${index}. [${item.completed ? "x" : " "}] ${item.title}`).join("\n")}
 </todoList>` : ""}`,
         };
+
+        console.log("systemMessage", systemMessage);
 
         existingMessages.unshift(systemMessage);
       } else if (
