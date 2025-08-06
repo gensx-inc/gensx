@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Message } from "@/hooks/useChat";
 import { Wrench, ChevronRight, ChevronDown, Loader2 } from "lucide-react";
+import { ToolCallPart, ToolResultPart } from "ai";
 
 interface ToolMessageProps {
   message: Message;
@@ -16,14 +17,7 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
   }
 
   const toolCalls = message.content.filter(
-    (
-      item,
-    ): item is {
-      type: "tool-call";
-      toolCallId: string;
-      toolName: string;
-      args: unknown;
-    } => item.type === "tool-call",
+    (item): item is ToolCallPart => item.type === "tool-call",
   );
 
   if (toolCalls.length === 0) {
@@ -47,17 +41,10 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
   let toolResultContent: string | null = null;
   if (toolResult && Array.isArray(toolResult.content)) {
     const resultItem = toolResult.content.find(
-      (
-        item,
-      ): item is {
-        type: "tool-result";
-        toolCallId: string;
-        toolName: string;
-        result: unknown;
-      } =>
+      (item): item is ToolResultPart =>
         item.type === "tool-result" && item.toolCallId === toolCall.toolCallId,
     );
-    toolResultContent = JSON.stringify(resultItem?.result, null, 2) || null;
+    toolResultContent = JSON.stringify(resultItem?.output, null, 2) || null;
   }
 
   const isComplete = !!toolResult;
@@ -89,9 +76,9 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
               <div className="border-l-2 border-slate-300 ml-2 pl-3 text-sm text-slate-400 whitespace-pre-wrap break-words leading-relaxed space-y-3">
                 <JsonDisplay
                   data={
-                    typeof toolCall.args === "string"
-                      ? toolCall.args
-                      : JSON.stringify(toolCall.args)
+                    typeof toolCall.input === "string"
+                      ? toolCall.input
+                      : JSON.stringify(toolCall.input)
                   }
                   label="Request:"
                 />
