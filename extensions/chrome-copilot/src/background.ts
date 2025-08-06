@@ -588,6 +588,21 @@ async function processStreamingEvent(
       // Ignore errors if popup is not open
     });
   }
+
+  // Handle workflow errors
+  if (event.type === "error") {
+    console.error("Workflow error received:", event);
+    
+    // Send error to popup
+    chrome.runtime.sendMessage({
+      type: "WORKFLOW_ERROR",
+      requestId,
+      error: event.error || event.message || "Workflow execution failed"
+    }).catch(() => {
+      // Ignore errors if popup is not open
+    });
+    return;
+  }
 }
 
 // Browser action now opens popup by default (configured in manifest.json)

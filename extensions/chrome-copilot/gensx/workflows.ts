@@ -52,6 +52,11 @@ export const copilotWorkflow = gensx.Workflow(
     recursionDepth?: number;
   }): Promise<{ response: string; messages: CoreMessage[] }> => {
     try {
+      // For testing: Simulate workflow error if prompt contains "ERROR"
+      if (prompt.includes('ERROR')) {
+        throw new Error('Workflow execution failed: Simulated error for testing error handling and retry functionality');
+      }
+
       // Get blob instance for chat history storage
       const chatHistoryBlob = useBlob<ThreadData>(
         chatHistoryBlobPath(userId, threadId),
