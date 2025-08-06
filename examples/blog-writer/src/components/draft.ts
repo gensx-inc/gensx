@@ -1,7 +1,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import * as gensx from "@gensx/core";
 import { generateText } from "@gensx/vercel-ai";
-import { tool } from "ai";
+import { stepCountIs, tool } from "ai";
 import { z } from "zod";
 
 import { WebResearch } from "./research.js";
@@ -74,7 +74,7 @@ ${JSON.stringify(props.research, null, 2)}`
     const webResearchTool = tool({
       description:
         "Conduct additional web research on a specific topic to get current, detailed information for this section",
-      parameters: z.object({
+      inputSchema: z.object({
         topic: z.string().describe("The specific topic to research"),
       }),
       execute: async ({ topic }: { topic: string }) => {
@@ -90,7 +90,7 @@ ${JSON.stringify(props.research, null, 2)}`
 
     const sectionContent = await generateText({
       model: anthropic("claude-opus-4-20250514"),
-      maxSteps: 6,
+      stopWhen: stepCountIs(6),
       maxTokens: 3000,
       tools: {
         webResearch: webResearchTool,

@@ -11,7 +11,7 @@ const client = tavily({ apiKey });
 
 export const webSearchTool = tool({
   description: "Search the web for current information on any topic.",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().describe("The search query to find information about"),
   }),
   execute: async ({ query }: { query: string }) => {

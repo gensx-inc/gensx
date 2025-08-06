@@ -11,7 +11,7 @@ const client = tavily({ apiKey });
 
 export const scrapePageTool = tool({
   description: "Scrape a web page and return its content as markdown.",
-  parameters: z.object({
+  inputSchema: z.object({
     url: z.string().describe("The URL of the web page to scrape"),
   }),
   execute: async ({ url }: { url: string }) => {

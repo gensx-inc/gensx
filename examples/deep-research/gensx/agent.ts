@@ -7,6 +7,7 @@ import {
   TextPart,
   ToolCallPart,
   LanguageModelV1,
+  stepCountIs,
 } from "ai";
 
 import { type LanguageModelV1ProviderMetadata } from "@ai-sdk/provider";
@@ -196,7 +197,7 @@ export const Agent = gensx.Component(
 
     const result = streamText({
       messages: filteredMessages,
-      maxSteps,
+      stopWhen: stepCountIs(maxSteps),
       model: wrappedLanguageModel,
       tools,
       providerOptions,

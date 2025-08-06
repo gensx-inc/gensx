@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { OpenAIContext, OpenAIProvider } from "@gensx/openai";
-import { GenerateText } from "@gensx/vercel-ai-sdk";
+import { generateText as GenerateText } from "@gensx/vercel-ai";
 import OpenAI from "openai";
 
 // Define types for the API provider configuration

@@ -21,7 +21,7 @@ const schema = z.object({
 export const reverseGeocodeTool = tool({
   description:
     "Reverse geocode a location from a specific latitude and longitude to an map object. This can be used to get the address or city, country, etc from a set of coordinates.",
-  parameters: schema,
+  inputSchema: schema,
   execute: async (params: z.infer<typeof schema>) => {
     const { latitude, longitude } = params;
 

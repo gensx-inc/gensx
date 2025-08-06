@@ -31,7 +31,7 @@ const schema = z.object({
 export const geocodeTool = tool({
   description:
     "Geocode a location from an address or location query to get latitude and longitude coordinates. You can use either a general query (like 'Paris, France') or specific address components.",
-  parameters: schema,
+  inputSchema: schema,
   execute: async (params: z.infer<typeof schema>) => {
     const { query, street, city, county, state, country, postalcode } = params;
 

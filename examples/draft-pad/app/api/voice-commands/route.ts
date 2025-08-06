@@ -7,7 +7,7 @@ import { z } from "zod";
 const voiceCommandTools = {
   addModels: {
     description: "Add specific models to the current selection",
-    parameters: z.object({
+    inputSchema: z.object({
       models: z
         .array(z.string())
         .describe(
@@ -24,7 +24,7 @@ const voiceCommandTools = {
 
   removeModels: {
     description: "Remove specific models from the current selection",
-    parameters: z.object({
+    inputSchema: z.object({
       models: z
         .array(z.string())
         .describe(
@@ -42,7 +42,7 @@ const voiceCommandTools = {
   selectOnlyModels: {
     description:
       "Replace current selection with only the specified models (clear others and select these)",
-    parameters: z.object({
+    inputSchema: z.object({
       models: z
         .array(z.string())
         .describe(
@@ -60,7 +60,7 @@ const voiceCommandTools = {
   setToSingleModel: {
     description:
       "Set selection to exactly one specific model (clear all others and select only this one)",
-    parameters: z.object({
+    inputSchema: z.object({
       model: z
         .string()
         .describe(
@@ -77,18 +77,18 @@ const voiceCommandTools = {
 
   clearAllModels: {
     description: "Remove all models from selection",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   toggleMultiSelect: {
     description: "Toggle between single and multi-select mode",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   // Sorting actions
   sortGenerations: {
     description: "Sort the generated responses by a specific metric",
-    parameters: z.object({
+    inputSchema: z.object({
       field: z
         .enum(["words", "time", "cost"])
         .describe("Field to sort by: words, generation time, or cost"),
@@ -97,7 +97,7 @@ const voiceCommandTools = {
 
   sortModels: {
     description: "Sort the available models by a specific metric",
-    parameters: z.object({
+    inputSchema: z.object({
       field: z
         .enum(["cost", "context", "maxOutput"])
         .describe(
@@ -109,51 +109,51 @@ const voiceCommandTools = {
   // Diff control actions
   showDiff: {
     description: "Show differences between model responses",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   hideDiff: {
     description: "Hide differences between model responses",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   toggleDiff: {
     description: "Toggle showing/hiding differences",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   // Version navigation actions
   goToPreviousVersion: {
     description: "Navigate to the previous version",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   goToNextVersion: {
     description: "Navigate to the next version",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   goToVersion: {
     description: "Navigate to a specific version number",
-    parameters: z.object({
+    inputSchema: z.object({
       version: z.number().describe("Version number to navigate to"),
     }),
   },
 
   goToLatestVersion: {
     description: "Navigate to the latest/most recent version",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   // UI control actions
   openModelSelector: {
     description: "Open the model selector interface",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 
   closeModelSelector: {
     description: "Close the model selector interface",
-    parameters: z.object({}),
+    inputSchema: z.object({}),
   },
 };
 
