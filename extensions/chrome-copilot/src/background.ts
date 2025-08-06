@@ -446,7 +446,13 @@ async function processStreamingEvent(
 
     console.log("External tool call detected:", event);
 
-    // Get tab ID from tool parameters (all tools now require tabId)
+    // Handle special background-only tools
+    if (event.toolName === 'openTab') {
+      await handleOpenTabTool(executionId, event);
+      return;
+    }
+
+    // Get tab ID from tool parameters (most tools require tabId)
     const toolTabId = event.params?.tabId;
     if (!toolTabId) {
       throw new Error("Tool execution requires tabId parameter, but none provided");
@@ -588,6 +594,94 @@ async function processStreamingEvent(
 
 // Content script is automatically injected via manifest.json content_scripts
 // No need for manual injection since we have matches: ["<all_urls>"]
+
+// Handle openTab tool execution
+async function handleOpenTabTool(executionId: string, event: any): Promise<void> {
+  try {
+    console.log("Executing openTab tool:", event.params);
+    
+    const { url, active = true } = event.params;
+    
+    // Validate URL
+    try {
+      new URL(url);
+    } catch (urlError) {
+      throw new Error(`Invalid URL provided: ${url}`);
+    }
+    
+    // Create the new tab
+    const newTab = await chrome.tabs.create({
+      url: url,
+      active: active
+    });
+    
+    if (!newTab.id) {
+      throw new Error("Failed to create new tab - no tab ID returned");
+    }
+    
+    console.log("Successfully created new tab:", newTab.id, newTab.url);
+    
+    // Wait a moment for the tab to start loading to get better title/domain info
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Get updated tab info
+    const updatedTab = await chrome.tabs.get(newTab.id);
+    const domain = updatedTab.url ? new URL(updatedTab.url).hostname : '';
+    
+    const result = {
+      success: true,
+      tabId: updatedTab.id,
+      url: updatedTab.url || url,
+      title: updatedTab.title || domain || 'New Tab',
+      domain: domain,
+      message: `Successfully opened new tab: ${updatedTab.title || domain || url}`
+    };
+    
+    console.log("openTab tool result:", result);
+    
+    // Notify popup to add this tab to selected tabs
+    try {
+      chrome.runtime.sendMessage({
+        type: 'TAB_OPENED_ADD_TO_SELECTED',
+        data: {
+          tabId: updatedTab.id,
+          url: updatedTab.url || url,
+          title: updatedTab.title || domain || 'New Tab',
+          domain: domain,
+          favicon: updatedTab.favIconUrl,
+          isActive: active
+        }
+      }).catch(() => {
+        // Ignore errors if popup is not open
+        console.log('Popup not open, tab will be available in @ mentions');
+      });
+    } catch (notificationError) {
+      console.warn('Failed to notify popup about new tab:', notificationError);
+    }
+    
+    // Resume workflow with success result
+    const gensx = await getClient();
+    await gensx.resume({
+      executionId,
+      nodeId: event.nodeId,
+      data: result
+    });
+    
+  } catch (error) {
+    console.error("openTab tool execution failed:", error);
+    
+    // Resume workflow with error information
+    const gensx = await getClient();
+    await gensx.resume({
+      executionId,
+      nodeId: event.nodeId,
+      data: {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to open new tab"
+      }
+    });
+  }
+}
 
 // Geolocation handling functions
 async function hasOffscreenDocument() {

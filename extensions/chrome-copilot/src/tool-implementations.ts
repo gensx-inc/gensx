@@ -1159,6 +1159,15 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       };
     }
   },
+
+  openTab: async (params) => {
+    // This implementation should never be called as openTab is handled by the background script
+    // This is just a placeholder to satisfy TypeScript
+    return {
+      success: false,
+      error: 'openTab should be handled by background script, not content script'
+    };
+  },
 };
 
 // Helper to check if an element is likely to be interactive
