@@ -91,7 +91,7 @@ ${JSON.stringify(props.research, null, 2)}`
     const sectionContent = await generateText({
       model: anthropic("claude-opus-4-20250514"),
       stopWhen: stepCountIs(6),
-      maxTokens: 3000,
+      maxOutputTokens: 3000,
       tools: {
         webResearch: webResearchTool,
       },
