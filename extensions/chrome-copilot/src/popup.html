@@ -122,6 +122,23 @@
       color: #374151;
     }
 
+    .message.system {
+      justify-content: center;
+      margin: 16px 0;
+    }
+
+    .message.system .message-content {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      max-width: 90%;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
     /* Tool Calls */
     .tool-calls {
       margin-top: 8px;
@@ -360,6 +377,7 @@
       align-items: center;
       gap: 8px;
     }
+
 
     /* Todo List */
     .todo-list-container {
@@ -889,7 +907,7 @@
       <div class="selected-tabs-container" id="selectedTabsContainer" style="display: none;">
         <div class="selected-tabs-header" id="selectedTabsHeader">
           <span class="selected-tabs-label">Selected tabs:</span>
-          <button class="selected-tabs-toggle" id="selectedTabsToggle" title="Toggle tabs visibility">
+          <button type="button" class="selected-tabs-toggle" id="selectedTabsToggle" title="Toggle tabs visibility">
             <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -919,7 +937,7 @@
         <textarea
           class="input"
           id="messageInput"
-          placeholder="Ask me to interact with the current page..."
+          placeholder="Ask me anything..."
           rows="1"
           style="resize: none; height: 36px; min-height: 36px; max-height: 120px; overflow-y: hidden;"
         ></textarea>

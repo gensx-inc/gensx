@@ -40,6 +40,11 @@ interface PopupState {
   mentionState: MentionState;
   availableTabs: TabContext[];
   selectedTabs: TabContext[];
+  lastFailedMessage?: {
+    text: string;
+    selectedTabs: TabContext[];
+    requestId: string;
+  };
 }
 
 class PopupChatInterface {
@@ -94,6 +99,7 @@ class PopupChatInterface {
       },
       availableTabs: [],
       selectedTabs: [],
+      lastFailedMessage: undefined,
     };
 
     // Get DOM elements
@@ -129,6 +135,11 @@ class PopupChatInterface {
     this.renderTodoList(); // Initial render of todo list
     this.initializeMentions(); // Initialize @ mention functionality
     this.autoResizeTextarea(); // Set initial textarea height
+    
+    // Auto-focus the input field when popup opens
+    setTimeout(() => {
+      this.elements.messageInput.focus();
+    }, 100); // Small delay to ensure DOM is ready
   }
 
   private generateUserId(): string {
@@ -210,8 +221,11 @@ class PopupChatInterface {
     // Reset height to auto to get accurate scrollHeight
     textarea.style.height = 'auto';
 
+    // For empty textarea (new threads), use a multi-line height to make it more prominent
+    const effectiveMinHeight = textarea.value.trim() === '' ? 80 : minHeight;
+
     // Calculate desired height based on content
-    let newHeight = Math.max(minHeight, textarea.scrollHeight);
+    let newHeight = Math.max(effectiveMinHeight, textarea.scrollHeight);
 
     // Limit to maxHeight
     newHeight = Math.min(newHeight, maxHeight);
@@ -227,6 +241,7 @@ class PopupChatInterface {
     }
 
   }
+
 
   private async loadPersistedState(): Promise<void> {
     try {
@@ -276,13 +291,13 @@ class PopupChatInterface {
       if (response && response.success && response.messages) {
         // Only load non-system messages for UI display
         this.state.messages = response.messages.filter((msg: any) => msg.role !== 'system');
-        
+
         // Load todo list if present
         if (response.todoList && response.todoList.items) {
           this.state.todoList = response.todoList;
           console.log('Loaded todo list:', this.state.todoList.items.length, 'items');
         }
-        
+
         console.log('Loaded thread history:', this.state.messages.length, 'messages');
         this.render(); // Re-render to show loaded messages and todo list
       } else if (response && !response.success) {
@@ -479,7 +494,7 @@ class PopupChatInterface {
       }
 
       this.render();
-      this.scrollToBottom();
+      this.scrollToBottom(); // Smart scroll during streaming updates
     }
   }
 
@@ -498,7 +513,7 @@ class PopupChatInterface {
 
       this.state.messages = data.messages;
       this.render();
-      this.scrollToBottom();
+      this.scrollToBottom(); // Smart scroll during streaming updates
     }
   }
 
@@ -532,12 +547,20 @@ class PopupChatInterface {
       this.currentStreamingRequestId = null;
       this.currentStreamingMessageIndex = -1;
 
+      // Clear preserved message state
+      this.state.lastFailedMessage = undefined;
+
       // Clear execution state when workflow completes
       this.clearExecutionState();
 
       this.render();
-      this.scrollToBottom();
+      this.scrollToBottom(); // Smart scroll - only if user is at bottom
       this.persistState();
+      
+      // Auto-focus input field when streaming completes
+      setTimeout(() => {
+        this.elements.messageInput.focus();
+      }, 100);
     }
   }
 
@@ -545,10 +568,43 @@ class PopupChatInterface {
     const { requestId, error } = message;
 
     if (this.currentStreamingRequestId === requestId) {
-      this.state.messages.push({
-        role: 'assistant',
-        content: `Error: ${error}. Make sure the GenSX workflow server is running.`
-      });
+      // Find and restore the failed message
+      if (this.state.lastFailedMessage && this.state.lastFailedMessage.requestId === requestId) {
+        // Remove the user message from chat history (last message should be the user message)
+        if (this.state.messages.length > 0 && this.state.messages[this.state.messages.length - 1].role === 'user') {
+          this.state.messages.pop();
+        }
+
+        // Extract clean error message
+        const cleanError = this.extractCleanErrorMessage(error);
+        
+        // Add error message to chat history to inform the user
+        this.state.messages.push({
+          role: 'system',
+          content: `⚠️ ${cleanError}\n\nYour message has been restored to the input field below for editing.`
+        });
+
+        // Restore the message to input field and selected tabs
+        this.elements.messageInput.value = this.state.lastFailedMessage.text;
+        this.state.selectedTabs = [...this.state.lastFailedMessage.selectedTabs];
+        this.autoResizeTextarea();
+
+        // Clear failed message state
+        this.state.lastFailedMessage = undefined;
+
+        console.log(`Workflow error: ${error}. Message restored to input field for editing.`);
+      } else {
+        console.warn('No preserved message found for failed request:', requestId);
+        
+        // Extract clean error message
+        const cleanError = this.extractCleanErrorMessage(error);
+        
+        // Still show error message even if we couldn't restore the user message
+        this.state.messages.push({
+          role: 'system',
+          content: `⚠️ ${cleanError}`
+        });
+      }
 
       this.state.isStreaming = false;
       this.currentStreamingRequestId = null;
@@ -558,8 +614,13 @@ class PopupChatInterface {
       this.clearExecutionState();
 
       this.render();
-      this.scrollToBottom();
+      this.forceScrollToBottom(); // Force scroll to show error message
       this.persistState();
+      
+      // Auto-focus input field after error for immediate editing
+      setTimeout(() => {
+        this.elements.messageInput.focus();
+      }, 100);
     }
   }
 
@@ -568,7 +629,10 @@ class PopupChatInterface {
     if (!text || this.state.isStreaming) return;
 
     // Use currently selected tabs
-    const mentionedTabs = this.state.selectedTabs;
+    const mentionedTabs = [...this.state.selectedTabs]; // Copy to preserve state
+
+    // Clear any previous system error messages before sending new message
+    this.state.messages = this.state.messages.filter(msg => msg.role !== 'system');
 
     // Add user message
     this.state.messages.push({ role: 'user', content: text });
@@ -580,7 +644,7 @@ class PopupChatInterface {
     this.collapseSelectedTabs();
 
     this.render();
-    this.scrollToBottom();
+    this.forceScrollToBottom(); // Force scroll when user sends message
 
     try {
       const settings = await SettingsManager.get();
@@ -592,6 +656,13 @@ class PopupChatInterface {
 
       // Store request ID for potential reconnection
       this.state.activeRequestId = requestId;
+
+      // Preserve message details for retry in case of error
+      this.state.lastFailedMessage = {
+        text,
+        selectedTabs: mentionedTabs,
+        requestId
+      };
 
       const workflowMessage: WorkflowMessage = {
         type: 'WORKFLOW_REQUEST',
@@ -617,6 +688,7 @@ class PopupChatInterface {
       this.state.isStreaming = false;
       this.currentStreamingRequestId = null;
 
+      // Show generic error message in chat
       this.state.messages.push({
         role: 'assistant',
         content: `Error: ${(error as Error).message}. Make sure the GenSX workflow server is running.`
@@ -627,19 +699,65 @@ class PopupChatInterface {
     }
   }
 
+  private extractCleanErrorMessage(error: any): string {
+    if (!error) {
+      return 'Workflow execution failed';
+    }
+
+    let errorMessage = '';
+
+    // Handle different error formats
+    if (typeof error === 'string') {
+      // Check if it's a JSON-serialized error object
+      if (error.startsWith('{') && error.includes('"message"')) {
+        try {
+          const errorObj = JSON.parse(error);
+          errorMessage = errorObj.message || errorObj.error || error;
+        } catch (parseError) {
+          errorMessage = error;
+        }
+      } else {
+        errorMessage = error;
+      }
+    } else if (typeof error === 'object') {
+      // Handle error objects directly
+      errorMessage = error.message || error.error || String(error);
+    } else {
+      errorMessage = String(error);
+    }
+
+    // Remove common technical prefixes
+    let cleanError = errorMessage
+      .replace(/^Error:\s*/i, '')
+      .replace(/^Workflow execution failed:\s*/i, '')
+      .replace(/^GenSX error:\s*/i, '')
+      .replace(/^Runtime error:\s*/i, '')
+      .trim();
+
+    // If the error is empty after cleaning, use generic message
+    if (!cleanError) {
+      return 'Workflow execution failed';
+    }
+
+    // Capitalize first letter if it's not already
+    cleanError = cleanError.charAt(0).toUpperCase() + cleanError.slice(1);
+
+    return cleanError;
+  }
+
   private async clearThread(): Promise<void> {
     // Generate new thread ID
     this.state.threadId = this.generateThreadId();
     this.state.messages = [];
     this.state.todoList = { items: [] }; // Clear todo list state
     this.state.selectedTabs = []; // Clear selected tabs
+    this.state.lastFailedMessage = undefined; // Clear failed message
 
     // Clear any active execution
     this.clearExecutionState();
 
     // Reset input and auto-select active tab
     this.elements.messageInput.value = '';
-    this.elements.messageInput.placeholder = 'Ask me to interact with the current page...';
     this.autoResizeTextarea(); // Reset textarea height
     await this.autoSelectActiveTab();
 
@@ -648,6 +766,11 @@ class PopupChatInterface {
 
     // Re-render with empty messages and todo list
     this.render();
+    
+    // Auto-focus input field after clearing thread
+    setTimeout(() => {
+      this.elements.messageInput.focus();
+    }, 100);
 
     console.log('Started new thread:', this.state.threadId);
   }
@@ -686,14 +809,21 @@ class PopupChatInterface {
       this.elements.messagesContainer.appendChild(reconnectElement);
     }
 
+
     // Update todo list
     this.renderTodoList();
 
     // Update selected tabs display
     this.renderSelectedTabs();
 
+    // Auto-expand selected tabs section for new threads (when there are no messages and tabs are selected)
+    if (this.state.messages.length === 0 && this.state.selectedTabs.length > 0) {
+      // Ensure the selected tabs section is expanded for new threads
+      this.elements.selectedTabsContainer.classList.remove('collapsed');
+    }
+
     // Update header with selected tabs info
-    this.updateHeaderInfo();
+    this.updateHeaderAndPlaceholder();
 
     // Update UI state
     this.elements.messageInput.disabled = this.state.isStreaming;
@@ -722,6 +852,19 @@ class PopupChatInterface {
         ).join('') : '';
 
       contentDiv.textContent = content;
+    } else if (message.role === 'system') {
+      const content = typeof message.content === 'string' ? message.content : String(message.content);
+      
+      // Split by \n and render as separate lines
+      const lines = content.split('\n');
+      lines.forEach((line, lineIndex) => {
+        const lineDiv = document.createElement('div');
+        lineDiv.textContent = line;
+        if (lineIndex > 0) {
+          lineDiv.style.marginTop = '4px';
+        }
+        contentDiv.appendChild(lineDiv);
+      });
     } else if (message.role === 'assistant') {
       const { textContent, toolCalls } = this.parseAssistantMessage(message);
 
@@ -902,6 +1045,7 @@ class PopupChatInterface {
     return statusDiv;
   }
 
+
   private renderTodoList(): void {
     const { todoList } = this.state;
     const { todoListContainer, todoListItems, todoListCount } = this.elements;
@@ -949,6 +1093,27 @@ class PopupChatInterface {
   }
 
   private scrollToBottom(): void {
+    setTimeout(() => {
+      // Only auto-scroll if user is already at or near the bottom
+      if (this.shouldAutoScroll()) {
+        this.elements.messagesContainer.scrollTop = this.elements.messagesContainer.scrollHeight;
+      }
+    }, 0);
+  }
+
+  private shouldAutoScroll(): boolean {
+    const container = this.elements.messagesContainer;
+    const scrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight;
+    const clientHeight = container.clientHeight;
+    
+    // Consider "at bottom" if within 100px of the bottom
+    // This accounts for small variations and partial scrolling
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    return distanceFromBottom <= 100;
+  }
+
+  private forceScrollToBottom(): void {
     setTimeout(() => {
       this.elements.messagesContainer.scrollTop = this.elements.messagesContainer.scrollHeight;
     }, 0);
@@ -1010,8 +1175,8 @@ class PopupChatInterface {
 
         this.state.selectedTabs = [tabContext];
 
-        // Update placeholder to indicate tab context
-        this.elements.messageInput.placeholder = `Ask me about "${tabContext.title}"...`;
+        // Update UI after selecting tab
+        this.render();
       }
     } catch (error) {
       console.warn('Failed to auto-select active tab:', error);
@@ -1261,18 +1426,23 @@ class PopupChatInterface {
     return mentions;
   }
 
-  private updateHeaderInfo(): void {
+  private updateHeaderAndPlaceholder(): void {
     const selectedCount = this.state.selectedTabs.length;
 
     if (selectedCount === 0) {
+      // No tabs selected - general conversation mode
       this.elements.currentPageElement.textContent = 'General conversation';
+      this.elements.messageInput.placeholder = 'Ask me anything...';
     } else if (selectedCount === 1) {
+      // Single tab selected
       const tab = this.state.selectedTabs[0];
-      // Truncate title if too long for header
       const displayTitle = tab.title.length > 25 ? tab.title.substring(0, 22) + '...' : tab.title;
       this.elements.currentPageElement.textContent = displayTitle;
+      this.elements.messageInput.placeholder = `Ask me about "${tab.title}"`;
     } else {
+      // Multiple tabs selected
       this.elements.currentPageElement.textContent = `${selectedCount} tabs selected`;
+      this.elements.messageInput.placeholder = `Ask me about these ${selectedCount} tabs`;
     }
   }
 
@@ -1331,6 +1501,7 @@ class PopupChatInterface {
 
       // Remove button
       const removeBtn = document.createElement('button');
+      removeBtn.type = 'button'; // Prevent form submission
       removeBtn.className = 'selected-tab-remove';
       removeBtn.innerHTML = '×';
       removeBtn.title = 'Remove tab';
@@ -1395,11 +1566,11 @@ class PopupChatInterface {
 
   private handleTabOpenedAddToSelected(message: ExtensionMessage): void {
     if (!message.data) return;
-    
+
     const { tabId, url, title, domain, favicon, isActive } = message.data;
-    
+
     console.log('Adding newly opened tab to selected tabs:', { tabId, title, domain });
-    
+
     // Create TabContext for the new tab
     const newTabContext: TabContext = {
       tabId: tabId,
@@ -1409,19 +1580,19 @@ class PopupChatInterface {
       favicon: favicon,
       isActive: isActive || false
     };
-    
+
     // Add to selected tabs if not already there
     const existingTabIndex = this.state.selectedTabs.findIndex(tab => tab.tabId === tabId);
     if (existingTabIndex === -1) {
       this.state.selectedTabs.push(newTabContext);
       console.log('New tab added to selected tabs, total:', this.state.selectedTabs.length);
-      
+
       // Re-render to show the new tab
       this.render();
-      
+
       // Persist the updated state
       this.persistState();
-      
+
       // Show the selected tabs area if it was hidden
       if (this.elements.selectedTabsContainer.style.display === 'none') {
         this.elements.selectedTabsContainer.style.display = 'block';
