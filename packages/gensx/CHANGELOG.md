@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.5.0](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.4...gensx-v0.5.0) (2025-08-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* update @gensx/vercel-ai to use v5 ai sdk ([#914](https://github.com/gensx-inc/gensx/issues/914))
+
+### ✨ New Features
+
+* quickstart for templates and gensx example commands ([#910](https://github.com/gensx-inc/gensx/issues/910)) ([28e1fd5](https://github.com/gensx-inc/gensx/commit/28e1fd54fd157fc0e7e4d49253685b50ffe99e12))
+* update @gensx/vercel-ai to use v5 ai sdk ([#914](https://github.com/gensx-inc/gensx/issues/914)) ([78a1a3c](https://github.com/gensx-inc/gensx/commit/78a1a3c9e578e1e2aceec3ef92297cae1ef5c918))
+
+
+### 🐛 Bug Fixes
+
+* pin to correct ai sdk version in templates ([#911](https://github.com/gensx-inc/gensx/issues/911)) ([cd63fee](https://github.com/gensx-inc/gensx/commit/cd63fee256dde8a9b71c0a698a4b57398e155b1e))
+
 ## [0.4.4](https://github.com/gensx-inc/gensx/compare/gensx-v0.4.3...gensx-v0.4.4) (2025-07-29)
 
 

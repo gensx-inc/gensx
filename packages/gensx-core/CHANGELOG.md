@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.3...gensx-core-v0.5.4) (2025-08-06)
+
+
+### ✨ New Features
+
+* Support executionScope. ([#900](https://github.com/gensx-inc/gensx/issues/900)) ([8b9b0ce](https://github.com/gensx-inc/gensx/commit/8b9b0ce5dd666d691854ce63dcf4ca4673aa35a9))
+
 ## [0.5.3](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.2...gensx-core-v0.5.3) (2025-07-29)
 
 

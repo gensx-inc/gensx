@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.4](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.2.3...gensx-storage-v0.2.4) (2025-08-06)
+
+
+### 🐛 Bug Fixes
+
+* make @libsql/client optional in @gensx/storage ([#907](https://github.com/gensx-inc/gensx/issues/907)) ([9072353](https://github.com/gensx-inc/gensx/commit/9072353ecdf9efcafbb3cbf130bc1c08055d01db)), closes [#788](https://github.com/gensx-inc/gensx/issues/788)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.4
+
 ## [0.2.3](https://github.com/gensx-inc/gensx/compare/gensx-storage-v0.2.2...gensx-storage-v0.2.3) (2025-07-29)
 
 

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.4.0](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.3...gensx-vercel-ai-v0.4.0) (2025-08-06)
+
+
+### ⚠ BREAKING CHANGES
+
+* update @gensx/vercel-ai to use v5 ai sdk ([#914](https://github.com/gensx-inc/gensx/issues/914))
+
+### ✨ New Features
+
+* update @gensx/vercel-ai to use v5 ai sdk ([#914](https://github.com/gensx-inc/gensx/issues/914)) ([78a1a3c](https://github.com/gensx-inc/gensx/commit/78a1a3c9e578e1e2aceec3ef92297cae1ef5c918))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/core bumped to 0.5.4
+
 ## [0.3.3](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.2...gensx-vercel-ai-v0.3.3) (2025-07-29)
 
 
