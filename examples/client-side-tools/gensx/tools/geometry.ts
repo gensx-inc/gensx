@@ -33,7 +33,7 @@ const findBoundingBoxSchema = z.object({
 export const findBoundingBoxTool = tool({
   description:
     "Calculate a bounding box around a center point with a given radius in meters",
-  parameters: findBoundingBoxSchema,
+  inputSchema: findBoundingBoxSchema,
   execute: async (params: z.infer<typeof findBoundingBoxSchema>) => {
     const { center, radius } = params;
 
@@ -92,7 +92,7 @@ const createBoundingBoxSchema = z.object({
 
 export const createBoundingBoxTool = tool({
   description: "Create a bounding box around a list of points",
-  parameters: createBoundingBoxSchema,
+  inputSchema: createBoundingBoxSchema,
   execute: async (params: z.infer<typeof createBoundingBoxSchema>) => {
     const { points, padding } = params;
 
@@ -183,7 +183,7 @@ const findClosestSchema = z.object({
 export const findClosestTool = tool({
   description:
     "Find the closest point from a start location among a list of points",
-  parameters: findClosestSchema,
+  inputSchema: findClosestSchema,
   execute: async (params: z.infer<typeof findClosestSchema>) => {
     const { start, points } = params;
 
@@ -238,7 +238,7 @@ const calculateDistanceSchema = z.object({
 export const calculateDistanceTool = tool({
   description:
     "Calculate the distance between two points using the Haversine formula",
-  parameters: calculateDistanceSchema,
+  inputSchema: calculateDistanceSchema,
   execute: async (params: z.infer<typeof calculateDistanceSchema>) => {
     const { point1, point2 } = params;
 
@@ -290,7 +290,7 @@ const isPointInBoundingBoxSchema = z.object({
 
 export const isPointInBoundingBoxTool = tool({
   description: "Check if a point is within a bounding box",
-  parameters: isPointInBoundingBoxSchema,
+  inputSchema: isPointInBoundingBoxSchema,
   execute: async (params: z.infer<typeof isPointInBoundingBoxSchema>) => {
     const { point, boundingBox } = params;
 
@@ -345,7 +345,7 @@ const sortPointsByDistanceSchema = z.object({
 
 export const sortPointsByDistanceTool = tool({
   description: "Sort a list of points by their distance from a reference point",
-  parameters: sortPointsByDistanceSchema,
+  inputSchema: sortPointsByDistanceSchema,
   execute: async (params: z.infer<typeof sortPointsByDistanceSchema>) => {
     const { reference, points } = params;
 

@@ -6,12 +6,12 @@ import {
   wrapLanguageModel,
   TextPart,
   ToolCallPart,
-  LanguageModelV1,
   ToolResultPart,
   smoothStream,
+  stepCountIs,
 } from "ai";
 
-import { type LanguageModelV1ProviderMetadata } from "@ai-sdk/provider";
+import { LanguageModelV2, SharedV2ProviderMetadata } from "@ai-sdk/provider";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -21,9 +21,9 @@ interface ReasoningPart {
 interface AgentProps {
   messages: CoreMessage[];
   tools: ToolSet;
-  model: LanguageModelV1;
+  model: LanguageModelV2;
   maxSteps?: number;
-  providerOptions?: LanguageModelV1ProviderMetadata;
+  providerOptions?: SharedV2ProviderMetadata;
 }
 
 export const Agent = gensx.Component(
@@ -90,7 +90,7 @@ export const Agent = gensx.Component(
 
     const result = streamText({
       messages: filteredMessages,
-      maxSteps,
+      stopWhen: stepCountIs(maxSteps),
       model: wrappedLanguageModel,
       tools,
       providerOptions,

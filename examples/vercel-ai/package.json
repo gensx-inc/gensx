@@ -16,10 +16,10 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.3",
-    "@gensx/core": "workspace:*",
-    "@gensx/vercel-ai": "workspace:*",
-    "ai": "^5.0.4",
+    "@ai-sdk/openai": "^2.0.0",
+    "@gensx/core": "^0.5.4",
+    "@gensx/vercel-ai": "^0.4.0",
+    "ai": "^5.0.0",
     "zod": "3.25.56"
   },
   "devDependencies": {

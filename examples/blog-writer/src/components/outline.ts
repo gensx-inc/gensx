@@ -60,7 +60,7 @@ const WriteOutline = gensx.Component(
     const result = await generateObject({
       model: anthropic("claude-sonnet-4-20250514"),
       schema: OutlineSchema,
-      maxTokens: 4000,
+      maxOutputTokens: 4000,
       prompt: `You are an expert content writer, and you are assisting me in writing an article titled "${props.title}". Your task is to write an outline for the article, taking into account the research you have done.
 
 Here are some notes about how I would like this article to be written:

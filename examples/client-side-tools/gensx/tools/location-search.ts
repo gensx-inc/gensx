@@ -166,7 +166,7 @@ IMPORTANT: The 'query' parameter is REQUIRED - you must always provide a search 
 - Country-specific searches
 
 Use this tool when you need to find specific types of places, businesses, or amenities in a particular area or along a route between waypoints.`,
-  parameters: schema,
+  inputSchema: schema,
   execute: async (params: z.infer<typeof schema>) => {
     const {
       query,

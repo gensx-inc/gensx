@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { useSearch } from "@gensx/storage";
 import { embed, generateText } from "@gensx/vercel-ai";
-import { tool } from "ai";
+import { stepCountIs, tool } from "ai";
 import { z } from "zod";
 
 import { InitializeSearch } from "./initialize.js";
@@ -19,7 +19,7 @@ const embeddingModel = openai.embedding("text-embedding-3-small");
 const tools = {
   query: tool({
     description: "Query the search index",
-    parameters: querySchema,
+    inputSchema: querySchema,
     execute: async ({ query }: QueryParams) => {
       const search = await useSearch("baseball");
       const embedding = await embed({
@@ -52,7 +52,7 @@ const RagAgent = gensx.Component(
       ],
       model: openai("gpt-4.1-mini"),
       tools: tools,
-      maxSteps: 10,
+      stopWhen: stepCountIs(10),
     });
     return result.text;
   },

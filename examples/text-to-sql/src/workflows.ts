@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import * as gensx from "@gensx/core";
 import { useDatabase } from "@gensx/storage";
 import { generateText } from "@gensx/vercel-ai";
-import { tool } from "ai";
+import { stepCountIs, tool } from "ai";
 import { z } from "zod";
 
 // Define the query tool schema
@@ -15,7 +15,7 @@ type QueryParams = z.infer<typeof querySchema>;
 const tools = {
   execute_query: tool({
     description: "Execute a SQL query against the baseball database",
-    parameters: querySchema,
+    inputSchema: querySchema,
     execute: async ({ query }: QueryParams) => {
       const db = await useDatabase("baseball");
       const result = await db.execute(query);
@@ -58,7 +58,7 @@ const SQLCopilot = gensx.Component(
       ],
       model: openai("gpt-4o-mini"),
       tools: tools,
-      maxSteps: 10,
+      stopWhen: stepCountIs(10),
     });
     return result.text;
   },

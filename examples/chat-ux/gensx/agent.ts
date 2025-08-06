@@ -1,3 +1,4 @@
+import { SharedV2ProviderMetadata } from "@ai-sdk/provider";
 import * as gensx from "@gensx/core";
 import { streamText } from "@gensx/vercel-ai";
 import {
@@ -6,10 +7,9 @@ import {
   wrapLanguageModel,
   TextPart,
   ToolCallPart,
-  LanguageModelV1,
+  LanguageModel,
+  stepCountIs,
 } from "ai";
-
-import { type LanguageModelV1ProviderMetadata } from "@ai-sdk/provider";
 
 interface ReasoningPart {
   type: "reasoning";
@@ -19,9 +19,9 @@ interface ReasoningPart {
 interface AgentProps {
   messages: CoreMessage[];
   tools: ToolSet;
-  model: LanguageModelV1;
+  model: LanguageModel;
   maxSteps?: number;
-  providerOptions?: LanguageModelV1ProviderMetadata;
+  providerOptions?: SharedV2ProviderMetadata;
 }
 
 export const Agent = gensx.Component(
@@ -196,7 +196,7 @@ export const Agent = gensx.Component(
 
     const result = streamText({
       messages: filteredMessages,
-      maxSteps,
+      stopWhen: stepCountIs(maxSteps),
       model: wrappedLanguageModel,
       tools,
       providerOptions,
