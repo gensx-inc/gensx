@@ -521,6 +521,25 @@ export class GenSX {
       throw new Error("org is required to create scoped tokens");
     }
 
+    if (this.isLocal) {
+      console.warn("Scoped tokens are not supported in local mode");
+      return {
+        id: "local-scoped-token",
+        token: "local-scoped-token",
+        name: options.name,
+        executionScope: options.executionScope,
+        projectId: "local-project-id",
+        projectName: "local-project-name",
+        workflowName: "local-workflow-name",
+        environmentId: "local-environment-id",
+        environmentName: "local-environment-name",
+        permissions: options.permissions ?? ["start", "run", "progress", "output", "status"],
+        expiresAt: new Date(options.expiresAt),
+        createdAt: new Date(),
+        requiredMatchFields: options.requiredMatchFields ?? ["*"],
+      };
+    }
+
     const url = `${this.baseUrl}/org/${org}/scoped-tokens`;
 
     const headers: Record<string, string> = {
