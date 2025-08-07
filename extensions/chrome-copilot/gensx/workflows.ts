@@ -10,7 +10,7 @@ import { analyzeScreenshotTool, queryPageTool } from "./tools/query";
 import { webSearchTool } from "./tools/search";
 import { createTodoList } from "./tools/todolist";
 import { asToolSet } from "@gensx/vercel-ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { createOpenAI } from "@ai-sdk/openai";
 
 const toolsToRemove: (keyof typeof toolbox)[] = ["fetchPageText", "captureElementScreenshot"];
 
@@ -297,13 +297,13 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         },
       };
 
-      const model = anthropic("claude-3-7-sonnet-latest");
+      // const model = anthropic("claude-3-7-sonnet-latest");
 
-      // const groqClient = createOpenAI({
-      //   apiKey: process.env.GROQ_API_KEY!,
-      //   baseURL: "https://api.groq.com/openai/v1",
-      // });
-      // const model = groqClient("moonshotai/kimi-k2-instruct");
+      const groqClient = createOpenAI({
+        apiKey: process.env.GROQ_API_KEY!,
+        baseURL: "https://api.groq.com/openai/v1",
+      });
+      const model = groqClient("moonshotai/kimi-k2-instruct");
       const result = await Agent({
         messages,
         tools,
