@@ -234,6 +234,46 @@ export class GenSX {
     return response;
   }
 
+  async run<T>(workflowName: string, options: StartOptions = {}) {
+
+    const { inputs = {} } = options;
+
+    // Use provided values or fall back to client defaults
+    const org = options.org ?? this.org;
+    const project = options.project ?? this.project;
+    const environment = options.environment ?? this.environment;
+
+    const url = this.buildWorkflowUrl(workflowName, org, project, environment);
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    // Only include Authorization header if apiKey is defined
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(inputs),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to start workflow: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data = (await response.json()) as {
+      executionId: string;
+      output: T;
+    }
+
+    return data;
+  }
+
   /**
    * Start a workflow asynchronously
    */
@@ -284,6 +324,37 @@ export class GenSX {
       executionStatus: data.executionStatus ?? data.status ?? "started",
       data,
     };
+  }
+
+  async getOutput(options: { executionId: string }): Promise<{ output: string }> {
+    const { executionId } = options;
+
+    const url = this.isLocal
+      ? `${this.baseUrl}/workflowExecutions/${executionId}/output`
+      : `${this.baseUrl}/org/${this.org}/workflowExecutions/${executionId}/output`;
+
+    const headers: Record<string, string> = {};
+
+    // Only include Authorization header if apiKey is defined
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+
+    const response = await fetch(url, {
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to get progress: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    if (!response.body) {
+      throw new Error("Response body is null");
+    }
+
+    return (await response.json()) as { output: string };
   }
 
   /**
