@@ -13,6 +13,17 @@ import { type CoreMessage } from "ai";
 
 // Legacy: currentWorkflowTabId removed - now using explicit tab selection
 
+// Track tabs opened by the extension (for security)
+const extensionOpenedTabs = new Set<number>();
+
+// Clean up closed tabs from tracking
+chrome.tabs.onRemoved.addListener((tabId) => {
+  const wasTracked = extensionOpenedTabs.delete(tabId);
+  if (wasTracked) {
+    console.log('Extension-opened tab closed:', tabId, `(${extensionOpenedTabs.size} tracked tabs remaining)`);
+  }
+});
+
 // Offscreen document management for geolocation
 const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
 let creating: Promise<void> | null = null; // A global promise to avoid concurrency issues
@@ -453,6 +464,11 @@ async function processStreamingEvent(
       return;
     }
 
+    if (event.toolName === 'closeTab') {
+      await handleCloseTabTool(executionId, event);
+      return;
+    }
+
 
     // Get tab ID from tool parameters (most tools require tabId)
     const toolTabId = event.params?.tabId;
@@ -662,6 +678,10 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
     
     console.log("Successfully created new tab:", newTab.id, newTab.url);
     
+    // Track this tab as opened by the extension
+    extensionOpenedTabs.add(newTab.id);
+    console.log('Added tab to extension tracking:', newTab.id, `(${extensionOpenedTabs.size} tracked tabs)`);
+    
     // Wait for the tab to start loading to get better title/domain info
     // Try multiple times with increasing delays to get good tab info
     let updatedTab = newTab;
@@ -740,6 +760,112 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
       data: {
         success: false,
         error: error instanceof Error ? error.message : "Failed to open new tab"
+      }
+    });
+  }
+}
+
+// Handle closeTab tool execution
+async function handleCloseTabTool(executionId: string, event: any): Promise<void> {
+  try {
+    console.log("Executing closeTab tool:", event.params);
+    
+    const { tabIds } = event.params;
+    
+    // Validate tabIds
+    if (!Array.isArray(tabIds) || tabIds.length === 0) {
+      throw new Error("Invalid tabIds provided - must be a non-empty array of numbers");
+    }
+    
+    // Validate each tabId
+    for (const tabId of tabIds) {
+      if (!tabId || typeof tabId !== 'number') {
+        throw new Error(`Invalid tabId provided: ${tabId} - must be a number`);
+      }
+    }
+    
+    console.log(`Processing ${tabIds.length} tab(s) for closure:`, tabIds);
+    
+    const closedTabs: number[] = [];
+    const failedTabs: Array<{ tabId: number; error: string }> = [];
+    
+    // Process each tab
+    for (const tabId of tabIds) {
+      try {
+        // Security check: Only allow closing tabs opened by the extension
+        if (!extensionOpenedTabs.has(tabId)) {
+          failedTabs.push({
+            tabId,
+            error: `Tab was not opened by this extension. For security, only extension-created tabs can be closed.`
+          });
+          continue;
+        }
+    
+        // Verify the tab still exists
+        let tab;
+        try {
+          tab = await chrome.tabs.get(tabId);
+          console.log("Closing tab:", tabId, tab.url);
+        } catch (tabError) {
+          console.warn("Tab no longer exists:", tabId, tabError);
+          
+          // Remove from tracking and count as success (tab is effectively closed)
+          extensionOpenedTabs.delete(tabId);
+          closedTabs.push(tabId);
+          continue;
+        }
+        
+        // Close the tab
+        await chrome.tabs.remove(tabId);
+        
+        // Remove from tracking (the onRemoved listener will also handle this)
+        extensionOpenedTabs.delete(tabId);
+        closedTabs.push(tabId);
+        
+        console.log(`Successfully closed tab ${tabId}:`, tab.title || tab.url);
+        
+      } catch (tabError) {
+        console.error(`Failed to close tab ${tabId}:`, tabError);
+        failedTabs.push({
+          tabId,
+          error: tabError instanceof Error ? tabError.message : "Unknown error occurred"
+        });
+      }
+    }
+    
+    // Prepare result
+    const allSuccessful = failedTabs.length === 0;
+    const result = {
+      success: allSuccessful,
+      closedTabs: closedTabs.length > 0 ? closedTabs : undefined,
+      failedTabs: failedTabs.length > 0 ? failedTabs : undefined,
+      message: allSuccessful 
+        ? `Successfully closed ${closedTabs.length} tab(s)`
+        : `Closed ${closedTabs.length} tab(s), failed to close ${failedTabs.length} tab(s)`,
+      error: allSuccessful ? undefined : `Some tabs failed to close. Check failedTabs for details.`
+    };
+    
+    console.log("closeTab tool result:", result);
+    
+    // Resume workflow with result
+    const gensx = await getClient();
+    await gensx.resume({
+      executionId,
+      nodeId: event.nodeId,
+      data: result
+    });
+    
+  } catch (error) {
+    console.error("closeTab tool execution failed:", error);
+    
+    // Resume workflow with error information
+    const gensx = await getClient();
+    await gensx.resume({
+      executionId,
+      nodeId: event.nodeId,
+      data: {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to close tabs"
       }
     });
   }

@@ -1472,6 +1472,15 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       error: 'openTab should be handled by background script, not content script'
     };
   },
+
+  closeTab: async (params) => {
+    // This implementation should never be called as closeTab is handled by the background script
+    // This is just a placeholder to satisfy TypeScript
+    return {
+      success: false,
+      error: 'closeTab should be handled by background script, not content script'
+    };
+  },
 };
 
 // Helper functions for fetchPageText optimization

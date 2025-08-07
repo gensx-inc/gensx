@@ -465,6 +465,26 @@ export const toolbox = createToolBox({
     }),
   },
 
+  closeTab: {
+    description: "Close one or more browser tabs that were previously opened by the openTab tool. For security, this tool can ONLY close tabs that were created by the extension itself, not user's existing tabs.",
+    params: z.object({
+      tabIds: z
+        .array(z.number())
+        .min(1)
+        .describe("Array of tab IDs to close. Pass a single-element array [tabId] to close one tab, or multiple IDs [tabId1, tabId2, ...] to close multiple tabs. All tabs must have been opened by the openTab tool."),
+    }),
+    result: z.object({
+      success: z.boolean().describe("True if all tabs were successfully closed"),
+      closedTabs: z.array(z.number()).optional().describe("Array of tab IDs that were successfully closed"),
+      failedTabs: z.array(z.object({
+        tabId: z.number(),
+        error: z.string()
+      })).optional().describe("Array of tabs that failed to close with error messages"),
+      message: z.string().optional().describe("Summary message"),
+      error: z.string().optional().describe("Error message if all tabs failed to close"),
+    }),
+  },
+
   captureElementScreenshot: {
     description: "Take a screenshot of a specific element on the page. Returns the image for visual analysis. Useful for understanding element appearance, layout, styling, or troubleshooting visual issues.",
     params: z.object({
