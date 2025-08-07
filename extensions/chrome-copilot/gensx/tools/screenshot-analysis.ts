@@ -1,9 +1,9 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
 import * as gensx from "@gensx/core";
 import { generateText } from "@gensx/vercel-ai";
 import { toolbox } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
+import { openai } from "@ai-sdk/openai";
 
 const analyzeScreenshot = gensx.Component("analyzeScreenshot", async ({
   tabId,
@@ -14,11 +14,8 @@ const analyzeScreenshot = gensx.Component("analyzeScreenshot", async ({
   selector: string;
   question: string;
 }) => {
-  const anthropic = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
-  });
-
-  const model = anthropic("claude-3-5-sonnet-20241022");
+  // const model = anthropic("claude-3-5-sonnet-20241022");
+  const model = openai("gpt-5-nano-2025-08-07");
 
   try {
     // Capture screenshot using the external tool (same pattern as queryPage uses fetchPageText)
@@ -39,6 +36,7 @@ const analyzeScreenshot = gensx.Component("analyzeScreenshot", async ({
     // Analyze the screenshot with the multi-modal model
     const result = await generateText({
       model,
+      temperature: 1,
       messages: [
         {
           role: 'user',

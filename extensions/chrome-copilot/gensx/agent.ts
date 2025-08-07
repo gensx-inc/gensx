@@ -100,12 +100,12 @@ export const Agent = gensx.Component(
       return message;
     });
 
-    // keep the message list under 131,000 tokens
-    if (JSON.stringify(filteredMessages).length > 131000 * 4) {
+    // keep the message list under 400,000 tokens
+    if (JSON.stringify(filteredMessages).length > 400_000 * 4) {
       gensx.publishObject("longMessages", true);
       // Remove messages from the middle (keep system message and recent messages)
       while (
-        JSON.stringify(filteredMessages).length > 131000 * 4 &&
+        JSON.stringify(filteredMessages).length > 400_000 * 4 &&
         filteredMessages.length > 2
       ) {
         // Remove the second message (first non-system message) to preserve system message
@@ -129,7 +129,7 @@ export const Agent = gensx.Component(
       tools,
       providerOptions,
       toolCallStreaming: true,
-      temperature: 0,
+      temperature: 1,
       experimental_transform: smoothStream(),
       onChunk: ({ chunk: streamChunk }) => {
         const chunk = streamChunk as typeof streamChunk | ToolResultPart;

@@ -1262,7 +1262,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       // Use html2canvas to capture the element
       console.log('Using html2canvas to capture element');
       
-      const canvas = await html2canvas(element, {
+      let canvas;
+      try {
+        canvas = await html2canvas(element, {
         backgroundColor: null,
         scale: 1,
         logging: false,
@@ -1270,7 +1272,43 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         allowTaint: false,
         width: element.offsetWidth,
         height: element.offsetHeight,
+        ignoreElements: (element) => {
+          // Skip elements that might have problematic CSS or aren't needed
+          return element.tagName === 'SCRIPT' || element.tagName === 'NOSCRIPT';
+        },
+        onclone: (clonedDoc, element) => {
+          // Remove or replace problematic CSS color functions
+          const stylesheets = clonedDoc.querySelectorAll('style');
+          stylesheets.forEach(sheet => {
+            if (sheet.textContent) {
+              // Replace problematic color functions with fallback colors
+              let content = sheet.textContent;
+              content = content.replace(/oklab\([^)]+\)/g, 'rgb(128, 128, 128)');
+              content = content.replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)');
+              content = content.replace(/lch\([^)]+\)/g, 'rgb(128, 128, 128)');
+              content = content.replace(/lab\([^)]+\)/g, 'rgb(128, 128, 128)');
+              sheet.textContent = content;
+            }
+          });
+        }
       });
+      } catch (html2canvasError) {
+        console.warn('html2canvas failed with advanced options, trying fallback:', html2canvasError);
+        
+        // Fallback: Try with minimal options
+        try {
+          canvas = await html2canvas(element, {
+            backgroundColor: '#ffffff',
+            scale: 1,
+            logging: false,
+            useCORS: false,
+            allowTaint: true,
+          });
+        } catch (fallbackError) {
+          console.error('Both html2canvas attempts failed:', fallbackError);
+          throw new Error(`Screenshot capture failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+        }
+      }
 
       // Convert to data URL
       const dataUrl = canvas.toDataURL('image/png', 0.8);

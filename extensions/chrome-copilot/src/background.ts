@@ -385,6 +385,11 @@ async function processStreamingEvent(
       return;
     }
 
+    if (event.toolName === 'navigate') {
+      await handleNavigateTool(executionId, event);
+      return;
+    }
+
 
     // Get tab ID from tool parameters (most tools require tabId)
     const toolTabId = event.params?.tabId;
@@ -782,6 +787,183 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
       data: {
         success: false,
         error: error instanceof Error ? error.message : "Failed to close tabs"
+      }
+    });
+  }
+}
+
+// Handle navigate tool execution
+async function handleNavigateTool(executionId: string, event: any): Promise<void> {
+  try {
+    console.log("Executing navigate tool:", event.params);
+    
+    const { tabId, action, path, url, waitForLoad = true, timeout = 5000 } = event.params;
+    
+    // Validate required parameters
+    if (!tabId || typeof tabId !== 'number') {
+      throw new Error("Invalid tabId provided - must be a number");
+    }
+    
+    if (!action) {
+      throw new Error("Navigation action is required");
+    }
+    
+    // Verify the tab exists
+    let tab;
+    try {
+      tab = await chrome.tabs.get(tabId);
+      console.log("Navigating tab:", tabId, tab.url);
+    } catch (tabError) {
+      console.warn("Tab no longer exists:", tabId, tabError);
+      
+      const result = {
+        success: false,
+        error: `Tab ${tabId} is no longer available (may have been closed)`
+      };
+      
+      const gensx = await getClient();
+      await gensx.resume({
+        executionId,
+        nodeId: event.nodeId,
+        data: result
+      });
+      return;
+    }
+    
+    const previousUrl = tab.url || '';
+    const startTime = Date.now();
+    
+    // Handle navigation based on action type
+    if (action === 'back') {
+      // Use content script for back/forward navigation (doesn't reload page)
+      try {
+        const toolResponse = await chrome.tabs.sendMessage(tabId, {
+          type: "EXTERNAL_TOOL_CALL",
+          data: {
+            toolName: 'navigate',
+            params: event.params,
+          }
+        });
+        
+        const result = {
+          success: true,
+          action,
+          currentUrl: toolResponse.data?.currentUrl || previousUrl,
+          previousUrl,
+          loadTime: Date.now() - startTime,
+          message: `Successfully executed ${action} navigation`
+        };
+        
+        const gensx = await getClient();
+        await gensx.resume({
+          executionId,
+          nodeId: event.nodeId,
+          data: result
+        });
+        
+      } catch (error) {
+        console.error("Back navigation failed:", error);
+        throw error;
+      }
+      
+    } else if (action === 'forward') {
+      // Use content script for back/forward navigation (doesn't reload page)
+      try {
+        const toolResponse = await chrome.tabs.sendMessage(tabId, {
+          type: "EXTERNAL_TOOL_CALL",
+          data: {
+            toolName: 'navigate',
+            params: event.params,
+          }
+        });
+        
+        const result = {
+          success: true,
+          action,
+          currentUrl: toolResponse.data?.currentUrl || previousUrl,
+          previousUrl,
+          loadTime: Date.now() - startTime,
+          message: `Successfully executed ${action} navigation`
+        };
+        
+        const gensx = await getClient();
+        await gensx.resume({
+          executionId,
+          nodeId: event.nodeId,
+          data: result
+        });
+        
+      } catch (error) {
+        console.error("Forward navigation failed:", error);
+        throw error;
+      }
+      
+    } else if (action === 'path' || action === 'url') {
+      // Handle path/url navigation directly in background script (causes page reload)
+      let targetUrl;
+      
+      if (action === 'path') {
+        if (!path) {
+          throw new Error("Path is required for path navigation");
+        }
+        
+        // Construct URL from current origin + path
+        const currentOrigin = new URL(previousUrl).origin;
+        targetUrl = currentOrigin + path;
+      } else {
+        if (!url) {
+          throw new Error("URL is required for url navigation");
+        }
+        targetUrl = url;
+      }
+      
+      // Validate the target URL
+      try {
+        new URL(targetUrl);
+      } catch (urlError) {
+        throw new Error(`Invalid target URL: ${targetUrl}`);
+      }
+      
+      console.log(`Navigating tab ${tabId} from ${previousUrl} to ${targetUrl}`);
+      
+      // Update the tab URL directly - this will cause navigation
+      await chrome.tabs.update(tabId, { url: targetUrl });
+      
+      // Return success immediately for page-reloading navigation
+      // We can't wait for the content script response because it gets destroyed during navigation
+      const result = {
+        success: true,
+        action,
+        currentUrl: targetUrl,
+        previousUrl,
+        loadTime: Date.now() - startTime,
+        message: `Successfully initiated ${action} navigation to ${targetUrl}`
+      };
+      
+      console.log("Navigate tool result:", result);
+      
+      const gensx = await getClient();
+      await gensx.resume({
+        executionId,
+        nodeId: event.nodeId,
+        data: result
+      });
+      
+    } else {
+      throw new Error(`Unsupported navigation action: ${action}`);
+    }
+    
+  } catch (error) {
+    console.error("Navigate tool execution failed:", error);
+    
+    // Resume workflow with error information
+    const gensx = await getClient();
+    await gensx.resume({
+      executionId,
+      nodeId: event.nodeId,
+      data: {
+        success: false,
+        error: error instanceof Error ? error.message : "Navigation failed"
       }
     });
   }

@@ -1,10 +1,10 @@
-import { createAnthropic } from "@ai-sdk/anthropic";
 import * as gensx from "@gensx/core";
 import { asToolSet, generateText } from "@gensx/vercel-ai";
 import { getReadonlyTools } from "../../shared/toolbox";
 import { toolbox } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
+import { openai } from "@ai-sdk/openai";
 
 // Helper function to chunk content intelligently
 const chunkContent = (content: string, maxChunkSize: number): string[] => {
@@ -55,134 +55,9 @@ const getToolsWithAnalysisCapabilities = () => {
   return readonlyTools; // Keep it simple - use screenshot analysis directly in prompt
 };
 
-// Enhanced query component that can include screenshots in analysis
-const queryPageWithScreenshots = async (query: string, tabId: number, includeScreenshots = false) => {
-  const anthropic = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
-  });
-
-  const model = anthropic("claude-3-5-sonnet-20241022");
-
-  // First, fetch the page content directly using executeExternalTool
-  const pageContent = await gensx.executeExternalTool(toolbox, "fetchPageText", { tabId });
-
-  if (!pageContent.success || !pageContent.content) {
-    return `Error fetching page content: ${pageContent.error || "Unknown error"}`;
-  }
-
-  // Find relevant interactive elements first
-  const interactiveElements = await gensx.executeExternalTool(toolbox, "findInteractiveElements", {
-    tabId,
-    textToFilter: query.split(' ').filter(word => word.length > 3) // Use query words as filter
-  });
-
-  let screenshots: Array<{ selector: string; image: string; description: string }> = [];
-
-  // If screenshots are requested and we have relevant elements, capture them
-  if (includeScreenshots && interactiveElements.success && interactiveElements.elements && interactiveElements.elements.length > 0) {
-    console.log('Capturing screenshots of relevant elements...');
-    const topElements = interactiveElements.elements.slice(0, 3); // Limit to top 3 elements
-
-    for (const element of topElements) {
-      try {
-        const screenshot = await gensx.executeExternalTool(toolbox, "captureElementScreenshot", {
-          tabId,
-          selector: element.selector,
-          scrollIntoView: true
-        });
-
-        if (screenshot.success && screenshot.image) {
-          screenshots.push({
-            selector: element.selector,
-            image: screenshot.image,
-            description: `${element.type} element: "${element.text}" (${element.role || 'no role'})`
-          });
-        }
-      } catch (error) {
-        console.warn('Failed to capture screenshot for element:', element.selector, error);
-      }
-    }
-  }
-
-  // Prepare messages with text and images
-  const messages = [
-    {
-      role: 'user' as const,
-      content: [
-        {
-          type: 'text' as const,
-          text: `You are analyzing a web page to answer a user query.
-
-TARGET TAB ID: ${tabId}
-USER QUERY: ${query}
-
-INTERACTIVE ELEMENTS FOUND:
-${interactiveElements.success ? JSON.stringify(interactiveElements.elements?.slice(0, 10) || [], null, 2) : 'No interactive elements found'}
-
-PAGE CONTENT:
-${pageContent.content.length > 50000 ? pageContent.content.substring(0, 50000) + '...[truncated]' : pageContent.content}
-
-${screenshots.length > 0 ? `\nSCREENSHOTS OF RELEVANT ELEMENTS:
-${screenshots.map((s, i) => `Screenshot ${i + 1}: ${s.description} (selector: ${s.selector})`).join('\n')}` : ''}
-
-INSTRUCTIONS:
-1. Answer the user query directly based on the page content and any screenshots provided
-2. Reference specific elements using their CSS selectors from the interactive elements list
-3. If screenshots are provided, describe what you observe in them
-4. Provide actionable next steps
-
-RESPONSE FORMAT:
-You MUST return a structured JSON response in this exact format:
-
-{
-  "answer": "[Direct answer to the user query]",
-  "relevantElements": [
-    {
-      "description": "[What this element does]",
-      "selector": "[CSS selector from interactive elements list]",
-      "action": "[What action this enables - click, fill, select, etc.]",
-      "role": "[ARIA role if available]",
-      "ariaLabel": "[aria-label if available]",
-      "text": "[visible text content]",
-      "purpose": "[Why this element is relevant to the query]"
-    }
-  ],
-  "visualObservations": [
-    "[What you observed in the screenshots, if any were provided]"
-  ],
-  "context": "[Additional information and recommended approach]",
-  "suggestedWorkflow": [
-    "[Step 1: What to do first]",
-    "[Step 2: What to do next]"
-  ]
-}
-
-Focus on being precise and actionable. Only include elements that are relevant to answering the query.`
-        },
-        // Add screenshot images to the content
-        ...screenshots.map(screenshot => ({
-          type: 'image' as const,
-          image: screenshot.image
-        }))
-      ]
-    }
-  ];
-
-  const result = await generateText({
-    model,
-    messages,
-    maxTokens: 4000,
-  });
-
-  return result.text;
-};
-
 const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query: string; tabId: number }) => {
-  const anthropic = createAnthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY!,
-  });
-
-  const anthropicModel = anthropic("claude-3-5-sonnet-20241022");
+  // const model = anthropic("claude-3-5-sonnet-20241022");
+  const model = openai("gpt-5-nano-2025-08-07");
 
   // const groq = createOpenAI({
   //   apiKey: process.env.GROQ_API_KEY!,
@@ -197,12 +72,13 @@ const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query:
     return `Error fetching page content: ${pageContent.error || "Unknown error"}`;
   }
 
-  // Check if content is too long and needs chunking (131000 token limit, ~4 characters per token)
-  if (pageContent.content.length <= 131000 * 3.5) {
+  // Check if content is too long and needs chunking (400,000 token limit, ~4 characters per token)
+  if (pageContent.content.length <= 400_000 * 3.5) {
     // Content is manageable, analyze directly with full context
     const result = await generateText({
       tools: asToolSet(getToolsWithAnalysisCapabilities()), // Available: fetchPageText, getCurrentUrl, geolocation, inspectElements, findElementsByText, findInteractiveElements
-      model: anthropicModel,
+      model,
+      temperature: 1,
       maxSteps: 8, // Increased to allow for proper tool usage during analysis
       prompt: `You are analyzing a web page to directly answer a user query.
 
@@ -252,8 +128,8 @@ Your response should completely answer: "${query}"`,
           findElementsByText: getReadonlyTools().findElementsByText,
           getCurrentUrl: getReadonlyTools().getCurrentUrl
         }),
-        model: anthropicModel,
-        maxSteps: 4, // Limited steps for chunk analysis
+        model,
+        maxSteps: 5, // Limited steps for chunk analysis
         prompt: `Analyzing chunk ${i + 1}/${chunks.length} of a web page for user query: "${query}"
 
 TAB ID: ${tabId}
@@ -286,7 +162,7 @@ ${isLastChunk ? 'FINAL CHUNK - Provide summary of findings from this chunk with 
       findElementsByText: getReadonlyTools().findElementsByText,
       getCurrentUrl: getReadonlyTools().getCurrentUrl
     }),
-    model: anthropicModel,
+    model,
     maxSteps: 8, // Allow sufficient steps for tool usage and analysis
     prompt: `You need to answer this user query directly: "${query}"
 
@@ -302,7 +178,7 @@ AVAILABLE TOOLS:
 TASK:
 Use the background information and available tools to provide a complete, self-contained answer to the user's query: "${query}"
 
-IMPORTANT: 
+IMPORTANT:
 - Answer directly as if speaking to the user who asked the question
 - When mentioning ANY page element, ALWAYS include its CSS selector using format: "[description] (selector: CSS_SELECTOR)"
 - Include specific details they requested (selectors, locations, descriptions, etc.)
