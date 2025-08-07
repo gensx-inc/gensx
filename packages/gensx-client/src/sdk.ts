@@ -488,7 +488,13 @@ export class GenSX {
         workflowName: "local-workflow-name",
         environmentId: "local-environment-id",
         environmentName: "local-environment-name",
-        permissions: options.permissions ?? ["start", "run", "progress", "output", "status"],
+        permissions: options.permissions ?? [
+          "start",
+          "run",
+          "progress",
+          "output",
+          "status",
+        ],
         expiresAt: new Date(options.expiresAt),
         createdAt: new Date(),
         requiredMatchFields: options.requiredMatchFields ?? ["*"],
@@ -515,7 +521,13 @@ export class GenSX {
         projectName: options.projectName,
         workflowName: options.workflowName,
         environmentName: options.environmentName,
-        permissions: options.permissions ?? ["start", "run", "progress", "output", "status"],
+        permissions: options.permissions ?? [
+          "start",
+          "run",
+          "progress",
+          "output",
+          "status",
+        ],
         expiresAt: options.expiresAt,
         requiredMatchFields: options.requiredMatchFields ?? ["*"],
       }),
@@ -527,7 +539,7 @@ export class GenSX {
       );
     }
 
-    const data = await response.json() as ScopedTokenResponse;
+    const data = (await response.json()) as ScopedTokenResponse;
     return {
       ...data,
       expiresAt: new Date(data.expiresAt),
