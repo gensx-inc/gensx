@@ -457,11 +457,28 @@ export const toolbox = createToolBox({
       error: z.string().optional().describe("Error message if tab creation failed"),
     }),
   },
+
+  captureElementScreenshot: {
+    description: "Take a screenshot of a specific element on the page. Returns the image for visual analysis. Useful for understanding element appearance, layout, styling, or troubleshooting visual issues.",
+    params: z.object({
+      tabId: z.number().describe("The ID of the tab containing the element"),
+      selector: z.string().describe("CSS selector of the element to capture"),
+      scrollIntoView: z.boolean().optional().default(true).describe("Whether to scroll the element into view before capturing"),
+    }),
+    result: z.object({
+      success: z.boolean(),
+      image: z.string().optional().describe("Base64 data URL of the screenshot image"),
+      width: z.number().optional().describe("Screenshot width in pixels"),
+      height: z.number().optional().describe("Screenshot height in pixels"),
+      message: z.string().optional().describe("Success message or additional info"),
+      error: z.string().optional().describe("Error message if screenshot failed"),
+    }),
+  },
 });
 
 export type ToolBox = typeof toolbox;
 
-const readonlyTools: (keyof ToolBox)[] = ["fetchPageText", "getCurrentUrl", "getGeolocation", "inspectElements", "findInteractiveElements", "findElementsByText"];
+const readonlyTools: (keyof ToolBox)[] = ["fetchPageText", "getCurrentUrl", "getGeolocation", "inspectElements", "findInteractiveElements", "findElementsByText", "captureElementScreenshot"];
 
 export function getReadonlyTools() {
   return Object.fromEntries(Object.entries(toolbox).filter(([key]) => readonlyTools.includes(key as keyof ToolBox)));

@@ -1,4 +1,4 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import * as gensx from "@gensx/core";
 import { asToolSet, generateText } from "@gensx/vercel-ai";
 import { getReadonlyTools } from "../../shared/toolbox";
@@ -49,13 +49,19 @@ const chunkContent = (content: string, maxChunkSize: number): string[] => {
   return chunks.filter(chunk => chunk.length > 0);
 };
 
-const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query: string; tabId: number }) => {
-  const groqClient = createOpenAI({
-    apiKey: process.env.GROQ_API_KEY!,
-    baseURL: "https://api.groq.com/openai/v1",
+// Helper function to get tools with analysis capabilities including multi-modal support
+const getToolsWithAnalysisCapabilities = () => {
+  const readonlyTools = getReadonlyTools();
+  return readonlyTools; // captureElementScreenshot is already included in readonlyTools
+};
+
+// Enhanced query component that can include screenshots in analysis
+const queryPageWithScreenshots = async (query: string, tabId: number, includeScreenshots = false) => {
+  const anthropic = createAnthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY!,
   });
 
-  const model = groqClient("moonshotai/kimi-k2-instruct");
+  const model = anthropic("claude-3-5-sonnet-20241022");
 
   // First, fetch the page content directly using executeExternalTool
   const pageContent = await gensx.executeExternalTool(toolbox, "fetchPageText", { tabId });
@@ -64,26 +70,66 @@ const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query:
     return `Error fetching page content: ${pageContent.error || "Unknown error"}`;
   }
 
-  // Check if content is too long and needs chunking (131000 token limit, ~4 characters per token)
-  if (pageContent.content.length <= 131000 * 3.5) {
-    // Content is manageable, analyze directly with full context
-    const result = await generateText({
-      tools: asToolSet(getReadonlyTools()), // Available: fetchPageText, getCurrentUrl, getGeolocation, inspectElements, findElementsByText
-      model,
-      maxSteps: 5, // Reduced since we already have interactive elements
-      prompt: `You are analyzing a web page to answer a user query. Interactive elements have already been discovered.
+  // Find relevant interactive elements first
+  const interactiveElements = await gensx.executeExternalTool(toolbox, "findInteractiveElements", {
+    tabId,
+    textToFilter: query.split(' ').filter(word => word.length > 3) // Use query words as filter
+  });
+
+  let screenshots: Array<{ selector: string; image: string; description: string }> = [];
+
+  // If screenshots are requested and we have relevant elements, capture them
+  if (includeScreenshots && interactiveElements.success && interactiveElements.elements && interactiveElements.elements.length > 0) {
+    console.log('Capturing screenshots of relevant elements...');
+    const topElements = interactiveElements.elements.slice(0, 3); // Limit to top 3 elements
+
+    for (const element of topElements) {
+      try {
+        const screenshot = await gensx.executeExternalTool(toolbox, "captureElementScreenshot", {
+          tabId,
+          selector: element.selector,
+          scrollIntoView: true
+        });
+
+        if (screenshot.success && screenshot.image) {
+          screenshots.push({
+            selector: element.selector,
+            image: screenshot.image,
+            description: `${element.type} element: "${element.text}" (${element.role || 'no role'})`
+          });
+        }
+      } catch (error) {
+        console.warn('Failed to capture screenshot for element:', element.selector, error);
+      }
+    }
+  }
+
+  // Prepare messages with text and images
+  const messages = [
+    {
+      role: 'user' as const,
+      content: [
+        {
+          type: 'text' as const,
+          text: `You are analyzing a web page to answer a user query.
 
 TARGET TAB ID: ${tabId}
 USER QUERY: ${query}
 
+INTERACTIVE ELEMENTS FOUND:
+${interactiveElements.success ? JSON.stringify(interactiveElements.elements?.slice(0, 10) || [], null, 2) : 'No interactive elements found'}
+
 PAGE CONTENT:
-${pageContent.content}
+${pageContent.content.length > 50000 ? pageContent.content.substring(0, 50000) + '...[truncated]' : pageContent.content}
+
+${screenshots.length > 0 ? `\nSCREENSHOTS OF RELEVANT ELEMENTS:
+${screenshots.map((s, i) => `Screenshot ${i + 1}: ${s.description} (selector: ${s.selector})`).join('\n')}` : ''}
 
 INSTRUCTIONS:
-1. Answer the user query directly based on the page content
-2. Use the findInteractiveElements tool to find interactive elements that are relevant to the query
-3. Use inspectElements tool (tabId: ${tabId}) ONLY if you need detailed properties of specific elements
-4. Use findElementsByText tool (tabId: ${tabId}) ONLY if you need to locate elements by specific text content
+1. Answer the user query directly based on the page content and any screenshots provided
+2. Reference specific elements using their CSS selectors from the interactive elements list
+3. If screenshots are provided, describe what you observe in them
+4. Provide actionable next steps
 
 RESPONSE FORMAT:
 You MUST return a structured JSON response in this exact format:
@@ -101,6 +147,9 @@ You MUST return a structured JSON response in this exact format:
       "purpose": "[Why this element is relevant to the query]"
     }
   ],
+  "visualObservations": [
+    "[What you observed in the screenshots, if any were provided]"
+  ],
   "context": "[Additional information and recommended approach]",
   "suggestedWorkflow": [
     "[Step 1: What to do first]",
@@ -108,7 +157,75 @@ You MUST return a structured JSON response in this exact format:
   ]
 }
 
-Focus on being precise and actionable. Only include elements that are relevant to answering the query.`,
+Focus on being precise and actionable. Only include elements that are relevant to answering the query.`
+        },
+        // Add screenshot images to the content
+        ...screenshots.map(screenshot => ({
+          type: 'image' as const,
+          image: screenshot.image
+        }))
+      ]
+    }
+  ];
+
+  const result = await generateText({
+    model,
+    messages,
+    maxTokens: 4000,
+  });
+
+  return result.text;
+};
+
+const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query: string; tabId: number }) => {
+  const anthropic = createAnthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY!,
+  });
+
+  const anthropicModel = anthropic("claude-3-5-sonnet-20241022");
+
+  // const groq = createOpenAI({
+  //   apiKey: process.env.GROQ_API_KEY!,
+  //   baseURL: "https://api.groq.com/openai/v1",
+  // });
+  // const groqModel = groq("moonshotai/kimi-k2-instruct");
+
+  // First, fetch the page content directly using executeExternalTool
+  const pageContent = await gensx.executeExternalTool(toolbox, "fetchPageText", { tabId });
+
+  if (!pageContent.success || !pageContent.content) {
+    return `Error fetching page content: ${pageContent.error || "Unknown error"}`;
+  }
+
+  // Check if content is too long and needs chunking (131000 token limit, ~4 characters per token)
+  if (pageContent.content.length <= 131000 * 3.5) {
+    // Content is manageable, analyze directly with full context
+    const result = await generateText({
+      tools: asToolSet(getToolsWithAnalysisCapabilities()), // Available: fetchPageText, getCurrentUrl, geolocation, inspectElements, findElementsByText, findInteractiveElements, captureElementScreenshot (multi-modal)
+      model: anthropicModel,
+      maxSteps: 8, // Increased to allow for proper tool usage during analysis
+      prompt: `You are analyzing a web page to directly answer a user query.
+
+USER QUERY: ${query}
+TAB ID: ${tabId}
+
+PAGE CONTENT:
+${pageContent.content}
+
+AVAILABLE TOOLS:
+- findInteractiveElements(tabId: ${tabId}, textToFilter?: string[]): Find interactive elements relevant to the query
+- inspectElements(tabId: ${tabId}, elements: Array): Get detailed properties of specific elements
+- findElementsByText(tabId: ${tabId}, content: string[]): Locate elements by specific text content
+- captureElementScreenshot(tabId: ${tabId}, selector: string): Take screenshots for visual analysis
+- getCurrentUrl(tabId: ${tabId}): Get the current URL
+
+INSTRUCTIONS:
+1. Use the available tools to gather the information needed to answer the user's query
+2. Provide a complete, self-contained answer that directly addresses what the user asked
+3. Include specific details like CSS selectors, locations, descriptions as requested
+4. Do not reference your analysis process - answer as if speaking directly to the user
+
+Your response should completely answer: "${query}"`,
     });
 
     return result.text;
@@ -126,12 +243,13 @@ Focus on being precise and actionable. Only include elements that are relevant t
     try {
       const chunkResult = await generateText({
         tools: asToolSet({
-          // Only provide subset of readonly tools that make sense for chunk analysis
+          // Only provide subset of tools that make sense for chunk analysis
           inspectElements: getReadonlyTools().inspectElements,
           findElementsByText: getReadonlyTools().findElementsByText,
+          captureElementScreenshot: getReadonlyTools().captureElementScreenshot, // Multi-modal version
           getCurrentUrl: getReadonlyTools().getCurrentUrl
         }),
-        model,
+        model: anthropicModel,
         maxSteps: 4, // Limited steps for chunk analysis
         prompt: `Analyzing chunk ${i + 1}/${chunks.length} of a web page for user query: "${query}"
 
@@ -140,12 +258,12 @@ TAB ID: ${tabId}
 CONTENT CHUNK ${i + 1}/${chunks.length}:
 ${chunk}
 
-AVAILABLE TOOLS: inspectElements, findElementsByText, getCurrentUrl
+AVAILABLE TOOLS: inspectElements, findElementsByText, captureElementScreenshot, getCurrentUrl
 - Use inspectElements ONLY if you need detailed properties of elements mentioned in this chunk
 - Use findElementsByText ONLY if you need to locate specific text mentioned in this chunk
-- Do NOT use findInteractiveElements
+- Use captureElementScreenshot ONLY if you need to see what elements look like visually
 
-TASK: Find content in this chunk relevant to "${query}". Reference the pre-discovered interactive elements list.
+TASK: Find content in this chunk relevant to "${query}".
 
 ${isLastChunk ? 'FINAL CHUNK - Provide summary of findings from this chunk.' : 'PARTIAL ANALYSIS - Focus only on this chunk content.'}`,
       });
@@ -156,47 +274,39 @@ ${isLastChunk ? 'FINAL CHUNK - Provide summary of findings from this chunk.' : '
     }
   }
 
-  // Synthesize final response with both content analysis and interactive elements
+  // Synthesize final response with interactive elements discovery
   const finalResult = await generateText({
-    model,
-    prompt: `Synthesize web page analysis to answer user query: "${query}"
+    tools: asToolSet({
+      findInteractiveElements: getReadonlyTools().findInteractiveElements,
+      captureElementScreenshot: getReadonlyTools().captureElementScreenshot,
+      inspectElements: getReadonlyTools().inspectElements,
+      findElementsByText: getReadonlyTools().findElementsByText,
+      getCurrentUrl: getReadonlyTools().getCurrentUrl
+    }),
+    model: anthropicModel,
+    maxSteps: 8, // Allow sufficient steps for tool usage and analysis
+    prompt: `You need to answer this user query directly: "${query}"
 
 TAB ID: ${tabId}
 
-CONTENT ANALYSIS FROM CHUNKS:
+BACKGROUND INFORMATION FROM PAGE ANALYSIS:
 ${chunkAnalyses.map((analysis, i) => `[Chunk ${i + 1}] ${analysis}`).join('\n\n')}
 
-FINAL SYNTHESIS:
-Combine the content analysis to provide a structured JSON response. Use the findInteractiveElements tool to find interactive elements that are relevant to the query.
+AVAILABLE TOOLS:
+- findInteractiveElements(tabId: ${tabId}, textToFilter?: string[]): Find interactive elements relevant to the query
+- captureElementScreenshot(tabId: ${tabId}, selector: string): Take screenshots for visual analysis
+- inspectElements, findElementsByText, getCurrentUrl: Additional analysis tools
 
-You MUST return a structured JSON response in this exact format:
+TASK:
+Use the background information and available tools to provide a complete, self-contained answer to the user's query: "${query}"
 
-{
-  "answer": "[Direct answer to '${query}' based on all chunk analyses]",
-  "relevantElements": [
-    {
-      "description": "[What this element does]",
-      "selector": "[CSS selector from pre-discovered interactive elements list]",
-      "action": "[What action this enables - click, fill, select, etc.]",
-      "role": "[ARIA role from interactive elements list if available]",
-      "ariaLabel": "[aria-label from ariaAttributes if available]",
-      "text": "[visible text content from interactive elements list]",
-      "purpose": "[Why this element is relevant to the query based on chunk analysis]"
-    }
-  ],
-  "context": "[Key information synthesized from all chunks]",
-  "suggestedWorkflow": [
-    "[Step 1: What to do first based on the analysis]",
-    "[Step 2: What to do next]",
-    "[Additional steps as needed]"
-  ]
-}
+IMPORTANT: 
+- Answer directly as if speaking to the user who asked the question
+- Include specific details they requested (selectors, locations, descriptions, etc.)
+- Do not reference internal analysis steps or chunk processing
+- Provide actionable information they can use immediately
 
-IMPORTANT:
-- Use CSS selectors from the discovered interactive elements list above
-- Extract role and ariaLabel information from the interactive elements data
-- Base the analysis on insights from all chunk analyses
-- Focus on actionable steps that directly address the user query`,
+Your response should completely answer: "${query}"`,
   });
 
   // Try to parse JSON response, fall back to text if parsing fails
