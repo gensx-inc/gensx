@@ -49,10 +49,10 @@ const chunkContent = (content: string, maxChunkSize: number): string[] => {
   return chunks.filter(chunk => chunk.length > 0);
 };
 
-// Helper function to get tools with analysis capabilities including multi-modal support
+// Helper function to get tools with analysis capabilities
 const getToolsWithAnalysisCapabilities = () => {
   const readonlyTools = getReadonlyTools();
-  return readonlyTools; // captureElementScreenshot is already included in readonlyTools
+  return readonlyTools; // Keep it simple - use screenshot analysis directly in prompt
 };
 
 // Enhanced query component that can include screenshots in analysis
@@ -201,7 +201,7 @@ const queryPage = gensx.Component("queryPage", async ({ query, tabId }: { query:
   if (pageContent.content.length <= 131000 * 3.5) {
     // Content is manageable, analyze directly with full context
     const result = await generateText({
-      tools: asToolSet(getToolsWithAnalysisCapabilities()), // Available: fetchPageText, getCurrentUrl, geolocation, inspectElements, findElementsByText, findInteractiveElements, captureElementScreenshot (multi-modal)
+      tools: asToolSet(getToolsWithAnalysisCapabilities()), // Available: fetchPageText, getCurrentUrl, geolocation, inspectElements, findElementsByText, findInteractiveElements
       model: anthropicModel,
       maxSteps: 8, // Increased to allow for proper tool usage during analysis
       prompt: `You are analyzing a web page to directly answer a user query.
@@ -216,14 +216,18 @@ AVAILABLE TOOLS:
 - findInteractiveElements(tabId: ${tabId}, textToFilter?: string[]): Find interactive elements relevant to the query
 - inspectElements(tabId: ${tabId}, elements: Array): Get detailed properties of specific elements
 - findElementsByText(tabId: ${tabId}, content: string[]): Locate elements by specific text content
-- captureElementScreenshot(tabId: ${tabId}, selector: string): Take screenshots for visual analysis
 - getCurrentUrl(tabId: ${tabId}): Get the current URL
 
 INSTRUCTIONS:
-1. Use the available tools to gather the information needed to answer the user's query
-2. Provide a complete, self-contained answer that directly addresses what the user asked
-3. Include specific details like CSS selectors, locations, descriptions as requested
-4. Do not reference your analysis process - answer as if speaking directly to the user
+1. Use the available tools (especially findInteractiveElements) to gather the information needed to answer the user's query
+2. When mentioning ANY page element, button, link, form, or visual component, ALWAYS include its CSS selector
+3. Provide a complete, self-contained answer that directly addresses what the user asked
+4. Include specific details like CSS selectors, locations, descriptions - make your response actionable
+5. Do not reference your analysis process - answer as if speaking directly to the user
+
+FORMAT REQUIREMENT:
+Whenever you mention an element, use this format: "[element description] (selector: CSS_SELECTOR)"
+Example: "The login button (selector: button[type='submit'].login-btn) is located in the header"
 
 Your response should completely answer: "${query}"`,
     });
@@ -246,7 +250,6 @@ Your response should completely answer: "${query}"`,
           // Only provide subset of tools that make sense for chunk analysis
           inspectElements: getReadonlyTools().inspectElements,
           findElementsByText: getReadonlyTools().findElementsByText,
-          captureElementScreenshot: getReadonlyTools().captureElementScreenshot, // Multi-modal version
           getCurrentUrl: getReadonlyTools().getCurrentUrl
         }),
         model: anthropicModel,
@@ -258,14 +261,15 @@ TAB ID: ${tabId}
 CONTENT CHUNK ${i + 1}/${chunks.length}:
 ${chunk}
 
-AVAILABLE TOOLS: inspectElements, findElementsByText, captureElementScreenshot, getCurrentUrl
+AVAILABLE TOOLS: inspectElements, findElementsByText, getCurrentUrl
 - Use inspectElements ONLY if you need detailed properties of elements mentioned in this chunk
 - Use findElementsByText ONLY if you need to locate specific text mentioned in this chunk
-- Use captureElementScreenshot ONLY if you need to see what elements look like visually
 
 TASK: Find content in this chunk relevant to "${query}".
 
-${isLastChunk ? 'FINAL CHUNK - Provide summary of findings from this chunk.' : 'PARTIAL ANALYSIS - Focus only on this chunk content.'}`,
+IMPORTANT: When mentioning any elements, use findElementsByText to get their CSS selectors and include them in format: "element description (selector: css.selector)"
+
+${isLastChunk ? 'FINAL CHUNK - Provide summary of findings from this chunk with CSS selectors for any mentioned elements.' : 'PARTIAL ANALYSIS - Focus only on this chunk content, include selectors for any elements mentioned.'}`,
       });
 
       chunkAnalyses.push(chunkResult.text);
@@ -278,7 +282,6 @@ ${isLastChunk ? 'FINAL CHUNK - Provide summary of findings from this chunk.' : '
   const finalResult = await generateText({
     tools: asToolSet({
       findInteractiveElements: getReadonlyTools().findInteractiveElements,
-      captureElementScreenshot: getReadonlyTools().captureElementScreenshot,
       inspectElements: getReadonlyTools().inspectElements,
       findElementsByText: getReadonlyTools().findElementsByText,
       getCurrentUrl: getReadonlyTools().getCurrentUrl
@@ -294,7 +297,6 @@ ${chunkAnalyses.map((analysis, i) => `[Chunk ${i + 1}] ${analysis}`).join('\n\n'
 
 AVAILABLE TOOLS:
 - findInteractiveElements(tabId: ${tabId}, textToFilter?: string[]): Find interactive elements relevant to the query
-- captureElementScreenshot(tabId: ${tabId}, selector: string): Take screenshots for visual analysis
 - inspectElements, findElementsByText, getCurrentUrl: Additional analysis tools
 
 TASK:
@@ -302,9 +304,14 @@ Use the background information and available tools to provide a complete, self-c
 
 IMPORTANT: 
 - Answer directly as if speaking to the user who asked the question
+- When mentioning ANY page element, ALWAYS include its CSS selector using format: "[description] (selector: CSS_SELECTOR)"
 - Include specific details they requested (selectors, locations, descriptions, etc.)
 - Do not reference internal analysis steps or chunk processing
 - Provide actionable information they can use immediately
+- Use findInteractiveElements tool to get accurate selectors for elements you mention
+
+FORMAT REQUIREMENT:
+Always mention elements with their selectors: "element description (selector: css.selector)"
 
 Your response should completely answer: "${query}"`,
   });
@@ -329,3 +336,6 @@ export const queryPageTool = tool({
     tabId: z.number().describe("The ID of the tab to query."),
   }),
 })
+
+// Export the screenshot analysis tool
+export { analyzeScreenshotTool } from "./screenshot-analysis";

@@ -6,13 +6,13 @@ import { serializeError } from "serialize-error";
 import { Agent } from "./agent";
 import { getFilteredTools, toolbox } from "../shared/toolbox";
 import { z } from "zod";
-import { queryPageTool } from "./tools/query";
+import { analyzeScreenshotTool, queryPageTool } from "./tools/query";
 import { webSearchTool } from "./tools/search";
 import { createTodoList } from "./tools/todolist";
 import { asToolSet } from "@gensx/vercel-ai";
 import { anthropic } from "@ai-sdk/anthropic";
 
-const toolsToRemove: (keyof typeof toolbox)[] = ["fetchPageText"];
+const toolsToRemove: (keyof typeof toolbox)[] = ["fetchPageText", "captureElementScreenshot"];
 
 type ThreadData = {
   messages: CoreMessage[];
@@ -165,6 +165,16 @@ Proactively detect and store user preferences to personalize your interactions.
 - Monitor for new preference signals and update immediately
 - Learn from corrections and apply consistently
 
+## USER CONFIRMATION
+Get direct confirmation from the user immediately before taking actions that are irreversible.
+Examples of irreversible actions are (but not limited to):
+- Making a purchase
+- Deleting data
+- Sending an email
+- Changing settings
+
+It is critically important that you get confirmation from the user before taking actions like these.
+
 ## AVAILABLE TOOLS
 
 ### Todo List Tools:
@@ -172,6 +182,7 @@ Proactively detect and store user preferences to personalize your interactions.
 
 ### Page Interaction Tools:
 - queryPage: Query the current page with natural language. This is the best tool for finding information, content, or available actions on the current page.
+- analyzeScreenshotTool: Capture a screenshot of a specific element and get answers or analysis of the visual content.
 - search: Web search for relevant information
 ${(Object.keys(toolsForModel) as (keyof typeof toolbox)[]).map((tool) => `- ${tool}: ${toolbox[tool].description}`).join("\n")}
 - updateUserPreference: Update persistent memory about user preferences
@@ -187,6 +198,7 @@ ${(Object.keys(toolsForModel) as (keyof typeof toolbox)[]).map((tool) => `- ${to
 - Read user preferences first, update with new discoveries
 - Use appropriate tools for interactions (clickElements, fillTextInputs, etc.)
 - Be clear and explain what you're doing
+- Get confirmation from the user before taking actions that are irreversible
 
 <date>The current date and time is ${new Date().toLocaleString()}.</date>
 
@@ -252,6 +264,7 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         search: webSearchTool,
         ...todoListTools,
         queryPage: queryPageTool,
+        analyzeScreenshotTool,
         updateUserPreference: {
           execute: async (params: { content: string }) => {
             const { content } = params;

@@ -57,7 +57,7 @@ export const toolbox = createToolBox({
 
   inspectElements: {
     description:
-      "Inspect multiple elements on a specific tab using jQuery selectors and get their properties.",
+      "Get detailed properties from specific elements using jQuery selectors. Returns only elements that contain the requested data (filters out empty results). Use this when you need specific property values from known elements, not for discovery.",
     params: z.object({
       tabId: z.number().describe("The ID of the tab to inspect elements in."),
       elements: z
@@ -68,7 +68,7 @@ export const toolbox = createToolBox({
               .array(z.string())
               .optional()
               .describe(
-                "List of properties to retrieve from the element. Valid values are: text, value, attr, css, data.",
+                "Properties to retrieve. Options: 'text' (text content), 'value' (form values), 'attr' (attributes), 'css' (styles), 'data' (data attributes). If not specified, returns a summary. Results are filtered to only include elements with non-empty requested properties.",
               ),
             attributeName: z
               .string()
@@ -94,13 +94,20 @@ export const toolbox = createToolBox({
         z.object({
           selector: z.string(),
           success: z.boolean(),
-          count: z.number().describe("Number of elements found"),
+          count: z.number().describe("Number of elements returned (after filtering empty results)"),
+          originalCount: z.number().optional().describe("Original number of elements found before filtering (only shown if different from count)"),
           elements: z.array(
             z.object({
               index: z.number(),
               text: z.string().optional(),
               value: z.string().optional(),
-              html: z.string().optional(),
+              summary: z.string().optional().describe("Element summary (when no properties specified)"),
+              children: z.array(z.object({
+                tag: z.string(),
+                selector: z.string(),
+                text: z.string().optional(),
+                count: z.number().optional()
+              })).optional().describe("Child elements summary"),
               attributes: z.record(z.string()).optional(),
               css: z.record(z.string()).optional(),
               data: z.record(z.any()).optional(),

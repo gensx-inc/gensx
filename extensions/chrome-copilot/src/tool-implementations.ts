@@ -65,7 +65,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             };
           }
 
-          const elementData = elements
+          let elementData = elements
             .map(function (this: HTMLElement, index: number) {
               const $el = $(this);
               const data: {
@@ -163,7 +163,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
               } else {
                 // Specific properties requested (HTML option removed)
                 if (elementParams.properties.includes("text")) {
-                  data.text = $el.text();
+                  data.text = $el.text().trim();
                 }
                 if (elementParams.properties.includes("value")) {
                   data.value = $el.val() as string | undefined;
@@ -204,11 +204,35 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             })
             .get();
 
+          // Filter out elements with empty requested properties to reduce noise
+          if (elementParams.properties && elementParams.properties.length > 0) {
+            elementData = elementData.filter((element) => {
+              // Check if at least one requested property has meaningful content
+              if (elementParams.properties.includes('text') && element.text && element.text.length > 0) {
+                return true;
+              }
+              if (elementParams.properties.includes('value') && element.value && element.value.length > 0) {
+                return true;
+              }
+              if (elementParams.properties.includes('attr') && element.attributes && Object.keys(element.attributes).length > 0) {
+                return true;
+              }
+              if (elementParams.properties.includes('css') && element.css && Object.keys(element.css).length > 0) {
+                return true;
+              }
+              if (elementParams.properties.includes('data') && element.data && Object.keys(element.data).length > 0) {
+                return true;
+              }
+              return false;
+            });
+          }
+
           return {
             selector: elementParams.selector,
-            success: true,
-            count,
+            success: elementData.length > 0,
+            count: elementData.length,
             elements: elementData,
+            originalCount: count > elementData.length ? count : undefined,
           };
         } catch (error) {
           return {
