@@ -29,7 +29,6 @@ export const copilotWorkflow = gensx.Workflow(
   async ({
     prompt,
     threadId,
-    userId,
     userName,
     userContext,
     selectedTabs = [],
@@ -38,7 +37,6 @@ export const copilotWorkflow = gensx.Workflow(
   }: {
     prompt: string;
     threadId: string;
-    userId: string;
     userName?: string;
     userContext?: string;
     selectedTabs?: Array<{
@@ -51,6 +49,8 @@ export const copilotWorkflow = gensx.Workflow(
     conversationMode?: "general" | "single-tab" | "multi-tab";
     recursionDepth?: number;
   }): Promise<{ response: string; messages: CoreMessage[] }> => {
+    const { userId } = gensx.getExecutionScope() as { userId: string };
+
     try {
       // For testing: Simulate workflow error if prompt contains "ERROR"
       if (prompt.includes('ERROR')) {
@@ -336,7 +336,6 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         return await copilotWorkflow({
           prompt: "continue",
           threadId,
-          userId,
           userName,
           userContext,
           selectedTabs,
@@ -350,7 +349,6 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         return await copilotWorkflow({
           prompt: "todo list is not complete, continue working on it.",
           threadId,
-          userId,
           userName,
           userContext,
           selectedTabs,
@@ -376,7 +374,9 @@ function chatHistoryBlobPath(userId: string, threadId: string): string {
 
 export const getChatHistoryWorkflow = gensx.Workflow(
   "fetchChatHistory",
-  async ({ userId, threadId }: { userId: string; threadId: string }) => {
+  async ({ threadId }: { threadId: string }) => {
+    const { userId } = gensx.getExecutionScope() as { userId: string };
+
     // Get blob instance for chat history storage
     const chatHistoryBlob = useBlob<ThreadData>(
       chatHistoryBlobPath(userId, threadId),

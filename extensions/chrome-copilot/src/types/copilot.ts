@@ -3,15 +3,9 @@
 export interface CopilotSettings {
   // API Configuration
   apiEndpoint: string;
-  apiKey: string;
   org: string;
   project: string;
   environment: string;
-
-  // Copilot Behavior
-  autoOpen: boolean;
-  enableShortcuts: boolean;
-  defaultWidth: number;
 
   // User Preferences
   userName: string;
@@ -79,7 +73,7 @@ export interface ToolCall {
 }
 
 export interface ExtensionMessage {
-  type: 'GET_TAB_INFO' | 'EXECUTE_TOOL' | 'SEND_MESSAGE' | 'TOGGLE_COPILOT' | 'WORKFLOW_REQUEST' | 'WORKFLOW_RESPONSE' | 'WORKFLOW_ERROR' | 'WORKFLOW_STREAM_UPDATE' | 'WORKFLOW_STREAM_COMPLETE' | 'WORKFLOW_MESSAGES_UPDATE' | 'WORKFLOW_TODO_LIST_UPDATE' | 'WORKFLOW_RECONNECT' | 'WORKFLOW_EXECUTION_STARTED' | 'EXTERNAL_TOOL_CALL' | 'EXTERNAL_TOOL_RESPONSE' | 'GET_THREAD_HISTORY' | 'CONTENT_SCRIPT_READY' | 'UPDATE_CURRENT_TAB' | 'GET_GEOLOCATION' | 'TAB_OPENED_ADD_TO_SELECTED';
+  type: 'GET_TAB_INFO' | 'EXECUTE_TOOL' | 'SEND_MESSAGE' | 'TOGGLE_COPILOT' | 'WORKFLOW_REQUEST' | 'WORKFLOW_RESPONSE' | 'WORKFLOW_ERROR' | 'WORKFLOW_STREAM_UPDATE' | 'WORKFLOW_STREAM_COMPLETE' | 'WORKFLOW_MESSAGES_UPDATE' | 'WORKFLOW_TODO_LIST_UPDATE' | 'WORKFLOW_RECONNECT' | 'WORKFLOW_EXECUTION_STARTED' | 'EXTERNAL_TOOL_CALL' | 'EXTERNAL_TOOL_RESPONSE' | 'GET_THREAD_HISTORY' | 'CONTENT_SCRIPT_READY' | 'UPDATE_CURRENT_TAB' | 'GET_GEOLOCATION' | 'TAB_OPENED_ADD_TO_SELECTED' | 'GET_USER_ID' | 'GET_THREAD_ID' | 'NEW_THREAD_ID';
   data?: any;
   tabId?: number;
   requestId?: string;
@@ -207,13 +201,9 @@ export interface WorkflowResponse {
 export class SettingsManager {
   private static readonly DEFAULT_SETTINGS: CopilotSettings = {
     apiEndpoint: 'http://localhost:1337',
-    apiKey: '',
     org: 'gensx',
     project: 'chrome-copilot',
     environment: 'default',
-    autoOpen: false,
-    enableShortcuts: true,
-    defaultWidth: 30,
     userName: '',
     userContext: ''
   };
@@ -255,15 +245,6 @@ export class SettingsManager {
       }
     }
 
-    // Validate default width
-    if (validated.defaultWidth !== undefined) {
-      const width = Number(validated.defaultWidth);
-      if (isNaN(width) || width < 20 || width > 60) {
-        validated.defaultWidth = this.DEFAULT_SETTINGS.defaultWidth;
-      } else {
-        validated.defaultWidth = width;
-      }
-    }
 
     // Sanitize text inputs
     if (validated.userName !== undefined) {
@@ -272,10 +253,6 @@ export class SettingsManager {
 
     if (validated.userContext !== undefined) {
       validated.userContext = validated.userContext.trim().slice(0, 1000);
-    }
-
-    if (validated.apiKey !== undefined) {
-      validated.apiKey = validated.apiKey.trim();
     }
 
     // Validate GenSX project settings

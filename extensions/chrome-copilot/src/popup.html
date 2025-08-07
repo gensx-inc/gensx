@@ -32,6 +32,18 @@
       justify-content: space-between;
     }
 
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-logo {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
     .header-info h3 {
       font-size: 16px;
       font-weight: 600;
@@ -855,9 +867,10 @@
 </head>
 <body>
   <div class="header">
-    <div class="header-info">
-      <h3>Genie</h3>
-      <p id="currentPage">Ready to help</p>
+    <div class="header-left">
+      <div class="header-info">
+        <p id="currentPage">Ready to help</p>
+      </div>
     </div>
     <div class="header-buttons">
       <button class="header-button" id="clearThread" title="Start new chat">

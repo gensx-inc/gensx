@@ -20,33 +20,192 @@ const extensionOpenedTabs = new Set<number>();
 chrome.tabs.onRemoved.addListener((tabId) => {
   const wasTracked = extensionOpenedTabs.delete(tabId);
   if (wasTracked) {
-    console.log('Extension-opened tab closed:', tabId, `(${extensionOpenedTabs.size} tracked tabs remaining)`);
+    console.log(
+      "Extension-opened tab closed:",
+      tabId,
+      `(${extensionOpenedTabs.size} tracked tabs remaining)`,
+    );
   }
 });
 
 // Offscreen document management for geolocation
-const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
+const OFFSCREEN_DOCUMENT_PATH = "/offscreen.html";
 let creating: Promise<void> | null = null; // A global promise to avoid concurrency issues
 
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('✅ Genie extension installed');
+chrome.runtime.onInstalled.addListener(async () => {
+  console.log("✅ Genie extension installed");
+
+  // Initialize or retrieve consistent userId on installation
+  await initializeUserId();
+
+  const settings = await SettingsManager.get();
+  // If we are not in local mode, fetch scoped token from the genie API if there is not one in storage
+  if (!settings.apiEndpoint.includes("localhost") && !chrome.storage.local.get("scopedToken")) {
+    // Fetch scoped token from the genie API. (genie.gensx.com/api/v1/scoped-tokens)
+    const response = await fetch(
+      `https://genie.gensx.com/api/v1/scoped-tokens`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          userId: await getUserId(),
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      console.error("Failed to fetch scoped token:", response.statusText);
+      return;
+    }
+
+    const tokenResponse = await response.json();
+
+    // Store the token in storage
+    await chrome.storage.local.set({ scopedToken: tokenResponse });
+
+    console.log("✅ Scoped token stored in storage");
+  }
 });
+
+chrome.runtime.onStartup.addListener(async () => {
+  await initializeUserId();
+
+  const settings = await SettingsManager.get();
+  // If we are not in local mode, fetch scoped token from the genie API if there is not one in storage
+  if (!settings.apiEndpoint.includes("localhost") && !chrome.storage.local.get("scopedToken")) {
+    // Fetch scoped token from the genie API. (genie.gensx.com/api/v1/scoped-tokens)
+    const response = await fetch(
+      `https://genie.gensx.com/api/scoped-tokens`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          userId: await getUserId(),
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      console.error("Failed to fetch scoped token:", response.statusText);
+      return;
+    }
+
+    const tokenResponse = await response.json();
+
+    // Store the token in storage
+    await chrome.storage.local.set({ scopedToken: tokenResponse });
+
+    console.log("✅ Scoped token stored in storage");
+  }
+});
+
+// Generate and store a consistent userId for the extension
+async function initializeUserId(): Promise<string> {
+  try {
+    // Try to get existing userId
+    const stored = await chrome.storage.local.get(["userId"]);
+
+    if (stored.userId) {
+      console.log("Using existing userId:", stored.userId);
+      return stored.userId;
+    }
+
+    // Generate new userId if none exists
+    const newUserId =
+      "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+
+    // Store the new userId
+    await chrome.storage.local.set({ userId: newUserId });
+    console.log("Generated and stored new userId:", newUserId);
+
+    return newUserId;
+  } catch (error) {
+    console.error("Failed to initialize userId:", error);
+    // Fallback to generating a temporary one
+    return "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+  }
+}
+
+// Get userId from storage (creates one if it doesn't exist)
+async function getUserId(): Promise<string> {
+  try {
+    const stored = await chrome.storage.local.get(["userId"]);
+
+    if (stored.userId) {
+      return stored.userId;
+    }
+
+    // If no userId exists, create one
+    return await initializeUserId();
+  } catch (error) {
+    console.error("Failed to get userId:", error);
+    // Fallback to generating a temporary one
+    return "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+  }
+}
+
+// Generate and get threadId - creates new one or gets current active one
+async function getThreadId(): Promise<string> {
+  try {
+    const stored = await chrome.storage.local.get(["currentThreadId"]);
+
+    if (stored.currentThreadId) {
+      console.log("Using existing threadId:", stored.currentThreadId);
+      return stored.currentThreadId;
+    }
+
+    // Generate new threadId if none exists
+    const newThreadId =
+      "thread_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+
+    // Store the new threadId
+    await chrome.storage.local.set({ currentThreadId: newThreadId });
+    console.log("Generated and stored new threadId:", newThreadId);
+
+    return newThreadId;
+  } catch (error) {
+    console.error("Failed to get threadId:", error);
+    // Fallback to generating a temporary one
+    return (
+      "thread_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
+    );
+  }
+}
+
+// Create a new threadId (for starting new conversations)
+async function createNewThreadId(): Promise<string> {
+  try {
+    const newThreadId =
+      "thread_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+
+    // Store the new threadId
+    await chrome.storage.local.set({ currentThreadId: newThreadId });
+    console.log("Created new threadId:", newThreadId);
+
+    return newThreadId;
+  } catch (error) {
+    console.error("Failed to create new threadId:", error);
+    // Fallback to generating a temporary one
+    return (
+      "thread_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9)
+    );
+  }
+}
 
 // Handle extension icon click to open side panel
 chrome.action.onClicked.addListener(async (tab) => {
   if (tab.id) {
-    console.log('📋 Opening side panel for tab:', tab.id);
+    console.log("📋 Opening side panel for tab:", tab.id);
     await chrome.sidePanel.open({ tabId: tab.id });
   }
 });
 
+
 const getClient = async () => {
   const settings = await SettingsManager.get();
   return new GenSX({
-    apiKey: settings.apiKey,
+    apiKey: (await chrome.storage.local.get("scopedToken"))?.scopedToken?.token as string,
     baseUrl: settings.apiEndpoint,
   });
-}
+};
 
 // Handle messages from content script
 chrome.runtime.onMessage.addListener(
@@ -54,7 +213,11 @@ chrome.runtime.onMessage.addListener(
     console.log("Background received message:", message);
 
     if (message.type === "CONTENT_SCRIPT_READY") {
-      console.log('✅ Content script ready on tab:', sender.tab?.id, message.url);
+      console.log(
+        "✅ Content script ready on tab:",
+        sender.tab?.id,
+        message.url,
+      );
       return false; // Not handling this message async
     }
 
@@ -95,6 +258,52 @@ chrome.runtime.onMessage.addListener(
       return true; // Indicates we will send a response asynchronously
     }
 
+    if (message.type === "GET_USER_ID") {
+      getUserId()
+        .then((userId) => {
+          sendResponse({ success: true, userId });
+        })
+        .catch((error) => {
+          sendResponse({
+            success: false,
+            error:
+              error instanceof Error ? error.message : "Failed to get userId",
+          });
+        });
+      return true; // Indicates we will send a response asynchronously
+    }
+
+    if (message.type === "GET_THREAD_ID") {
+      getThreadId()
+        .then((threadId) => {
+          sendResponse({ success: true, threadId });
+        })
+        .catch((error) => {
+          sendResponse({
+            success: false,
+            error:
+              error instanceof Error ? error.message : "Failed to get threadId",
+          });
+        });
+      return true; // Indicates we will send a response asynchronously
+    }
+
+    if (message.type === "NEW_THREAD_ID") {
+      createNewThreadId()
+        .then((threadId) => {
+          sendResponse({ success: true, threadId });
+        })
+        .catch((error) => {
+          sendResponse({
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to create new threadId",
+          });
+        });
+      return true; // Indicates we will send a response asynchronously
+    }
 
     return false; // Not handling this message
   },
@@ -127,22 +336,27 @@ async function handleWorkflowRequest(
       },
     });
 
-    console.log("Starting to process streaming response for request:", requestId);
+    console.log(
+      "Starting to process streaming response for request:",
+      requestId,
+    );
 
     // Process the streaming response
     await processStreamingResponse(response, requestId, sender);
-
   } catch (error) {
     console.error("Workflow execution failed for request:", requestId, error);
 
     // Send error response to popup
-    chrome.runtime.sendMessage({
-      type: "WORKFLOW_ERROR",
-      requestId,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    }).catch(() => {
-      // Ignore errors if popup is not open
-    });
+    chrome.runtime
+      .sendMessage({
+        type: "WORKFLOW_ERROR",
+        requestId,
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
+      })
+      .catch(() => {
+        // Ignore errors if popup is not open
+      });
   }
 }
 
@@ -161,8 +375,11 @@ async function handleGetThreadHistory(
     const gensx = await getClient();
 
     console.log("Running fetchChatHistory workflow...");
-    const { output: threadData } = await gensx.run<{ messages: CoreMessage[]; todoList: { items: { title: string, completed: boolean }[] } }>("fetchChatHistory", {
-      inputs: { userId, threadId }
+    const { output: threadData } = await gensx.run<{
+      messages: CoreMessage[];
+      todoList: { items: { title: string; completed: boolean }[] };
+    }>("fetchChatHistory", {
+      inputs: { userId, threadId },
     });
 
     console.log("fetchChatHistory workflow output:", threadData);
@@ -174,37 +391,53 @@ async function handleGetThreadHistory(
 
     // Extract todoList, defaulting to empty list if not present
     let todoList: TodoList = { items: [] };
-    if (threadData?.todoList && threadData.todoList.items && Array.isArray(threadData.todoList.items)) {
+    if (
+      threadData?.todoList &&
+      threadData.todoList.items &&
+      Array.isArray(threadData.todoList.items)
+    ) {
       todoList = threadData.todoList;
     }
 
-    console.log("Retrieved thread history:", messages.length, "messages", todoList.items.length, "todo items");
+    console.log(
+      "Retrieved thread history:",
+      messages.length,
+      "messages",
+      todoList.items.length,
+      "todo items",
+    );
 
     // Convert GenSX messages to popup-compatible format
     const convertedMessages = messages
-      .filter((msg: any) => msg.role !== 'system') // Filter out system messages for UI
+      .filter((msg: any) => msg.role !== "system") // Filter out system messages for UI
       .map((msg: any) => ({
         role: msg.role,
         content: msg.content,
         timestamp: msg.timestamp,
-        toolCalls: msg.toolCalls
+        toolCalls: msg.toolCalls,
       }));
 
-    console.log("Converted messages for popup:", convertedMessages.length, "messages");
+    console.log(
+      "Converted messages for popup:",
+      convertedMessages.length,
+      "messages",
+    );
 
     sendResponse({
       success: true,
       messages: convertedMessages,
-      todoList: todoList
+      todoList: todoList,
     });
-
   } catch (error) {
     console.error("Failed to get thread history:", error);
     sendResponse({
       success: false,
-      error: error instanceof Error ? error.message : "Failed to retrieve thread history",
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to retrieve thread history",
       messages: [],
-      todoList: { items: [] }
+      todoList: { items: [] },
     });
   }
 }
@@ -226,27 +459,35 @@ async function handleWorkflowReconnect(
     // Use GenSX getProgress API to reconnect to the execution
     const stream = await gensx.getProgress({ executionId });
 
-    console.log("Reconnection successful, processing progress stream:", executionId);
+    console.log(
+      "Reconnection successful, processing progress stream:",
+      executionId,
+    );
 
     // Create a Response-like object with the stream for compatibility
     const response = new Response(stream, {
-      headers: { 'content-type': 'application/x-ndjson' }
+      headers: { "content-type": "application/x-ndjson" },
     });
 
     // Process the streaming response from the reconnection
     await processStreamingResponse(response, requestId, sender);
-
   } catch (error) {
-    console.error("Workflow reconnection failed for execution:", executionId, error);
+    console.error(
+      "Workflow reconnection failed for execution:",
+      executionId,
+      error,
+    );
 
     // Send error response to popup
-    chrome.runtime.sendMessage({
-      type: "WORKFLOW_ERROR",
-      requestId,
-      error: error instanceof Error ? error.message : "Reconnection failed",
-    }).catch(() => {
-      // Ignore errors if popup is not open
-    });
+    chrome.runtime
+      .sendMessage({
+        type: "WORKFLOW_ERROR",
+        requestId,
+        error: error instanceof Error ? error.message : "Reconnection failed",
+      })
+      .catch(() => {
+        // Ignore errors if popup is not open
+      });
   }
 }
 
@@ -283,7 +524,7 @@ async function processStreamingResponse(
       buffer += chunk;
 
       // Process complete JSON lines
-      const lines = buffer.split('\n');
+      const lines = buffer.split("\n");
       buffer = lines.pop() || ""; // Keep the incomplete line in buffer
 
       for (const line of lines) {
@@ -296,15 +537,17 @@ async function processStreamingResponse(
               executionId = event.workflowExecutionId;
 
               // Send execution ID to popup for state tracking
-              chrome.runtime.sendMessage({
-                type: "WORKFLOW_EXECUTION_STARTED",
-                requestId,
-                data: {
-                  executionId
-                }
-              }).catch(() => {
-                // Ignore errors if popup is not open
-              });
+              chrome.runtime
+                .sendMessage({
+                  type: "WORKFLOW_EXECUTION_STARTED",
+                  requestId,
+                  data: {
+                    executionId,
+                  },
+                })
+                .catch(() => {
+                  // Ignore errors if popup is not open
+                });
             }
 
             // Update messages state if this is a messages object update
@@ -315,11 +558,21 @@ async function processStreamingResponse(
 
             // Update todo list state if this is a todoList object update
             if (event.type === "object" && event.label === "todoList") {
-              todoListState = applyObjectPatches(event.patches, todoListState) as TodoList;
+              todoListState = applyObjectPatches(
+                event.patches,
+                todoListState,
+              ) as TodoList;
               console.log("Updated todo list state:", todoListState);
             }
 
-            await processStreamingEvent(executionId, event, requestId, sender, messagesState, todoListState);
+            await processStreamingEvent(
+              executionId,
+              event,
+              requestId,
+              sender,
+              messagesState,
+              todoListState,
+            );
           } catch (parseError) {
             console.warn("Failed to parse streaming event:", line, parseError);
           }
@@ -328,29 +581,35 @@ async function processStreamingResponse(
     }
 
     // Send final completion message to popup
-    chrome.runtime.sendMessage({
-      type: "WORKFLOW_STREAM_COMPLETE",
-      requestId,
-      data: {
-        finalMessage: ""
-      }
-    }).catch(() => {
-      // Ignore errors if popup is not open
-    });
+    chrome.runtime
+      .sendMessage({
+        type: "WORKFLOW_STREAM_COMPLETE",
+        requestId,
+        data: {
+          finalMessage: "",
+        },
+      })
+      .catch(() => {
+        // Ignore errors if popup is not open
+      });
 
     console.log("Streaming completed for request:", requestId);
-
   } catch (streamError) {
     console.error("Error processing stream:", streamError);
 
     // Send error to popup
-    chrome.runtime.sendMessage({
-      type: "WORKFLOW_ERROR",
-      requestId,
-      error: streamError instanceof Error ? streamError.message : "Streaming error occurred"
-    }).catch(() => {
-      // Ignore errors if popup is not open
-    });
+    chrome.runtime
+      .sendMessage({
+        type: "WORKFLOW_ERROR",
+        requestId,
+        error:
+          streamError instanceof Error
+            ? streamError.message
+            : "Streaming error occurred",
+      })
+      .catch(() => {
+        // Ignore errors if popup is not open
+      });
   } finally {
     reader.releaseLock();
   }
@@ -375,21 +634,20 @@ async function processStreamingEvent(
     console.log("External tool call detected:", event);
 
     // Handle special background-only tools
-    if (event.toolName === 'openTab') {
+    if (event.toolName === "openTab") {
       await handleOpenTabTool(executionId, event);
       return;
     }
 
-    if (event.toolName === 'closeTab') {
+    if (event.toolName === "closeTab") {
       await handleCloseTabTool(executionId, event);
       return;
     }
 
-    if (event.toolName === 'navigate') {
+    if (event.toolName === "navigate") {
       await handleNavigateTool(executionId, event);
       return;
     }
-
 
     // Get tab ID from tool parameters (most tools require tabId)
     const toolTabId = event.params?.tabId;
@@ -398,14 +656,14 @@ async function processStreamingEvent(
       const errorResult = {
         success: false,
         error: `Tool '${event.toolName}' requires a tabId parameter, but none was provided. Please include the tab ID of the browser tab you want to interact with.`,
-        message: `Missing required tabId parameter for ${event.toolName} tool`
+        message: `Missing required tabId parameter for ${event.toolName} tool`,
       };
 
       const gensx = await getClient();
       await gensx.resume({
         executionId,
         nodeId: event.nodeId,
-        data: errorResult
+        data: errorResult,
       });
       return;
     }
@@ -415,7 +673,11 @@ async function processStreamingEvent(
       let tab;
       try {
         tab = await chrome.tabs.get(toolTabId);
-        console.log("Using specified tab for tool execution:", toolTabId, tab.url);
+        console.log(
+          "Using specified tab for tool execution:",
+          toolTabId,
+          tab.url,
+        );
       } catch (tabError) {
         console.warn("Tab no longer exists:", toolTabId, tabError);
 
@@ -426,8 +688,8 @@ async function processStreamingEvent(
           nodeId: event.nodeId,
           data: {
             success: false,
-            error: `Tab ${toolTabId} is no longer available (may have been closed)`
-          }
+            error: `Tab ${toolTabId} is no longer available (may have been closed)`,
+          },
         });
         return;
       }
@@ -443,21 +705,24 @@ async function processStreamingEvent(
             params: event.params,
             nodeId: event.nodeId,
             paramsSchema: event.paramsSchema,
-            resultSchema: event.resultSchema
-          }
+            resultSchema: event.resultSchema,
+          },
         });
       } catch (connectionError) {
-        console.warn("Content script connection failed, attempting to inject:", connectionError);
+        console.warn(
+          "Content script connection failed, attempting to inject:",
+          connectionError,
+        );
 
         // Try to inject the content script manually
         try {
           await chrome.scripting.executeScript({
             target: { tabId: toolTabId },
-            files: ['content.js']
+            files: ["content.js"],
           });
 
           // Wait a bit for the script to initialize
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
 
           // Retry the message
           toolResponse = await chrome.tabs.sendMessage(toolTabId, {
@@ -468,12 +733,14 @@ async function processStreamingEvent(
               params: event.params,
               nodeId: event.nodeId,
               paramsSchema: event.paramsSchema,
-              resultSchema: event.resultSchema
-            }
+              resultSchema: event.resultSchema,
+            },
           });
         } catch (injectionError) {
           console.error("Failed to inject content script:", injectionError);
-          throw new Error(`Content script injection failed: ${injectionError instanceof Error ? injectionError.message : String(injectionError)}`);
+          throw new Error(
+            `Content script injection failed: ${injectionError instanceof Error ? injectionError.message : String(injectionError)}`,
+          );
         }
       }
 
@@ -484,7 +751,7 @@ async function processStreamingEvent(
       await gensx.resume({
         executionId,
         nodeId: event.nodeId,
-        data: toolResponse.data.result
+        data: toolResponse.data.result,
       });
     } catch (error) {
       console.error("Tool execution failed:", error);
@@ -497,8 +764,9 @@ async function processStreamingEvent(
           nodeId: event.nodeId,
           data: {
             success: false,
-            error: error instanceof Error ? error.message : "Tool execution failed"
-          }
+            error:
+              error instanceof Error ? error.message : "Tool execution failed",
+          },
         });
       } catch (resumeError) {
         console.error("Failed to resume workflow with error:", resumeError);
@@ -515,8 +783,10 @@ async function processStreamingEvent(
       requestId,
       data: {
         messages: messagesState.messages || [],
-        isIncremental: event.patches?.some((p: any) => p.op === "string-append")
-      }
+        isIncremental: event.patches?.some(
+          (p: any) => p.op === "string-append",
+        ),
+      },
     };
 
     // Send to popup and other extension contexts
@@ -531,8 +801,8 @@ async function processStreamingEvent(
       type: "WORKFLOW_TODO_LIST_UPDATE",
       requestId,
       data: {
-        todoList: todoListState
-      }
+        todoList: todoListState,
+      },
     };
 
     // Send to popup and other extension contexts
@@ -551,18 +821,23 @@ async function processStreamingEvent(
       console.error("Execution failed, notifying popup");
 
       // Send error to popup
-      chrome.runtime.sendMessage({
-        type: "WORKFLOW_ERROR",
-        requestId,
-        error: event.error || event.message || "Workflow execution failed"
-      }).catch(() => {
-        // Ignore errors if popup is not open
-      });
+      chrome.runtime
+        .sendMessage({
+          type: "WORKFLOW_ERROR",
+          requestId,
+          error: event.error || event.message || "Workflow execution failed",
+        })
+        .catch(() => {
+          // Ignore errors if popup is not open
+        });
     } else {
-      console.warn("Stream error occurred but execution not failed, continuing...", {
-        error: event.error || event.message,
-        executionStatus: event.executionStatus
-      });
+      console.warn(
+        "Stream error occurred but execution not failed, continuing...",
+        {
+          error: event.error || event.message,
+          executionStatus: event.executionStatus,
+        },
+      );
     }
     return;
   }
@@ -574,7 +849,10 @@ async function processStreamingEvent(
 // No need for manual injection since we have matches: ["<all_urls>"]
 
 // Handle openTab tool execution
-async function handleOpenTabTool(executionId: string, event: any): Promise<void> {
+async function handleOpenTabTool(
+  executionId: string,
+  event: any,
+): Promise<void> {
   try {
     console.log("Executing openTab tool:", event.params);
 
@@ -590,7 +868,7 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
     // Create the new tab
     const newTab = await chrome.tabs.create({
       url: url,
-      active: active
+      active: active,
     });
 
     if (!newTab.id) {
@@ -601,7 +879,11 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
 
     // Track this tab as opened by the extension
     extensionOpenedTabs.add(newTab.id);
-    console.log('Added tab to extension tracking:', newTab.id, `(${extensionOpenedTabs.size} tracked tabs)`);
+    console.log(
+      "Added tab to extension tracking:",
+      newTab.id,
+      `(${extensionOpenedTabs.size} tracked tabs)`,
+    );
 
     // Wait for the tab to start loading to get better title/domain info
     // Try multiple times with increasing delays to get good tab info
@@ -610,31 +892,40 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
     const maxAttempts = 3;
 
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, attempts === 0 ? 300 : 800));
+      await new Promise((resolve) =>
+        setTimeout(resolve, attempts === 0 ? 300 : 800),
+      );
 
       try {
         updatedTab = await chrome.tabs.get(newTab.id);
         // If we got a meaningful title, break early
-        if (updatedTab.title && updatedTab.title !== 'New Tab' && !updatedTab.title.startsWith('chrome://')) {
-          console.log(`Got good tab info on attempt ${attempts + 1}:`, updatedTab.title);
+        if (
+          updatedTab.title &&
+          updatedTab.title !== "New Tab" &&
+          !updatedTab.title.startsWith("chrome://")
+        ) {
+          console.log(
+            `Got good tab info on attempt ${attempts + 1}:`,
+            updatedTab.title,
+          );
           break;
         }
       } catch (tabError) {
-        console.warn('Error getting updated tab info:', tabError);
+        console.warn("Error getting updated tab info:", tabError);
         break;
       }
       attempts++;
     }
 
-    const domain = updatedTab.url ? new URL(updatedTab.url).hostname : '';
+    const domain = updatedTab.url ? new URL(updatedTab.url).hostname : "";
 
     const result = {
       success: true,
       tabId: updatedTab.id,
       url: updatedTab.url || url,
-      title: updatedTab.title || domain || 'New Tab',
+      title: updatedTab.title || domain || "New Tab",
       domain: domain,
-      message: `Successfully opened new tab: ${updatedTab.title || domain || url}`
+      message: `Successfully opened new tab: ${updatedTab.title || domain || url}`,
     };
 
     console.log("openTab tool result:", result);
@@ -643,23 +934,26 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
     const tabData = {
       tabId: updatedTab.id,
       url: updatedTab.url || url,
-      title: updatedTab.title || domain || 'New Tab',
+      title: updatedTab.title || domain || "New Tab",
       domain: domain,
       favicon: updatedTab.favIconUrl,
-      isActive: active
+      isActive: active,
     };
 
-    console.log('Sending TAB_OPENED_ADD_TO_SELECTED notification:', tabData);
+    console.log("Sending TAB_OPENED_ADD_TO_SELECTED notification:", tabData);
 
     try {
       await chrome.runtime.sendMessage({
-        type: 'TAB_OPENED_ADD_TO_SELECTED',
-        data: tabData
+        type: "TAB_OPENED_ADD_TO_SELECTED",
+        data: tabData,
       });
-      console.log('Successfully notified popup about new tab');
+      console.log("Successfully notified popup about new tab");
     } catch (notificationError) {
       // This might happen if popup is closed, but that's okay
-      console.log('Popup not open, but tab will be available in @ mentions:', notificationError);
+      console.log(
+        "Popup not open, but tab will be available in @ mentions:",
+        notificationError,
+      );
     }
 
     // Resume workflow with success result
@@ -667,9 +961,8 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
     await gensx.resume({
       executionId,
       nodeId: event.nodeId,
-      data: result
+      data: result,
     });
-
   } catch (error) {
     console.error("openTab tool execution failed:", error);
 
@@ -680,14 +973,18 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
       nodeId: event.nodeId,
       data: {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to open new tab"
-      }
+        error:
+          error instanceof Error ? error.message : "Failed to open new tab",
+      },
     });
   }
 }
 
 // Handle closeTab tool execution
-async function handleCloseTabTool(executionId: string, event: any): Promise<void> {
+async function handleCloseTabTool(
+  executionId: string,
+  event: any,
+): Promise<void> {
   try {
     console.log("Executing closeTab tool:", event.params);
 
@@ -695,12 +992,14 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
 
     // Validate tabIds
     if (!Array.isArray(tabIds) || tabIds.length === 0) {
-      throw new Error("Invalid tabIds provided - must be a non-empty array of numbers");
+      throw new Error(
+        "Invalid tabIds provided - must be a non-empty array of numbers",
+      );
     }
 
     // Validate each tabId
     for (const tabId of tabIds) {
-      if (!tabId || typeof tabId !== 'number') {
+      if (!tabId || typeof tabId !== "number") {
         throw new Error(`Invalid tabId provided: ${tabId} - must be a number`);
       }
     }
@@ -717,7 +1016,7 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
         if (!extensionOpenedTabs.has(tabId)) {
           failedTabs.push({
             tabId,
-            error: `Tab was not opened by this extension. For security, only extension-created tabs can be closed.`
+            error: `Tab was not opened by this extension. For security, only extension-created tabs can be closed.`,
           });
           continue;
         }
@@ -744,12 +1043,14 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
         closedTabs.push(tabId);
 
         console.log(`Successfully closed tab ${tabId}:`, tab.title || tab.url);
-
       } catch (tabError) {
         console.error(`Failed to close tab ${tabId}:`, tabError);
         failedTabs.push({
           tabId,
-          error: tabError instanceof Error ? tabError.message : "Unknown error occurred"
+          error:
+            tabError instanceof Error
+              ? tabError.message
+              : "Unknown error occurred",
         });
       }
     }
@@ -763,7 +1064,9 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
       message: allSuccessful
         ? `Successfully closed ${closedTabs.length} tab(s)`
         : `Closed ${closedTabs.length} tab(s), failed to close ${failedTabs.length} tab(s)`,
-      error: allSuccessful ? undefined : `Some tabs failed to close. Check failedTabs for details.`
+      error: allSuccessful
+        ? undefined
+        : `Some tabs failed to close. Check failedTabs for details.`,
     };
 
     console.log("closeTab tool result:", result);
@@ -773,9 +1076,8 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
     await gensx.resume({
       executionId,
       nodeId: event.nodeId,
-      data: result
+      data: result,
     });
-
   } catch (error) {
     console.error("closeTab tool execution failed:", error);
 
@@ -786,28 +1088,38 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
       nodeId: event.nodeId,
       data: {
         success: false,
-        error: error instanceof Error ? error.message : "Failed to close tabs"
-      }
+        error: error instanceof Error ? error.message : "Failed to close tabs",
+      },
     });
   }
 }
 
 // Handle navigate tool execution
-async function handleNavigateTool(executionId: string, event: any): Promise<void> {
+async function handleNavigateTool(
+  executionId: string,
+  event: any,
+): Promise<void> {
   try {
     console.log("Executing navigate tool:", event.params);
-    
-    const { tabId, action, path, url, waitForLoad = true, timeout = 5000 } = event.params;
-    
+
+    const {
+      tabId,
+      action,
+      path,
+      url,
+      waitForLoad = true,
+      timeout = 5000,
+    } = event.params;
+
     // Validate required parameters
-    if (!tabId || typeof tabId !== 'number') {
+    if (!tabId || typeof tabId !== "number") {
       throw new Error("Invalid tabId provided - must be a number");
     }
-    
+
     if (!action) {
       throw new Error("Navigation action is required");
     }
-    
+
     // Verify the tab exists
     let tab;
     try {
@@ -815,98 +1127,94 @@ async function handleNavigateTool(executionId: string, event: any): Promise<void
       console.log("Navigating tab:", tabId, tab.url);
     } catch (tabError) {
       console.warn("Tab no longer exists:", tabId, tabError);
-      
+
       const result = {
         success: false,
-        error: `Tab ${tabId} is no longer available (may have been closed)`
+        error: `Tab ${tabId} is no longer available (may have been closed)`,
       };
-      
+
       const gensx = await getClient();
       await gensx.resume({
         executionId,
         nodeId: event.nodeId,
-        data: result
+        data: result,
       });
       return;
     }
-    
-    const previousUrl = tab.url || '';
+
+    const previousUrl = tab.url || "";
     const startTime = Date.now();
-    
+
     // Handle navigation based on action type
-    if (action === 'back') {
+    if (action === "back") {
       // Use content script for back/forward navigation (doesn't reload page)
       try {
         const toolResponse = await chrome.tabs.sendMessage(tabId, {
           type: "EXTERNAL_TOOL_CALL",
           data: {
-            toolName: 'navigate',
+            toolName: "navigate",
             params: event.params,
-          }
+          },
         });
-        
+
         const result = {
           success: true,
           action,
           currentUrl: toolResponse.data?.currentUrl || previousUrl,
           previousUrl,
           loadTime: Date.now() - startTime,
-          message: `Successfully executed ${action} navigation`
+          message: `Successfully executed ${action} navigation`,
         };
-        
+
         const gensx = await getClient();
         await gensx.resume({
           executionId,
           nodeId: event.nodeId,
-          data: result
+          data: result,
         });
-        
       } catch (error) {
         console.error("Back navigation failed:", error);
         throw error;
       }
-      
-    } else if (action === 'forward') {
+    } else if (action === "forward") {
       // Use content script for back/forward navigation (doesn't reload page)
       try {
         const toolResponse = await chrome.tabs.sendMessage(tabId, {
           type: "EXTERNAL_TOOL_CALL",
           data: {
-            toolName: 'navigate',
+            toolName: "navigate",
             params: event.params,
-          }
+          },
         });
-        
+
         const result = {
           success: true,
           action,
           currentUrl: toolResponse.data?.currentUrl || previousUrl,
           previousUrl,
           loadTime: Date.now() - startTime,
-          message: `Successfully executed ${action} navigation`
+          message: `Successfully executed ${action} navigation`,
         };
-        
+
         const gensx = await getClient();
         await gensx.resume({
           executionId,
           nodeId: event.nodeId,
-          data: result
+          data: result,
         });
-        
       } catch (error) {
         console.error("Forward navigation failed:", error);
         throw error;
       }
-      
-    } else if (action === 'path' || action === 'url') {
+    } else if (action === "path" || action === "url") {
       // Handle path/url navigation directly in background script (causes page reload)
       let targetUrl;
-      
-      if (action === 'path') {
+
+      if (action === "path") {
         if (!path) {
           throw new Error("Path is required for path navigation");
         }
-        
+
         // Construct URL from current origin + path
         const currentOrigin = new URL(previousUrl).origin;
         targetUrl = currentOrigin + path;
@@ -916,19 +1224,21 @@ async function handleNavigateTool(executionId: string, event: any): Promise<void
         }
         targetUrl = url;
       }
-      
+
       // Validate the target URL
       try {
         new URL(targetUrl);
       } catch (urlError) {
         throw new Error(`Invalid target URL: ${targetUrl}`);
       }
-      
-      console.log(`Navigating tab ${tabId} from ${previousUrl} to ${targetUrl}`);
-      
+
+      console.log(
+        `Navigating tab ${tabId} from ${previousUrl} to ${targetUrl}`,
+      );
+
       // Update the tab URL directly - this will cause navigation
       await chrome.tabs.update(tabId, { url: targetUrl });
-      
+
       // Return success immediately for page-reloading navigation
       // We can't wait for the content script response because it gets destroyed during navigation
       const result = {
@@ -937,25 +1247,23 @@ async function handleNavigateTool(executionId: string, event: any): Promise<void
         currentUrl: targetUrl,
         previousUrl,
         loadTime: Date.now() - startTime,
-        message: `Successfully initiated ${action} navigation to ${targetUrl}`
+        message: `Successfully initiated ${action} navigation to ${targetUrl}`,
       };
-      
+
       console.log("Navigate tool result:", result);
-      
+
       const gensx = await getClient();
       await gensx.resume({
         executionId,
         nodeId: event.nodeId,
-        data: result
+        data: result,
       });
-      
     } else {
       throw new Error(`Unsupported navigation action: ${action}`);
     }
-    
   } catch (error) {
     console.error("Navigate tool execution failed:", error);
-    
+
     // Resume workflow with error information
     const gensx = await getClient();
     await gensx.resume({
@@ -963,8 +1271,8 @@ async function handleNavigateTool(executionId: string, event: any): Promise<void
       nodeId: event.nodeId,
       data: {
         success: false,
-        error: error instanceof Error ? error.message : "Navigation failed"
-      }
+        error: error instanceof Error ? error.message : "Navigation failed",
+      },
     });
   }
 }
@@ -985,8 +1293,11 @@ async function setupOffscreenDocument() {
     } else {
       creating = chrome.offscreen.createDocument({
         url: OFFSCREEN_DOCUMENT_PATH,
-        reasons: [chrome.offscreen.Reason.GEOLOCATION || chrome.offscreen.Reason.DOM_SCRAPING],
-        justification: 'Geolocation access for extension tools',
+        reasons: [
+          chrome.offscreen.Reason.GEOLOCATION ||
+            chrome.offscreen.Reason.DOM_SCRAPING,
+        ],
+        justification: "Geolocation access for extension tools",
       });
 
       await creating;
@@ -1005,9 +1316,9 @@ async function closeOffscreenDocument() {
 async function getGeolocation(params: any) {
   await setupOffscreenDocument();
   const geolocation = await chrome.runtime.sendMessage({
-    type: 'get-geolocation',
-    target: 'offscreen',
-    params
+    type: "get-geolocation",
+    target: "offscreen",
+    params,
   });
   await closeOffscreenDocument();
   return geolocation;
@@ -1025,14 +1336,14 @@ async function handleGeolocationRequest(
 
     sendResponse({
       success: true,
-      data: geolocation
+      data: geolocation,
     });
   } catch (error) {
     console.error("Geolocation request failed:", error);
     sendResponse({
       success: false,
-      error: error instanceof Error ? error.message : "Geolocation request failed"
+      error:
+        error instanceof Error ? error.message : "Geolocation request failed",
     });
   }
 }
-

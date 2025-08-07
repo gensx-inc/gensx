@@ -83,8 +83,8 @@ class PopupChatInterface {
       expandedTools: new Set<string>(),
       isStreaming: false,
       isReconnecting: false,
-      userId: this.generateUserId(),
-      threadId: this.generateThreadId(),
+      userId: '', // Will be loaded from background script
+      threadId: '', // Will be loaded from background script
       activeTab: 'chat',
       websiteKnowledge: '',
       domain: '',
@@ -142,13 +142,7 @@ class PopupChatInterface {
     }, 100); // Small delay to ensure DOM is ready
   }
 
-  private generateUserId(): string {
-    return 'popup_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
 
-  private generateThreadId(): string {
-    return 'thread_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-  }
 
   private initializeEventListeners(): void {
     // Form submission
@@ -245,13 +239,31 @@ class PopupChatInterface {
 
   private async loadPersistedState(): Promise<void> {
     try {
-      // Load user and thread state from chrome.storage.local
+      // Get userId from background script (ensures consistency across all contexts)
+      const userIdResponse = await chrome.runtime.sendMessage({ type: 'GET_USER_ID' });
+      if (userIdResponse && userIdResponse.success) {
+        this.state.userId = userIdResponse.userId;
+      } else {
+        console.error('Failed to get userId from background script:', userIdResponse?.error);
+        // Fallback to generating temporary userId
+        this.state.userId = 'popup_fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      }
+
+      // Get threadId from background script (ensures consistency across all contexts)
+      const threadIdResponse = await chrome.runtime.sendMessage({ type: 'GET_THREAD_ID' });
+      if (threadIdResponse && threadIdResponse.success) {
+        this.state.threadId = threadIdResponse.threadId;
+      } else {
+        console.error('Failed to get threadId from background script:', threadIdResponse?.error);
+        // Fallback to generating temporary threadId
+        this.state.threadId = 'thread_fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      }
+
+      // Load user and thread state from chrome.storage.local (for selected tabs only now)
       const stored = await chrome.storage.local.get(['userState', 'activeExecution']);
 
-      // Load or create user/thread identifiers
+      // Load selected tabs if they exist
       if (stored.userState) {
-        this.state.userId = stored.userState.userId || this.state.userId;
-        this.state.threadId = stored.userState.threadId || this.state.threadId;
         
         // Restore selected tabs if they exist, but verify tabs are still open
         if (stored.userState.selectedTabs && Array.isArray(stored.userState.selectedTabs)) {
@@ -333,8 +345,7 @@ class PopupChatInterface {
     try {
       await chrome.storage.local.set({
         userState: {
-          userId: this.state.userId,
-          threadId: this.state.threadId,
+          // userId and threadId are now managed by background script, don't store them locally
           selectedTabs: this.state.selectedTabs, // Persist selected tabs
         }
       });
@@ -766,33 +777,45 @@ class PopupChatInterface {
   }
 
   private async clearThread(): Promise<void> {
-    // Generate new thread ID
-    this.state.threadId = this.generateThreadId();
-    this.state.messages = [];
-    this.state.todoList = { items: [] }; // Clear todo list state
-    this.state.selectedTabs = []; // Clear selected tabs
-    this.state.lastFailedMessage = undefined; // Clear failed message
+    try {
+      // Request new thread ID from background script
+      const newThreadResponse = await chrome.runtime.sendMessage({ type: 'NEW_THREAD_ID' });
+      if (newThreadResponse && newThreadResponse.success) {
+        this.state.threadId = newThreadResponse.threadId;
+      } else {
+        console.error('Failed to create new threadId from background script:', newThreadResponse?.error);
+        // Fallback to generating temporary threadId
+        this.state.threadId = 'thread_fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      }
 
-    // Clear any active execution
-    this.clearExecutionState();
+      this.state.messages = [];
+      this.state.todoList = { items: [] }; // Clear todo list state
+      this.state.selectedTabs = []; // Clear selected tabs
+      this.state.lastFailedMessage = undefined; // Clear failed message
 
-    // Reset input and auto-select active tab
-    this.elements.messageInput.value = '';
-    this.autoResizeTextarea(); // Reset textarea height
-    await this.autoSelectActiveTab();
+      // Clear any active execution
+      this.clearExecutionState();
 
-    // Persist new thread ID
-    await this.persistUserState();
+      // Reset input and auto-select active tab
+      this.elements.messageInput.value = '';
+      this.autoResizeTextarea(); // Reset textarea height
+      await this.autoSelectActiveTab();
 
-    // Re-render with empty messages and todo list
-    this.render();
-    
-    // Auto-focus input field after clearing thread
-    setTimeout(() => {
-      this.elements.messageInput.focus();
-    }, 100);
+      // Persist selected tabs (threadId is managed by background script)
+      await this.persistUserState();
 
-    console.log('Started new thread:', this.state.threadId);
+      // Re-render with empty messages and todo list
+      this.render();
+      
+      // Auto-focus input field after clearing thread
+      setTimeout(() => {
+        this.elements.messageInput.focus();
+      }, 100);
+
+      console.log('Started new thread:', this.state.threadId);
+    } catch (error) {
+      console.error('Failed to clear thread:', error);
+    }
   }
 
   private toggleTool(toolCallId: string): void {

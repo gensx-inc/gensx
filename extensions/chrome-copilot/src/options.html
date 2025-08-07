@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Genie Settings</title>
+  <link rel="icon" type="image/x-icon" href="../icons/icon-48.ico">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -158,14 +159,69 @@
       color: #1e40af;
       border: 1px solid #93c5fd;
     }
+
+    .developer-section {
+      margin-top: 40px;
+      padding: 20px;
+      background: #fafafa;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      display: none; /* Hidden by default */
+    }
+
+    .developer-section.visible {
+      display: block;
+    }
+
+    .developer-toggle {
+      margin-top: 32px;
+      padding: 16px 0;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+    }
+
+    .developer-toggle button {
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px 8px;
+    }
+
+    .developer-toggle button:hover {
+      color: #374151;
+    }
+
+    .developer-section h2 {
+      color: #dc2626;
+      font-size: 18px;
+    }
+
+    .developer-warning {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="logo">
-      <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/>
+        <path d="m14 7 3 3"/>
+        <path d="M5 6v4"/>
+        <path d="M19 14v4"/>
+        <path d="M10 2v2"/>
+        <path d="M7 8H3"/>
+        <path d="M21 16h-4"/>
+        <path d="M11 3H9"/>
       </svg>
     </div>
     <h1>Genie</h1>
@@ -177,81 +233,19 @@
   </div>
 
   <div class="alert alert-info">
-    <strong>Note:</strong> This extension requires a running GenSX workflow server to function.
-    Make sure you have the GenSX copilot example running locally or configure a custom API endpoint below.
+    <strong>Welcome to Genie!</strong> Your AI web assistant is ready to help you browse and interact with web pages.
+    Simply click the extension icon or use the keyboard shortcut to get started.
   </div>
 
   <form id="settings-form">
-    <div class="section">
-      <h2>API Configuration</h2>
 
-      <div class="form-group">
-        <label for="apiEndpoint">GenSX API Endpoint</label>
-        <input type="url" id="apiEndpoint" placeholder="http://localhost:3000">
-        <div class="help-text">
-          The base URL where your GenSX server is running (the client will handle the API path)
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="apiKey">API Key (Optional)</label>
-        <input type="text" id="apiKey" placeholder="Enter API key if required">
-        <div class="help-text">
-          Some GenSX deployments may require an API key for authentication
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="org">Organization</label>
-        <input type="text" id="org" placeholder="gensx">
-        <div class="help-text">
-          The GenSX organization identifier for your workflows
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="project">Project</label>
-        <input type="text" id="project" placeholder="chrome-copilot">
-        <div class="help-text">
-          The GenSX project name where your copilot workflow is deployed
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="environment">Environment</label>
-        <input type="text" id="environment" placeholder="default">
-        <div class="help-text">
-          The deployment environment (e.g., default, staging, production)
-        </div>
-      </div>
-    </div>
 
     <div class="section">
-      <h2>Copilot Behavior</h2>
-
-      <div class="form-group">
-        <div class="checkbox-group">
-          <input type="checkbox" id="autoOpen">
-          <label for="autoOpen">Automatically open copilot on page load</label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <div class="checkbox-group">
-          <input type="checkbox" id="enableShortcuts">
-          <label for="enableShortcuts">Enable keyboard shortcuts</label>
-        </div>
-        <div class="help-text">
-          Use Ctrl+Shift+G (Cmd+Shift+G on Mac) to toggle the copilot
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="defaultWidth">Default Pane Width (%)</label>
-        <input type="range" id="defaultWidth" min="20" max="60" value="30">
-        <div class="help-text">
-          How much of the screen width the copilot should take up by default
-        </div>
+      <h2>Keyboard Shortcut</h2>
+      
+      <div class="alert alert-info">
+        <strong>Ctrl+Shift+K</strong> (Cmd+Shift+K on Mac) - Opens Genie AI assistant<br>
+        <small>You can customize this shortcut in Chrome's extension shortcuts settings: <code>chrome://extensions/shortcuts</code></small>
       </div>
     </div>
 
@@ -275,11 +269,62 @@
       </div>
     </div>
 
+    <div class="developer-toggle">
+      <button type="button" id="developer-toggle-btn">
+        Developer Settings
+      </button>
+    </div>
+
+    <div id="developer-section" class="developer-section">
+      <div class="developer-warning">
+        <strong>⚠️ Developer Settings</strong><br>
+        These settings are for developers running local GenSX servers. 
+        Changing these values may break the extension functionality.
+      </div>
+      
+      <div class="section">
+        <h2>🛠️ API Configuration</h2>
+
+        <div class="form-group">
+          <label for="apiEndpoint">GenSX API Endpoint</label>
+          <input type="url" id="apiEndpoint" placeholder="http://localhost:1337">
+          <div class="help-text">
+            The base URL where your GenSX server is running (the client will handle the API path)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="org">Organization</label>
+          <input type="text" id="org" placeholder="gensx">
+          <div class="help-text">
+            The GenSX organization identifier for your workflows
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="project">Project</label>
+          <input type="text" id="project" placeholder="chrome-copilot">
+          <div class="help-text">
+            The GenSX project name where your copilot workflow is deployed
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="environment">Environment</label>
+          <input type="text" id="environment" placeholder="default">
+          <div class="help-text">
+            The deployment environment (e.g., default, staging, production)
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="button-group">
       <button type="button" id="reset-btn" class="btn-secondary">Reset to Defaults</button>
       <button type="submit" class="btn-primary">Save Settings</button>
     </div>
   </form>
+
 
   <script src="options.js"></script>
 </body>
