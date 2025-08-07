@@ -339,16 +339,20 @@ export const toolbox = createToolBox({
   },
 
   findElementsByText: {
-    description: "Find multiple elements on a specific tab by text content.",
+    description: "Find specific elements containing text content. Returns only the deepest elements that directly contain the text, not their parent containers.",
     params: z.object({
       tabId: z.number().describe("The ID of the tab to search in."),
-      content: z.array(z.string()).describe("The content of the element to find"),
+      content: z.array(z.string()).describe("The text content to search for in elements"),
     }),
     result: z.object({
       success: z.boolean(),
       elements: z.array(z.object({
-        selector: z.string(),
-      })).optional(),
+        selector: z.string().describe("CSS selector to uniquely identify the element"),
+        text: z.string().describe("The actual text content found in the element"),
+        matchedTerm: z.string().describe("Which search term matched this element"),
+        elementType: z.string().describe("HTML tag name of the element"),
+      })).optional().describe("Array of specific elements containing the search text"),
+      totalFound: z.number().optional().describe("Total number of elements found (before any limits)"),
       error: z.string().optional().describe("Error message if operation failed"),
     }),
   },

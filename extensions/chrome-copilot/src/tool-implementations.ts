@@ -785,83 +785,92 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
   },
 
   findElementsByText: (params) => {
-    const foundElements = new Set<Element>();
-    const maxResults = 50; // Limit results for performance
+    const foundElements = new Map<HTMLElement, { text: string; matchedTerm: string }>();
+    const maxResults = 30; // Reasonable limit for performance
+    const minTextLength = 2; // Skip very short text content
     
-    // Pre-compile search patterns for better performance
-    const searchTexts = params.content.map(text => text.toLowerCase().trim());
-    
-    // Use a more targeted approach - start with likely text containers
-    const textContainerSelectors = [
-      'p', 'span', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 
-      'li', 'td', 'th', 'label', 'button', 'a', 'strong', 'em',
-      '[class*="text"]', '[class*="title"]', '[class*="label"]', '[class*="content"]'
-    ];
-    
-    searchTexts.forEach(searchText => {
-      if (foundElements.size >= maxResults) return;
+    try {
+      // Pre-compile search patterns for better performance
+      const searchTerms = params.content.map(text => text.toLowerCase().trim());
       
-      // First pass: check likely text containers (much faster than *)
-      textContainerSelectors.forEach(selector => {
+      // Find all elements that contain text
+      const allElements = document.querySelectorAll('*');
+      
+      searchTerms.forEach(searchTerm => {
         if (foundElements.size >= maxResults) return;
         
-        try {
-          $(selector).each((_, element): false | void => {
-            if (foundElements.size >= maxResults) return false;
-            
-            const el = element as HTMLElement;
-            
-            // Quick visibility check first
-            if (el.offsetParent === null && el.style.position !== 'fixed') {
-              return; // Continue to next element
+        Array.from(allElements).forEach(element => {
+          if (foundElements.size >= maxResults) return;
+          
+          const el = element as HTMLElement;
+          
+          // Skip elements that are not visible
+          if (!el.offsetParent && el.style.position !== 'fixed' && el.style.display !== 'contents') {
+            return;
+          }
+          
+          // Skip script, style, and other non-content elements
+          if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'META', 'LINK', 'HEAD'].includes(el.tagName)) {
+            return;
+          }
+          
+          // Get only the direct text content of this element (not from children)
+          const directTextContent = getDirectTextContent(el);
+          
+          if (!directTextContent || directTextContent.length < minTextLength) {
+            return;
+          }
+          
+          // Check if the direct text content contains our search term
+          if (directTextContent.toLowerCase().includes(searchTerm)) {
+            // Make sure we haven't already found this element with a different term
+            if (!foundElements.has(el)) {
+              foundElements.set(el, {
+                text: directTextContent.trim(),
+                matchedTerm: searchTerm
+              });
             }
-            
-            // Check if this element's text contains our search text
-            const elementText = el.textContent?.toLowerCase().trim() || '';
-            if (!elementText.includes(searchText)) {
-              return; // Continue to next element
-            }
-            
-            // Check if any direct children contain the text (to find deepest)
-            let hasChildWithText = false;
-            for (const child of el.children) {
-              const childText = child.textContent?.toLowerCase().trim() || '';
-              if (childText.includes(searchText)) {
-                hasChildWithText = true;
-                break;
-              }
-            }
-            
-            // Include if it's a leaf node OR has its own text content
-            if (!hasChildWithText) {
-              foundElements.add(element);
-            } else {
-              // Check if this element has its own text (not just from children)
-              const childrenText = Array.from(el.children)
-                .map(child => child.textContent || '')
-                .join('').toLowerCase();
-              const ownText = elementText.replace(childrenText, '').trim();
-              
-              if (ownText.includes(searchText)) {
-                foundElements.add(element);
-              }
-            }
-            
-            return; // Explicitly return void to continue
-          });
-        } catch (e) {
-          // Skip problematic selectors
-          console.warn('Selector failed:', selector, e);
-        }
+          }
+        });
       });
-    });
+      
+      // Convert to result format
+      const elements = Array.from(foundElements.entries()).map(([element, data]) => ({
+        selector: getUniqueSelector(element),
+        text: data.text,
+        matchedTerm: data.matchedTerm,
+        elementType: element.tagName.toLowerCase(),
+      }));
+      
+      return {
+        success: true,
+        elements,
+        totalFound: elements.length,
+      };
+      
+    } catch (error) {
+      console.error('findElementsByText error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        elements: [],
+      };
+    }
     
-    return {
-      success: true,
-      elements: Array.from(foundElements).slice(0, maxResults).map(element => ({
-        selector: getUniqueSelector(element as HTMLElement),
-      })),
-    };
+    // Helper function to get only direct text content (not from children)
+    function getDirectTextContent(element: HTMLElement): string {
+      let textContent = '';
+      
+      // Iterate through all child nodes
+      for (const node of element.childNodes) {
+        if (node.nodeType === Node.TEXT_NODE) {
+          // This is a text node - add its content
+          textContent += node.textContent || '';
+        }
+      }
+      
+      return textContent.trim();
+    }
   },
 
   findInteractiveElements: async (params) => {
