@@ -90,17 +90,6 @@ chrome.runtime.onMessage.addListener(
       return true; // Indicates we will send a response asynchronously
     }
 
-    if (message.type === "GET_WEBSITE_KNOWLEDGE") {
-      handleGetWebsiteKnowledge(message, sender, sendResponse);
-      return true; // Indicates we will send a response asynchronously
-    }
-
-    if (message.type === "DELETE_WEBSITE_KNOWLEDGE") {
-      handleDeleteWebsiteKnowledge(message, sender, sendResponse);
-      return true; // Indicates we will send a response asynchronously
-    }
-
-
     if (message.type === "GET_GEOLOCATION") {
       handleGeolocationRequest(message, sender, sendResponse);
       return true; // Indicates we will send a response asynchronously
@@ -216,79 +205,6 @@ async function handleGetThreadHistory(
       error: error instanceof Error ? error.message : "Failed to retrieve thread history",
       messages: [],
       todoList: { items: [] }
-    });
-  }
-}
-
-// Handle website knowledge base retrieval
-async function handleGetWebsiteKnowledge(
-  message: any,
-  sender: chrome.runtime.MessageSender,
-  sendResponse: (response: any) => void,
-) {
-  const { data } = message;
-  const { userId, domain } = data;
-
-  try {
-    console.log("Getting website knowledge for:", userId, domain);
-
-    const gensx = await getClient();
-
-    console.log("Running getWebsiteKnowledgeBase workflow...");
-    const { output: knowledgeData } = await gensx.run<{ content: string; exists: boolean }>("getWebsiteKnowledgeBase", {
-      inputs: { userId, domain }
-    });
-
-    console.log("getWebsiteKnowledgeBase workflow output:", knowledgeData);
-
-    sendResponse({
-      success: true,
-      content: knowledgeData?.content || "",
-      exists: knowledgeData?.exists || false
-    });
-
-  } catch (error) {
-    console.error("Failed to get website knowledge:", error);
-    sendResponse({
-      success: false,
-      error: error instanceof Error ? error.message : "Failed to retrieve website knowledge",
-      content: "",
-      exists: false
-    });
-  }
-}
-
-// Handle website knowledge base deletion
-async function handleDeleteWebsiteKnowledge(
-  message: any,
-  sender: chrome.runtime.MessageSender,
-  sendResponse: (response: any) => void,
-) {
-  const { data } = message;
-  const { userId, domain } = data;
-
-  try {
-    console.log("Deleting website knowledge for:", userId, domain);
-
-    const gensx = await getClient();
-
-    console.log("Running deleteWebsiteKnowledgeBase workflow...");
-    const { output: deleteResult } = await gensx.run<{ success: boolean; message: string }>("deleteWebsiteKnowledgeBase", {
-      inputs: { userId, domain }
-    });
-
-    console.log("deleteWebsiteKnowledgeBase workflow output:", deleteResult);
-
-    sendResponse({
-      success: deleteResult?.success || false,
-      message: deleteResult?.message || "Unknown result"
-    });
-
-  } catch (error) {
-    console.error("Failed to delete website knowledge:", error);
-    sendResponse({
-      success: false,
-      message: error instanceof Error ? error.message : "Failed to delete website knowledge"
     });
   }
 }
@@ -479,7 +395,7 @@ async function processStreamingEvent(
         error: `Tool '${event.toolName}' requires a tabId parameter, but none was provided. Please include the tab ID of the browser tab you want to interact with.`,
         message: `Missing required tabId parameter for ${event.toolName} tool`
       };
-      
+
       const gensx = await getClient();
       await gensx.resume({
         executionId,
@@ -623,12 +539,12 @@ async function processStreamingEvent(
   // Handle workflow errors (only if execution actually failed)
   if (event.type === "error") {
     console.error("Workflow error received:", event);
-    
+
     // Only treat as execution failure if executionStatus is explicitly "failed"
     // Stream errors can occur during execution without indicating complete failure
     if (event.executionStatus === "failed") {
       console.error("Execution failed, notifying popup");
-      
+
       // Send error to popup
       chrome.runtime.sendMessage({
         type: "WORKFLOW_ERROR",
@@ -656,41 +572,41 @@ async function processStreamingEvent(
 async function handleOpenTabTool(executionId: string, event: any): Promise<void> {
   try {
     console.log("Executing openTab tool:", event.params);
-    
+
     const { url, active = true } = event.params;
-    
+
     // Validate URL
     try {
       new URL(url);
     } catch (urlError) {
       throw new Error(`Invalid URL provided: ${url}`);
     }
-    
+
     // Create the new tab
     const newTab = await chrome.tabs.create({
       url: url,
       active: active
     });
-    
+
     if (!newTab.id) {
       throw new Error("Failed to create new tab - no tab ID returned");
     }
-    
+
     console.log("Successfully created new tab:", newTab.id, newTab.url);
-    
+
     // Track this tab as opened by the extension
     extensionOpenedTabs.add(newTab.id);
     console.log('Added tab to extension tracking:', newTab.id, `(${extensionOpenedTabs.size} tracked tabs)`);
-    
+
     // Wait for the tab to start loading to get better title/domain info
     // Try multiple times with increasing delays to get good tab info
     let updatedTab = newTab;
     let attempts = 0;
     const maxAttempts = 3;
-    
+
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, attempts === 0 ? 300 : 800));
-      
+
       try {
         updatedTab = await chrome.tabs.get(newTab.id);
         // If we got a meaningful title, break early
@@ -704,9 +620,9 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
       }
       attempts++;
     }
-    
+
     const domain = updatedTab.url ? new URL(updatedTab.url).hostname : '';
-    
+
     const result = {
       success: true,
       tabId: updatedTab.id,
@@ -715,9 +631,9 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
       domain: domain,
       message: `Successfully opened new tab: ${updatedTab.title || domain || url}`
     };
-    
+
     console.log("openTab tool result:", result);
-    
+
     // Always notify popup to add this tab to selected tabs, even with basic info
     const tabData = {
       tabId: updatedTab.id,
@@ -727,9 +643,9 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
       favicon: updatedTab.favIconUrl,
       isActive: active
     };
-    
+
     console.log('Sending TAB_OPENED_ADD_TO_SELECTED notification:', tabData);
-    
+
     try {
       await chrome.runtime.sendMessage({
         type: 'TAB_OPENED_ADD_TO_SELECTED',
@@ -740,7 +656,7 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
       // This might happen if popup is closed, but that's okay
       console.log('Popup not open, but tab will be available in @ mentions:', notificationError);
     }
-    
+
     // Resume workflow with success result
     const gensx = await getClient();
     await gensx.resume({
@@ -748,10 +664,10 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
       nodeId: event.nodeId,
       data: result
     });
-    
+
   } catch (error) {
     console.error("openTab tool execution failed:", error);
-    
+
     // Resume workflow with error information
     const gensx = await getClient();
     await gensx.resume({
@@ -769,26 +685,26 @@ async function handleOpenTabTool(executionId: string, event: any): Promise<void>
 async function handleCloseTabTool(executionId: string, event: any): Promise<void> {
   try {
     console.log("Executing closeTab tool:", event.params);
-    
+
     const { tabIds } = event.params;
-    
+
     // Validate tabIds
     if (!Array.isArray(tabIds) || tabIds.length === 0) {
       throw new Error("Invalid tabIds provided - must be a non-empty array of numbers");
     }
-    
+
     // Validate each tabId
     for (const tabId of tabIds) {
       if (!tabId || typeof tabId !== 'number') {
         throw new Error(`Invalid tabId provided: ${tabId} - must be a number`);
       }
     }
-    
+
     console.log(`Processing ${tabIds.length} tab(s) for closure:`, tabIds);
-    
+
     const closedTabs: number[] = [];
     const failedTabs: Array<{ tabId: number; error: string }> = [];
-    
+
     // Process each tab
     for (const tabId of tabIds) {
       try {
@@ -800,7 +716,7 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
           });
           continue;
         }
-    
+
         // Verify the tab still exists
         let tab;
         try {
@@ -808,22 +724,22 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
           console.log("Closing tab:", tabId, tab.url);
         } catch (tabError) {
           console.warn("Tab no longer exists:", tabId, tabError);
-          
+
           // Remove from tracking and count as success (tab is effectively closed)
           extensionOpenedTabs.delete(tabId);
           closedTabs.push(tabId);
           continue;
         }
-        
+
         // Close the tab
         await chrome.tabs.remove(tabId);
-        
+
         // Remove from tracking (the onRemoved listener will also handle this)
         extensionOpenedTabs.delete(tabId);
         closedTabs.push(tabId);
-        
+
         console.log(`Successfully closed tab ${tabId}:`, tab.title || tab.url);
-        
+
       } catch (tabError) {
         console.error(`Failed to close tab ${tabId}:`, tabError);
         failedTabs.push({
@@ -832,21 +748,21 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
         });
       }
     }
-    
+
     // Prepare result
     const allSuccessful = failedTabs.length === 0;
     const result = {
       success: allSuccessful,
       closedTabs: closedTabs.length > 0 ? closedTabs : undefined,
       failedTabs: failedTabs.length > 0 ? failedTabs : undefined,
-      message: allSuccessful 
+      message: allSuccessful
         ? `Successfully closed ${closedTabs.length} tab(s)`
         : `Closed ${closedTabs.length} tab(s), failed to close ${failedTabs.length} tab(s)`,
       error: allSuccessful ? undefined : `Some tabs failed to close. Check failedTabs for details.`
     };
-    
+
     console.log("closeTab tool result:", result);
-    
+
     // Resume workflow with result
     const gensx = await getClient();
     await gensx.resume({
@@ -854,10 +770,10 @@ async function handleCloseTabTool(executionId: string, event: any): Promise<void
       nodeId: event.nodeId,
       data: result
     });
-    
+
   } catch (error) {
     console.error("closeTab tool execution failed:", error);
-    
+
     // Resume workflow with error information
     const gensx = await getClient();
     await gensx.resume({
