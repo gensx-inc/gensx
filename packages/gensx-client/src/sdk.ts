@@ -234,8 +234,8 @@ export class GenSX {
     return response;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
   async run<T>(workflowName: string, options: StartOptions = {}) {
-
     const { inputs = {} } = options;
 
     // Use provided values or fall back to client defaults
@@ -269,7 +269,7 @@ export class GenSX {
     const data = (await response.json()) as {
       executionId: string;
       output: T;
-    }
+    };
 
     return data;
   }
@@ -326,7 +326,9 @@ export class GenSX {
     };
   }
 
-  async getOutput(options: { executionId: string }): Promise<{ output: string }> {
+  async getOutput(options: {
+    executionId: string;
+  }): Promise<{ output: string }> {
     const { executionId } = options;
 
     const url = this.isLocal
