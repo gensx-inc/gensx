@@ -95,6 +95,7 @@ chrome.runtime.onMessage.addListener(
       return true; // Indicates we will send a response asynchronously
     }
 
+
     return false; // Not handling this message
   },
 );
@@ -451,6 +452,7 @@ async function processStreamingEvent(
       await handleOpenTabTool(executionId, event);
       return;
     }
+
 
     // Get tab ID from tool parameters (most tools require tabId)
     const toolTabId = event.params?.tabId;
@@ -809,3 +811,4 @@ async function handleGeolocationRequest(
     });
   }
 }
+

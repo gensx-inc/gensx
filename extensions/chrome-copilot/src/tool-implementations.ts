@@ -5,6 +5,7 @@ import $ from 'jquery';
 import { finder } from '@medv/finder';
 import { InferToolParams, InferToolResult } from '@gensx/core';
 import Europa from 'europa';
+import html2canvas from 'html2canvas';
 
 import { toolbox } from '../shared/toolbox';
 
@@ -1194,6 +1195,77 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         success: false,
         elements: [],
         message: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+
+  captureElementScreenshot: async (params) => {
+    try {
+      const { tabId, selector, scrollIntoView = true } = params;
+      console.log('Capturing screenshot for selector:', selector, 'on tab:', tabId);
+
+      // Find the element
+      const $element = $(selector);
+      if ($element.length === 0) {
+        return {
+          success: false,
+          error: `Element not found with selector: ${selector}`,
+        };
+      }
+
+      const element = $element[0] as HTMLElement;
+
+      // Check if element is visible using jQuery's built-in helper
+      if (!$element.is(':visible')) {
+        return {
+          success: false,
+          error: `Element is not visible: ${selector}`,
+        };
+      }
+
+      // Scroll element into view if requested
+      if (scrollIntoView) {
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center', 
+          inline: 'center' 
+        });
+        
+        // Wait for scroll to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // Use html2canvas to capture the element
+      console.log('Using html2canvas to capture element');
+      
+      const canvas = await html2canvas(element, {
+        backgroundColor: null,
+        scale: 1,
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+      });
+
+      // Convert to data URL
+      const dataUrl = canvas.toDataURL('image/png', 0.8);
+      
+      console.log(`Successfully captured screenshot: ${canvas.width}x${canvas.height} pixels`);
+      
+      return {
+        success: true,
+        image: dataUrl,
+        width: canvas.width,
+        height: canvas.height,
+        message: `Screenshot captured for element ${selector} (${canvas.width}x${canvas.height}px)`,
+      };
+      
+    } catch (error) {
+      console.error('captureElementScreenshot error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
