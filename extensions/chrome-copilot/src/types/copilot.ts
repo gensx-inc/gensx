@@ -86,8 +86,6 @@ export interface WorkflowMessage {
   requestId: string;
   data: {
     prompt: string;
-    threadId: string;
-    userId: string;
     userName?: string;
     userContext?: string;
     selectedTabs?: TabContext[];

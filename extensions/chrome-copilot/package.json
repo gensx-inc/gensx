@@ -4,7 +4,7 @@
   "description": "Chrome extension for Genie - AI-powered web page interaction assistant",
   "main": "dist/background.js",
   "scripts": {
-    "dev": "npx gensx start gensx/workflows.ts",
+    "dev": "gensx start gensx/workflows.ts",
     "build": "webpack --mode=production",
     "build:dev": "webpack --mode=development",
     "watch": "webpack --mode=development --watch",

@@ -26,8 +26,6 @@ interface PopupState {
   expandedTools: Set<string>;
   isStreaming: boolean;
   isReconnecting: boolean;
-  userId: string;
-  threadId: string;
   currentTabId?: number;
   currentUrl?: string;
   activeExecutionId?: string;
@@ -83,8 +81,6 @@ class PopupChatInterface {
       expandedTools: new Set<string>(),
       isStreaming: false,
       isReconnecting: false,
-      userId: '', // Will be loaded from background script
-      threadId: '', // Will be loaded from background script
       activeTab: 'chat',
       websiteKnowledge: '',
       domain: '',
@@ -135,7 +131,7 @@ class PopupChatInterface {
     this.renderTodoList(); // Initial render of todo list
     this.initializeMentions(); // Initialize @ mention functionality
     this.autoResizeTextarea(); // Set initial textarea height
-    
+
     // Auto-focus the input field when popup opens
     setTimeout(() => {
       this.elements.messageInput.focus();
@@ -239,36 +235,16 @@ class PopupChatInterface {
 
   private async loadPersistedState(): Promise<void> {
     try {
-      // Get userId from background script (ensures consistency across all contexts)
-      const userIdResponse = await chrome.runtime.sendMessage({ type: 'GET_USER_ID' });
-      if (userIdResponse && userIdResponse.success) {
-        this.state.userId = userIdResponse.userId;
-      } else {
-        console.error('Failed to get userId from background script:', userIdResponse?.error);
-        // Fallback to generating temporary userId
-        this.state.userId = 'popup_fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      }
-
-      // Get threadId from background script (ensures consistency across all contexts)
-      const threadIdResponse = await chrome.runtime.sendMessage({ type: 'GET_THREAD_ID' });
-      if (threadIdResponse && threadIdResponse.success) {
-        this.state.threadId = threadIdResponse.threadId;
-      } else {
-        console.error('Failed to get threadId from background script:', threadIdResponse?.error);
-        // Fallback to generating temporary threadId
-        this.state.threadId = 'thread_fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      }
-
       // Load user and thread state from chrome.storage.local (for selected tabs only now)
       const stored = await chrome.storage.local.get(['userState', 'activeExecution']);
 
       // Load selected tabs if they exist
       if (stored.userState) {
-        
+
         // Restore selected tabs if they exist, but verify tabs are still open
         if (stored.userState.selectedTabs && Array.isArray(stored.userState.selectedTabs)) {
           const validTabs: TabContext[] = [];
-          
+
           for (const storedTab of stored.userState.selectedTabs) {
             try {
               // Verify the tab still exists
@@ -279,7 +255,7 @@ class PopupChatInterface {
               console.log('Skipping closed tab:', storedTab.title, storedTab.tabId);
             }
           }
-          
+
           this.state.selectedTabs = validTabs;
           console.log(`Restored ${validTabs.length} of ${stored.userState.selectedTabs.length} selected tabs`);
         }
@@ -306,15 +282,11 @@ class PopupChatInterface {
 
   private async loadThreadHistory(): Promise<void> {
     try {
-      console.log('Loading thread history for userId:', this.state.userId, 'threadId:', this.state.threadId);
+      console.log('Loading thread history');
 
       // Request thread history from background script (which will use blob API)
       const response = await chrome.runtime.sendMessage({
         type: 'GET_THREAD_HISTORY',
-        data: {
-          userId: this.state.userId,
-          threadId: this.state.threadId
-        }
       });
 
       console.log('Thread history response:', response);
@@ -334,7 +306,7 @@ class PopupChatInterface {
       } else if (response && !response.success) {
         console.warn('Failed to load thread history:', response.error);
       } else {
-        console.log('No existing thread history found for thread:', this.state.threadId);
+        console.log('No existing thread history found');
       }
     } catch (error) {
       console.warn('Failed to load thread history:', error);
@@ -587,7 +559,7 @@ class PopupChatInterface {
       this.render();
       this.scrollToBottom(); // Smart scroll - only if user is at bottom
       this.persistState();
-      
+
       // Auto-focus input field when streaming completes
       setTimeout(() => {
         this.elements.messageInput.focus();
@@ -608,7 +580,7 @@ class PopupChatInterface {
 
         // Extract clean error message
         const cleanError = this.extractCleanErrorMessage(error);
-        
+
         // Add error message to chat history to inform the user
         this.state.messages.push({
           role: 'system',
@@ -626,10 +598,10 @@ class PopupChatInterface {
         console.log(`Workflow error: ${error}. Message restored to input field for editing.`);
       } else {
         console.warn('No preserved message found for failed request:', requestId);
-        
+
         // Extract clean error message
         const cleanError = this.extractCleanErrorMessage(error);
-        
+
         // Still show error message even if we couldn't restore the user message
         this.state.messages.push({
           role: 'system',
@@ -647,7 +619,7 @@ class PopupChatInterface {
       this.render();
       this.forceScrollToBottom(); // Force scroll to show error message
       this.persistState();
-      
+
       // Auto-focus input field after error for immediate editing
       setTimeout(() => {
         this.elements.messageInput.focus();
@@ -700,8 +672,6 @@ class PopupChatInterface {
         requestId,
         data: {
           prompt: text,
-          threadId: this.state.threadId,
-          userId: this.state.userId,
           userName: settings.userName,
           userContext: settings.userContext,
           selectedTabs: mentionedTabs,
@@ -779,14 +749,7 @@ class PopupChatInterface {
   private async clearThread(): Promise<void> {
     try {
       // Request new thread ID from background script
-      const newThreadResponse = await chrome.runtime.sendMessage({ type: 'NEW_THREAD_ID' });
-      if (newThreadResponse && newThreadResponse.success) {
-        this.state.threadId = newThreadResponse.threadId;
-      } else {
-        console.error('Failed to create new threadId from background script:', newThreadResponse?.error);
-        // Fallback to generating temporary threadId
-        this.state.threadId = 'thread_fallback_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-      }
+      await chrome.runtime.sendMessage({ type: 'NEW_THREAD_ID' });
 
       this.state.messages = [];
       this.state.todoList = { items: [] }; // Clear todo list state
@@ -806,13 +769,13 @@ class PopupChatInterface {
 
       // Re-render with empty messages and todo list
       this.render();
-      
+
       // Auto-focus input field after clearing thread
       setTimeout(() => {
         this.elements.messageInput.focus();
       }, 100);
 
-      console.log('Started new thread:', this.state.threadId);
+      console.log('Started new thread');
     } catch (error) {
       console.error('Failed to clear thread:', error);
     }
@@ -897,7 +860,7 @@ class PopupChatInterface {
       contentDiv.textContent = content;
     } else if (message.role === 'system') {
       const content = typeof message.content === 'string' ? message.content : String(message.content);
-      
+
       // Split by \n and render as separate lines
       const lines = content.split('\n');
       lines.forEach((line, lineIndex) => {
@@ -1138,13 +1101,13 @@ class PopupChatInterface {
   private scrollToBottom(): void {
     // Check if we should auto-scroll BEFORE any DOM changes affect measurements
     const shouldScroll = this.shouldAutoScroll();
-    
+
     // Use requestAnimationFrame for better timing with DOM updates
     requestAnimationFrame(() => {
       if (shouldScroll) {
         const container = this.elements.messagesContainer;
         container.scrollTop = container.scrollHeight;
-        
+
         // Double-check and correct if needed (handles dynamic content)
         requestAnimationFrame(() => {
           if (shouldScroll) {
@@ -1160,17 +1123,17 @@ class PopupChatInterface {
     const scrollTop = container.scrollTop;
     const scrollHeight = container.scrollHeight;
     const clientHeight = container.clientHeight;
-    
+
     // If there's no scroll (content fits in view), always auto-scroll
     if (scrollHeight <= clientHeight) {
       return true;
     }
-    
+
     // Consider "at bottom" if within a smaller, more precise threshold
     // Use 30px or 5% of client height, whichever is smaller - more precise than 100px
     const threshold = Math.min(30, Math.max(10, clientHeight * 0.05));
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
+
     // Also check if we're very close to bottom (within 1px) to catch edge cases
     return distanceFromBottom <= threshold || Math.abs(distanceFromBottom) <= 1;
   }
@@ -1180,7 +1143,7 @@ class PopupChatInterface {
     requestAnimationFrame(() => {
       const container = this.elements.messagesContainer;
       container.scrollTop = container.scrollHeight;
-      
+
       // Double-check to handle dynamic content that might still be rendering
       requestAnimationFrame(() => {
         container.scrollTop = container.scrollHeight;

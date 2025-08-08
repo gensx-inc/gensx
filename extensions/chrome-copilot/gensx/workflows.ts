@@ -51,6 +51,8 @@ export const copilotWorkflow = gensx.Workflow(
   }): Promise<{ response: string; messages: CoreMessage[] }> => {
     const { userId } = gensx.getExecutionScope() as { userId: string };
 
+    console.log("Running copilot workflow for threadId:", threadId, "for userId:", userId);
+
     try {
       // For testing: Simulate workflow error if prompt contains "ERROR"
       if (prompt.includes('ERROR')) {
@@ -139,9 +141,9 @@ You MUST use the todo list as your primary task management system for all tasks.
 4. **Continue until ALL items are completed** - Don't stop until every item is marked complete
 
 ### Todo Tools:
-- addTodoItem: Add new todo items when you discover additional steps
-- completeTodoItem: Mark items completed immediately after each step
-- removeTodoItem: Remove irrelevant or duplicate items
+- addTodoItems: Add new todo items when you discover additional steps
+- completeTodoItems: Mark items completed immediately after each step
+- removeTodoItems: Remove irrelevant or duplicate items
 - getTodoList: Check your progress and plan next steps
 
 ## PAGE INTERACTION
@@ -177,9 +179,6 @@ It is critically important that you get confirmation from the user before taking
 
 ## AVAILABLE TOOLS
 
-### Todo List Tools:
-- addTodoItem, completeTodoItem, removeTodoItem, getTodoList
-
 ### Page Interaction Tools:
 - queryPage: Query the current page with natural language. This is the best tool for finding information, content, or available actions on the current page.
 - analyzeScreenshotTool: Capture a screenshot of a specific element and get answers or analysis of the visual content.
@@ -188,7 +187,7 @@ ${(Object.keys(toolsForModel) as (keyof typeof toolbox)[]).map((tool) => `- ${to
 - updateUserPreference: Update persistent memory about user preferences
 
 ### Searching vs Navigating
-- Use search when you need to find information that is not on the current page.
+- Use search when you need to find information that is not on the current page or more general information.
 - Use navigate when you need to go to a different page or tab.
 - Prefer navigating when you are looking for specific singular information from a page, and search when you are looking for multiple results.
 
@@ -199,6 +198,7 @@ ${(Object.keys(toolsForModel) as (keyof typeof toolbox)[]).map((tool) => `- ${to
 - Use appropriate tools for interactions (clickElements, fillTextInputs, etc.)
 - Be clear and explain what you're doing
 - Get confirmation from the user before taking actions that are irreversible
+- Before finishing, check your todo list and make sure all items are complete.
 
 <date>The current date and time is ${new Date().toLocaleString()}.</date>
 
@@ -344,19 +344,6 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         });
       }
 
-      if (finalTodoList.items.filter((item) => !item.completed).length > 0 && recursionDepth < 5) {
-        console.warn("todo list is not complete, continuing", finalTodoList);
-        return await copilotWorkflow({
-          prompt: "todo list is not complete, continue working on it.",
-          threadId,
-          userName,
-          userContext,
-          selectedTabs,
-          conversationMode,
-          recursionDepth: recursionDepth + 1,
-        });
-      }
-
       return result;
     } catch (error) {
       console.error(
@@ -376,6 +363,8 @@ export const getChatHistoryWorkflow = gensx.Workflow(
   "fetchChatHistory",
   async ({ threadId }: { threadId: string }) => {
     const { userId } = gensx.getExecutionScope() as { userId: string };
+
+    console.log("Fetching chat history for threadId:", threadId, "for userId:", userId);
 
     // Get blob instance for chat history storage
     const chatHistoryBlob = useBlob<ThreadData>(

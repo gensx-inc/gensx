@@ -38,64 +38,70 @@ chrome.runtime.onInstalled.addListener(async () => {
   // Initialize or retrieve consistent userId on installation
   await initializeUserId();
 
-  const settings = await SettingsManager.get();
-  // If we are not in local mode, fetch scoped token from the genie API if there is not one in storage
-  if (!settings.apiEndpoint.includes("localhost") && !chrome.storage.local.get("scopedToken")) {
-    // Fetch scoped token from the genie API. (genie.gensx.com/api/v1/scoped-tokens)
-    const response = await fetch(
-      `https://genie.gensx.com/api/v1/scoped-tokens`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          userId: await getUserId(),
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      console.error("Failed to fetch scoped token:", response.statusText);
-      return;
-    }
-
-    const tokenResponse = await response.json();
-
-    // Store the token in storage
-    await chrome.storage.local.set({ scopedToken: tokenResponse });
-
-    console.log("✅ Scoped token stored in storage");
-  }
+  await getScopedToken();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   await initializeUserId();
 
-  const settings = await SettingsManager.get();
-  // If we are not in local mode, fetch scoped token from the genie API if there is not one in storage
-  if (!settings.apiEndpoint.includes("localhost") && !chrome.storage.local.get("scopedToken")) {
-    // Fetch scoped token from the genie API. (genie.gensx.com/api/v1/scoped-tokens)
-    const response = await fetch(
-      `https://genie.gensx.com/api/scoped-tokens`,
-      {
-        method: "POST",
-        body: JSON.stringify({
-          userId: await getUserId(),
-        }),
-      },
-    );
-
-    if (!response.ok) {
-      console.error("Failed to fetch scoped token:", response.statusText);
-      return;
-    }
-
-    const tokenResponse = await response.json();
-
-    // Store the token in storage
-    await chrome.storage.local.set({ scopedToken: tokenResponse });
-
-    console.log("✅ Scoped token stored in storage");
-  }
+  await getScopedToken();
 });
+
+async function getScopedToken(): Promise<string> {
+  const token = (await chrome.storage.local.get("scopedToken"))?.scopedToken as { token: string; expiresAt: string };
+
+  console.log("Scoped token:", token);
+
+  // If the toke is at risk of expiring, fetch a new one
+  if (!token || new Date(token.expiresAt) < new Date(Date.now() + 30_000)) {
+    return await fetchScopedTokenFromApi();
+  }
+
+  return token.token;
+}
+
+async function fetchScopedTokenFromApi(): Promise<string> {
+  const userId = await getUserId();
+
+  const settings = await SettingsManager.get();
+  if (settings.apiEndpoint.includes("localhost:1337")) {
+    console.log("Fetching scoped token from dev server");
+    // We can fetch from the dev server using the client
+    const gensx = await getClient(true);
+    const token = await gensx.createScopedToken({
+      name: `genie-${userId}-${Date.now()}`,
+      executionScope: {
+        userId,
+      },
+      projectName: "genie",
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(), // 30 days
+    });
+    await chrome.storage.local.set({ scopedToken: token });
+    return token.token;
+  }
+
+  // In prod, go through the genie API.
+  console.log("Fetching scoped token from genie API");
+  const response = await fetch(
+    `https://genie.gensx.com/api/scoped-tokens`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        // We are assuming here that userIds are basically unguessable. Its not great security, but it will do for now until we integrate a real user management system.
+        userId,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    console.error("Failed to fetch scoped token:", response.statusText);
+    throw new Error("Failed to fetch scoped token");
+  }
+
+  const tokenResponse = await response.json();
+  await chrome.storage.local.set({ scopedToken: tokenResponse });
+  return tokenResponse.token;
+}
 
 // Generate and store a consistent userId for the extension
 async function initializeUserId(): Promise<string> {
@@ -110,7 +116,7 @@ async function initializeUserId(): Promise<string> {
 
     // Generate new userId if none exists
     const newUserId =
-      "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+      "user_" + Date.now() + "_" + crypto.randomUUID().replace(/-/g, "");
 
     // Store the new userId
     await chrome.storage.local.set({ userId: newUserId });
@@ -120,7 +126,7 @@ async function initializeUserId(): Promise<string> {
   } catch (error) {
     console.error("Failed to initialize userId:", error);
     // Fallback to generating a temporary one
-    return "user_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
+    return "user_" + Date.now() + "_" + crypto.randomUUID().replace(/-/g, "");
   }
 }
 
@@ -199,10 +205,12 @@ chrome.action.onClicked.addListener(async (tab) => {
 });
 
 
-const getClient = async () => {
+const getClient = async (skipToken = false) => {
   const settings = await SettingsManager.get();
+  const token = skipToken ? undefined : await getScopedToken();
+  console.log("Using scoped token as apiKey:", { token, settings });
   return new GenSX({
-    apiKey: (await chrome.storage.local.get("scopedToken"))?.scopedToken?.token as string,
+    apiKey: token,
     baseUrl: settings.apiEndpoint,
   });
 };
@@ -327,8 +335,7 @@ async function handleWorkflowRequest(
     const response = await gensx.runRaw("copilot", {
       inputs: {
         prompt: data.prompt,
-        threadId: data.threadId,
-        userId: data.userId,
+        threadId: await getThreadId(),
         userName: data.userName,
         userContext: data.userContext,
         selectedTabs: data.selectedTabs || [],
@@ -366,11 +373,9 @@ async function handleGetThreadHistory(
   sender: chrome.runtime.MessageSender,
   sendResponse: (response: any) => void,
 ) {
-  const { data } = message;
-  const { userId, threadId } = data;
-
   try {
-    console.log("Getting thread history for:", userId, threadId);
+    const threadId = await getThreadId();
+    console.log("Getting thread history for:", threadId);
 
     const gensx = await getClient();
 
@@ -379,7 +384,7 @@ async function handleGetThreadHistory(
       messages: CoreMessage[];
       todoList: { items: { title: string; completed: boolean }[] };
     }>("fetchChatHistory", {
-      inputs: { userId, threadId },
+      inputs: { threadId },
     });
 
     console.log("fetchChatHistory workflow output:", threadData);

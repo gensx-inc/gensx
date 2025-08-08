@@ -27,25 +27,43 @@ export function createTodoList(initialTodoList: {
           return { success: true, items: todoList.items.map((item, index) => ({ ...item, index })) };
         },
       }),
-      completeTodoItem: tool({
+      completeTodoItems: tool({
         description: "Mark a todo item as completed",
         parameters: z.object({
-          index: z.number().describe("The index of the todo item to complete. If omitted, the top-most non-completed item will be completed.").optional(),
+          items: z.array(z.object({
+            index: z.number().describe("The index of the todo item to complete. If omitted, the top-most non-completed item will be completed."),
+          })).describe("The items to complete. If omitted, the top-most non-completed item will be completed.").optional(),
         }),
-        execute: async (params: { index?: number }) => {
-          const index = params.index ?? todoList.items.findIndex(item => !item.completed);
-          todoList.items[index].completed = true;
+        execute: async (params: { items?: { index: number }[] }) => {
+          const { items } = params;
+
+          if (items) {
+            items.forEach(item => {
+              todoList.items[item.index].completed = true;
+            });
+          } else {
+            const index = todoList.items.findIndex(item => !item.completed);
+            todoList.items[index].completed = true;
+          }
+
           gensx.publishObject("todoList", todoList);
           return { success: true, items: todoList.items.map((item, index) => ({ ...item, index })) };
         },
       }),
-      removeTodoItem: tool({
+      removeTodoItems: tool({
         description: "Remove a todo item from the list",
         parameters: z.object({
-          index: z.number().describe("The index of the todo item to remove"),
+          items: z.array(z.object({
+            index: z.number().describe("The index of the todo item to remove"),
+          })).describe("The items to remove. If omitted, the top-most item will be removed."),
         }),
-        execute: async (params: { index: number }) => {
-          todoList.items.splice(params.index, 1);
+        execute: async (params: { items: { index: number }[] }) => {
+          const { items } = params;
+
+          items.forEach(item => {
+            todoList.items.splice(item.index, 1);
+          });
+
           gensx.publishObject("todoList", todoList);
           return { success: true, items: todoList.items.map((item, index) => ({ ...item, index })) };
         },
