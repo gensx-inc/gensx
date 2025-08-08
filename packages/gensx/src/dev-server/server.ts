@@ -236,11 +236,13 @@ export class GensxServer {
           ) => void;
           onRequestInput?: (request: { nodeId: string }) => unknown;
           workflowExecutionId?: string;
+          executionScope?: Record<string, unknown>;
         },
       ) => Promise<unknown>;
     },
     executionId: string,
     input: unknown,
+    executionScope?: Record<string, unknown>,
   ): Promise<void> {
     // Use the server's logger for consistency
     return this.executionHandler.executeWorkflowAsync(
@@ -249,6 +251,7 @@ export class GensxServer {
       executionId,
       input,
       this.logger,
+      executionScope,
     );
   }
 
