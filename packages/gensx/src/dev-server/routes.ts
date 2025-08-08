@@ -5,7 +5,12 @@ import { BadRequestError, NotFoundError } from "./errors.js";
 import { ExecutionManager } from "./execution-handler.js";
 import { generateOpenApiSpec, generateSwaggerUI } from "./openapi.js";
 import { CustomEvent, JsonValue, WorkflowMessage } from "./types.js";
-import { decodeLocalScopedToken, encodeLocalScopedToken, generateExecutionId, generateWorkflowId } from "./utils.js";
+import {
+  decodeLocalScopedToken,
+  encodeLocalScopedToken,
+  generateExecutionId,
+  generateWorkflowId,
+} from "./utils.js";
 import { ValidationManager } from "./validation.js";
 import { WorkflowManager } from "./workflow-manager.js";
 
@@ -46,23 +51,29 @@ export function setupRoutes(
   // Create a local scoped token (dev-only)
   app.post(`/scoped-tokens`, async (c) => {
     try {
-      const body = (await validationManager.parseJsonBody(c));
-      const name = String(body.name as string | undefined ?? "local-scoped-token");
-      const executionScope = (body.executionScope as Record<string, unknown> | undefined) ?? {};
-      const projectName = String(body.projectName as string | undefined ?? "local-project");
-      const workflowName = (body.workflowName as string | undefined | null) ?? null;
-      const environmentName = (body.environmentName as string | undefined | null) ?? null;
-      const permissions = (Array.isArray(body.permissions) ? (body.permissions as string[]) : [
-        "start",
-        "run",
-        "progress",
-        "output",
-        "status",
-      ]);
-      const expiresAtStr = String(body.expiresAt as string | undefined ?? new Date(Date.now() + 1000 * 60 * 60).toISOString());
-      const requiredMatchFields = (Array.isArray(body.requiredMatchFields)
+      const body = await validationManager.parseJsonBody(c);
+      const name = String(
+        (body.name as string | undefined) ?? "local-scoped-token",
+      );
+      const executionScope =
+        (body.executionScope as Record<string, unknown> | undefined) ?? {};
+      const projectName = String(
+        (body.projectName as string | undefined) ?? "local-project",
+      );
+      const workflowName =
+        (body.workflowName as string | undefined | null) ?? null;
+      const environmentName =
+        (body.environmentName as string | undefined | null) ?? null;
+      const permissions = Array.isArray(body.permissions)
+        ? (body.permissions as string[])
+        : ["start", "run", "progress", "output", "status"];
+      const expiresAtStr = String(
+        (body.expiresAt as string | undefined) ??
+          new Date(Date.now() + 1000 * 60 * 60).toISOString(),
+      );
+      const requiredMatchFields = Array.isArray(body.requiredMatchFields)
         ? (body.requiredMatchFields as string[])
-        : ["*"]);
+        : ["*"];
 
       const id = generateExecutionId();
       const token = encodeLocalScopedToken(executionScope);
@@ -85,7 +96,10 @@ export function setupRoutes(
         requiredMatchFields,
       });
     } catch (error) {
-      logger.error("❌ Error creating local scoped token:", error instanceof Error ? error.message : String(error));
+      logger.error(
+        "❌ Error creating local scoped token:",
+        error instanceof Error ? error.message : String(error),
+      );
       return c.json({ error: "Failed to create local scoped token" }, 500);
     }
   });
@@ -122,9 +136,14 @@ export function setupRoutes(
       const body = await validationManager.parseJsonBody(c);
 
       // Extract local scoped token execution scope if provided
-      const authHeader = c.req.header("Authorization") ?? c.req.header("authorization");
-      const bearer = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : undefined;
-      const localExecutionScope = bearer ? decodeLocalScopedToken(bearer) : undefined;
+      const authHeader =
+        c.req.header("Authorization") ?? c.req.header("authorization");
+      const bearer = authHeader?.toLowerCase().startsWith("bearer ")
+        ? authHeader.slice(7).trim()
+        : undefined;
+      const localExecutionScope = bearer
+        ? decodeLocalScopedToken(bearer)
+        : undefined;
 
       // Validate that input exists and matches schema
       const schema = workflowManager.getSchema(workflowName);
@@ -394,9 +413,14 @@ export function setupRoutes(
       body = await validationManager.parseJsonBody(c);
 
       // Extract local scoped token execution scope if provided
-      const authHeader = c.req.header("Authorization") ?? c.req.header("authorization");
-      const bearer = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : undefined;
-      const localExecutionScope = bearer ? decodeLocalScopedToken(bearer) : undefined;
+      const authHeader =
+        c.req.header("Authorization") ?? c.req.header("authorization");
+      const bearer = authHeader?.toLowerCase().startsWith("bearer ")
+        ? authHeader.slice(7).trim()
+        : undefined;
+      const localExecutionScope = bearer
+        ? decodeLocalScopedToken(bearer)
+        : undefined;
 
       // Validate that input exists and matches schema
       const schema = workflowManager.getSchema(workflowName);
