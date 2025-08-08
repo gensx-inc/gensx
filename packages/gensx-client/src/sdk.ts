@@ -190,9 +190,12 @@ export class GenSX {
     this.isLocal =
       this.baseUrl.includes("localhost") && !config.overrideLocalMode;
 
+    // Always capture apiKey if provided (even in local) so callers can set
+    // Authorization for local dev features like scoped tokens
+    this.apiKey = this.getApiKey(config.apiKey);
+
     if (!this.isLocal) {
       // For non-local mode, require apiKey
-      this.apiKey = this.getApiKey(config.apiKey);
       if (!this.apiKey) {
         throw new Error(
           "apiKey is required. Provide it in the constructor or set the GENSX_API_KEY environment variable.",
@@ -469,36 +472,53 @@ export class GenSX {
   async createScopedToken(
     options: CreateScopedTokenOptions,
   ): Promise<ScopedTokenResponse> {
+    if (this.isLocal) {
+      const url = `${this.baseUrl}/scoped-tokens`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          name: options.name,
+          executionScope: options.executionScope,
+          projectName: options.projectName,
+          workflowName: options.workflowName,
+          environmentName: options.environmentName,
+          permissions: options.permissions ?? [
+            "start",
+            "run",
+            "progress",
+            "output",
+            "status",
+          ],
+          expiresAt: options.expiresAt,
+          requiredMatchFields: options.requiredMatchFields ?? ["*"],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to create scoped token (local): ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as ScopedTokenResponse;
+      return {
+        ...data,
+        expiresAt: new Date(data.expiresAt),
+        createdAt: new Date(data.createdAt),
+      };
+    }
+
+    // Non-local (cloud)
     // Use provided values or fall back to client defaults
     const org = options.org ?? this.org;
 
     if (!org) {
       throw new Error("org is required to create scoped tokens");
-    }
-
-    if (this.isLocal) {
-      console.warn("Scoped tokens are not supported in local mode");
-      return {
-        id: "local-scoped-token",
-        token: "local-scoped-token",
-        name: options.name,
-        executionScope: options.executionScope,
-        projectId: "local-project-id",
-        projectName: "local-project-name",
-        workflowName: "local-workflow-name",
-        environmentId: "local-environment-id",
-        environmentName: "local-environment-name",
-        permissions: options.permissions ?? [
-          "start",
-          "run",
-          "progress",
-          "output",
-          "status",
-        ],
-        expiresAt: new Date(options.expiresAt),
-        createdAt: new Date(),
-        requiredMatchFields: options.requiredMatchFields ?? ["*"],
-      };
     }
 
     const url = `${this.baseUrl}/org/${org}/scoped-tokens`;

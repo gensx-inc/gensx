@@ -5,7 +5,7 @@ import { BadRequestError, NotFoundError } from "./errors.js";
 import { ExecutionManager } from "./execution-handler.js";
 import { generateOpenApiSpec, generateSwaggerUI } from "./openapi.js";
 import { CustomEvent, JsonValue, WorkflowMessage } from "./types.js";
-import { generateWorkflowId } from "./utils.js";
+import { decodeLocalScopedToken, encodeLocalScopedToken, generateExecutionId, generateWorkflowId } from "./utils.js";
 import { ValidationManager } from "./validation.js";
 import { WorkflowManager } from "./workflow-manager.js";
 
@@ -43,6 +43,53 @@ export function setupRoutes(
     });
   });
 
+  // Create a local scoped token (dev-only)
+  app.post(`/scoped-tokens`, async (c) => {
+    try {
+      const body = (await validationManager.parseJsonBody(c));
+      const name = String(body.name as string | undefined ?? "local-scoped-token");
+      const executionScope = (body.executionScope as Record<string, unknown> | undefined) ?? {};
+      const projectName = String(body.projectName as string | undefined ?? "local-project");
+      const workflowName = (body.workflowName as string | undefined | null) ?? null;
+      const environmentName = (body.environmentName as string | undefined | null) ?? null;
+      const permissions = (Array.isArray(body.permissions) ? (body.permissions as string[]) : [
+        "start",
+        "run",
+        "progress",
+        "output",
+        "status",
+      ]);
+      const expiresAtStr = String(body.expiresAt as string | undefined ?? new Date(Date.now() + 1000 * 60 * 60).toISOString());
+      const requiredMatchFields = (Array.isArray(body.requiredMatchFields)
+        ? (body.requiredMatchFields as string[])
+        : ["*"]);
+
+      const id = generateExecutionId();
+      const token = encodeLocalScopedToken(executionScope);
+      const createdAt = new Date();
+      const expiresAt = new Date(expiresAtStr);
+
+      return c.json({
+        id,
+        token,
+        name,
+        executionScope,
+        projectId: "local-project-id",
+        projectName,
+        workflowName,
+        environmentId: environmentName ? "local-environment-id" : null,
+        environmentName,
+        permissions,
+        expiresAt,
+        createdAt,
+        requiredMatchFields,
+      });
+    } catch (error) {
+      logger.error("❌ Error creating local scoped token:", error instanceof Error ? error.message : String(error));
+      return c.json({ error: "Failed to create local scoped token" }, 500);
+    }
+  });
+
   // Get a single workflow by name
   app.get(`/workflows/:workflowName`, (c) => {
     const workflowName = c.req.param("workflowName");
@@ -74,6 +121,11 @@ export function setupRoutes(
       // Get request body for workflow parameters
       const body = await validationManager.parseJsonBody(c);
 
+      // Extract local scoped token execution scope if provided
+      const authHeader = c.req.header("Authorization") ?? c.req.header("authorization");
+      const bearer = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : undefined;
+      const localExecutionScope = bearer ? decodeLocalScopedToken(bearer) : undefined;
+
       // Validate that input exists and matches schema
       const schema = workflowManager.getSchema(workflowName);
       validationManager.validateInput(body, schema);
@@ -88,6 +140,7 @@ export function setupRoutes(
         execution.id,
         body,
         logger,
+        localExecutionScope,
       );
 
       // Return immediately with executionId
@@ -340,6 +393,11 @@ export function setupRoutes(
       // Get request body for workflow parameters
       body = await validationManager.parseJsonBody(c);
 
+      // Extract local scoped token execution scope if provided
+      const authHeader = c.req.header("Authorization") ?? c.req.header("authorization");
+      const bearer = authHeader?.toLowerCase().startsWith("bearer ") ? authHeader.slice(7).trim() : undefined;
+      const localExecutionScope = bearer ? decodeLocalScopedToken(bearer) : undefined;
+
       // Validate that input exists and matches schema
       const schema = workflowManager.getSchema(workflowName);
       validationManager.validateInput(body, schema);
@@ -410,6 +468,7 @@ export function setupRoutes(
                   messageListener,
                   workflowExecutionId: execution.id,
                   onRequestInput,
+                  executionScope: localExecutionScope,
                 });
 
                 if (
@@ -533,6 +592,7 @@ export function setupRoutes(
           },
           workflowExecutionId: execution.id,
           onRequestInput,
+          executionScope: localExecutionScope,
         });
 
         // Update execution with result

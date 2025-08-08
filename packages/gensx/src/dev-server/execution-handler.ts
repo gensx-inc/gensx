@@ -1,9 +1,9 @@
 import {
-  InputRequest,
-  JsonValue,
-  WorkflowExecution,
-  WorkflowMessage,
-  WorkflowMessageList,
+    InputRequest,
+    JsonValue,
+    WorkflowExecution,
+    WorkflowMessage,
+    WorkflowMessageList,
 } from "./types.js";
 import { generateExecutionId } from "./utils.js";
 import { WorkflowManager } from "./workflow-manager.js";
@@ -57,6 +57,7 @@ export class ExecutionManager {
       info: (msg: string, ...args: unknown[]) => void;
       error: (msg: string, error?: unknown) => void;
     },
+    executionScope?: Record<string, unknown>,
   ): Promise<void> {
     // Get the current execution record
     const execution = this.workflowManager.getExecution(executionId);
@@ -101,6 +102,7 @@ export class ExecutionManager {
         messageListener,
         onRequestInput: this.createInputRequestCallback(executionId),
         workflowExecutionId: executionId,
+        executionScope,
       });
 
       // Update execution with result
