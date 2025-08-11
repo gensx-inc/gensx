@@ -121,6 +121,37 @@ export interface ResumeOptions {
   data: unknown;
 }
 
+export interface CreateScopedTokenOptions {
+  name: string;
+  executionScope: Record<string, unknown>;
+  projectName: string;
+  workflowName?: string;
+  environmentName?: string;
+  permissions?: string[];
+  expiresAt: string; // ISO datetime string
+  requiredMatchFields?: string[];
+  // Allow overriding client-level config
+  org?: string;
+  project?: string;
+  environment?: string;
+}
+
+export interface ScopedTokenResponse {
+  id: string;
+  token: string;
+  name: string;
+  executionScope: Record<string, unknown>;
+  projectId: string;
+  projectName: string;
+  workflowName: string | null;
+  environmentId: string | null;
+  environmentName: string | null;
+  permissions: string[];
+  expiresAt: Date;
+  createdAt: Date;
+  requiredMatchFields?: string[];
+}
+
 /**
  * GenSX SDK for interacting with GenSX workflows
  *
@@ -159,9 +190,12 @@ export class GenSX {
     this.isLocal =
       this.baseUrl.includes("localhost") && !config.overrideLocalMode;
 
+    // Always capture apiKey if provided (even in local) so callers can set
+    // Authorization for local dev features like scoped tokens
+    this.apiKey = this.getApiKey(config.apiKey);
+
     if (!this.isLocal) {
       // For non-local mode, require apiKey
-      this.apiKey = this.getApiKey(config.apiKey);
       if (!this.apiKey) {
         throw new Error(
           "apiKey is required. Provide it in the constructor or set the GENSX_API_KEY environment variable.",
@@ -430,6 +464,107 @@ export class GenSX {
     }
 
     return response;
+  }
+
+  /**
+   * Create a scoped token for API access
+   */
+  async createScopedToken(
+    options: CreateScopedTokenOptions,
+  ): Promise<ScopedTokenResponse> {
+    if (this.isLocal) {
+      const url = `${this.baseUrl}/scoped-tokens`;
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(this.apiKey ? { Authorization: `Bearer ${this.apiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          name: options.name,
+          executionScope: options.executionScope,
+          projectName: options.projectName,
+          workflowName: options.workflowName,
+          environmentName: options.environmentName,
+          permissions: options.permissions ?? [
+            "start",
+            "run",
+            "progress",
+            "output",
+            "status",
+          ],
+          expiresAt: options.expiresAt,
+          requiredMatchFields: options.requiredMatchFields ?? ["*"],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to create scoped token (local): ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const data = (await response.json()) as ScopedTokenResponse;
+      return {
+        ...data,
+        expiresAt: new Date(data.expiresAt),
+        createdAt: new Date(data.createdAt),
+      };
+    }
+
+    // Non-local (cloud)
+    // Use provided values or fall back to client defaults
+    const org = options.org ?? this.org;
+
+    if (!org) {
+      throw new Error("org is required to create scoped tokens");
+    }
+
+    const url = `${this.baseUrl}/org/${org}/scoped-tokens`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    // Only include Authorization header if apiKey is defined
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        name: options.name,
+        executionScope: options.executionScope,
+        projectName: options.projectName,
+        workflowName: options.workflowName,
+        environmentName: options.environmentName,
+        permissions: options.permissions ?? [
+          "start",
+          "run",
+          "progress",
+          "output",
+          "status",
+        ],
+        expiresAt: options.expiresAt,
+        requiredMatchFields: options.requiredMatchFields ?? ["*"],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to create scoped token: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    const data = (await response.json()) as ScopedTokenResponse;
+    return {
+      ...data,
+      expiresAt: new Date(data.expiresAt),
+      createdAt: new Date(data.createdAt),
+    };
   }
 
   // Private helper methods
