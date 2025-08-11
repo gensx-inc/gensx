@@ -74,6 +74,7 @@ class PopupChatInterface {
   };
   private currentStreamingRequestId: string | null = null;
   private currentStreamingMessageIndex: number = -1;
+  private isWaitingForFirstToken: boolean = false;
 
   constructor() {
     this.state = {
@@ -466,8 +467,11 @@ class PopupChatInterface {
 
     if (this.currentStreamingRequestId === requestId) {
       this.state.activeExecutionId = data.executionId;
-      console.log('Workflow execution started:', data.executionId);
+      console.log('Workflow execution started:', data.executionId, 'isWaitingForFirstToken:', this.isWaitingForFirstToken);
       this.persistState();
+      
+      // Render to ensure thinking spinner is visible when execution starts
+      this.render();
     }
   }
 
@@ -477,6 +481,12 @@ class PopupChatInterface {
     if (this.currentStreamingRequestId === requestId) {
       // Clear reconnection state since we're now receiving updates
       this.state.isReconnecting = false;
+
+      // Clear thinking state since we're now receiving tokens
+      if (this.isWaitingForFirstToken) {
+        console.log('First token received - clearing thinking spinner');
+        this.isWaitingForFirstToken = false;
+      }
 
       // Clear reconnection timeout if it exists
       if ((this as any).reconnectionTimeout) {
@@ -507,6 +517,12 @@ class PopupChatInterface {
     if (this.currentStreamingRequestId === requestId) {
       // Clear reconnection state since we're now receiving updates
       this.state.isReconnecting = false;
+
+      // Clear thinking state since we're now receiving updates
+      if (this.isWaitingForFirstToken) {
+        console.log('Messages update received - clearing thinking spinner');
+        this.isWaitingForFirstToken = false;
+      }
 
       // Clear reconnection timeout if it exists
       if ((this as any).reconnectionTimeout) {
@@ -547,6 +563,7 @@ class PopupChatInterface {
       }
 
       this.state.isStreaming = false;
+      this.isWaitingForFirstToken = false; // Clear thinking state when complete
       this.currentStreamingRequestId = null;
       this.currentStreamingMessageIndex = -1;
 
@@ -610,6 +627,7 @@ class PopupChatInterface {
       }
 
       this.state.isStreaming = false;
+      this.isWaitingForFirstToken = false; // Clear thinking state on error
       this.currentStreamingRequestId = null;
       this.currentStreamingMessageIndex = -1;
 
@@ -640,6 +658,8 @@ class PopupChatInterface {
     // Add user message
     this.state.messages.push({ role: 'user', content: text });
     this.state.isStreaming = true;
+    this.isWaitingForFirstToken = true; // Set thinking state
+    console.log('Message sent - showing thinking spinner');
     this.elements.messageInput.value = '';
     this.autoResizeTextarea();
 
@@ -687,6 +707,7 @@ class PopupChatInterface {
       console.error('Error sending message:', error);
 
       this.state.isStreaming = false;
+      this.isWaitingForFirstToken = false; // Clear thinking state on error
       this.currentStreamingRequestId = null;
 
       // Show generic error message in chat
@@ -807,6 +828,13 @@ class PopupChatInterface {
     if (this.state.messages.length === 0 && this.shouldShowInitHint()) {
       const hintElement = this.renderInitHint();
       this.elements.messagesContainer.appendChild(hintElement);
+    }
+
+    // Show thinking indicator if waiting for first token
+    if (this.isWaitingForFirstToken) {
+      console.log('Rendering thinking spinner');
+      const thinkingElement = this.renderThinkingIndicator();
+      this.elements.messagesContainer.appendChild(thinkingElement);
     }
 
     // Show reconnection status if reconnecting
@@ -1039,6 +1067,18 @@ class PopupChatInterface {
     return this.state.knowledgeBaseLoaded && (!this.state.websiteKnowledge || this.state.websiteKnowledge.trim().length === 0);
   }
 
+  private renderThinkingIndicator(): HTMLElement {
+    const thinkingDiv = document.createElement('div');
+    thinkingDiv.className = 'thinking-indicator';
+    thinkingDiv.innerHTML = `
+      <div class="thinking-bubble">
+        <div class="thinking-spinner"></div>
+        <span class="thinking-text">Thinking...</span>
+      </div>
+    `;
+    return thinkingDiv;
+  }
+
   private renderReconnectionStatus(): HTMLElement {
     const statusDiv = document.createElement('div');
     statusDiv.className = 'reconnection-status';
@@ -1055,6 +1095,9 @@ class PopupChatInterface {
   private renderTodoList(): void {
     const { todoList } = this.state;
     const { todoListContainer, todoListItems, todoListCount } = this.elements;
+
+    // Store previous item count to detect if new items were added
+    const previousItemCount = parseInt(todoListCount.textContent?.split('/')[1] || '0', 10);
 
     // Update count with completed/total format
     const totalItems = todoList.items.length;
@@ -1095,6 +1138,24 @@ class PopupChatInterface {
       todoItemDiv.appendChild(checkboxDiv);
       todoItemDiv.appendChild(titleDiv);
       todoListItems.appendChild(todoItemDiv);
+    });
+
+    // Auto-scroll to bottom if todo list is open and new items were added
+    if (totalItems > previousItemCount && !todoListContainer.classList.contains('collapsed')) {
+      this.scrollTodoListToBottom();
+    }
+  }
+
+  private scrollTodoListToBottom(): void {
+    // Use requestAnimationFrame to ensure DOM has been updated
+    requestAnimationFrame(() => {
+      const todoItemsContainer = this.elements.todoListItems;
+      todoItemsContainer.scrollTop = todoItemsContainer.scrollHeight;
+      
+      // Double-check and correct if needed (handles dynamic content)
+      requestAnimationFrame(() => {
+        todoItemsContainer.scrollTop = todoItemsContainer.scrollHeight;
+      });
     });
   }
 

@@ -3,7 +3,7 @@ import { generateText } from "@gensx/vercel-ai";
 import { toolbox } from "../../shared/toolbox";
 import { tool } from "ai";
 import z from "zod";
-import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 
 const analyzeScreenshot = gensx.Component("analyzeScreenshot", async ({
   tabId,
@@ -14,8 +14,8 @@ const analyzeScreenshot = gensx.Component("analyzeScreenshot", async ({
   selector: string;
   question: string;
 }) => {
-  // const model = anthropic("claude-3-5-sonnet-20241022");
-  const model = openai("gpt-5-nano-2025-08-07");
+  const model = anthropic("claude-3-5-haiku-20241022");
+  // const model = openai("gpt-5-nano-2025-08-07");
 
   try {
     // Capture screenshot using the external tool (same pattern as queryPage uses fetchPageText)
@@ -65,7 +65,6 @@ Be specific and descriptive in your analysis.`
           ]
         }
       ],
-      maxTokens: 2000,
     });
 
     return result.text;

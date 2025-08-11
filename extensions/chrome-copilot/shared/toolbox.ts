@@ -2,15 +2,15 @@ import { createToolBox } from "@gensx/core";
 import { z } from "zod";
 
 export const toolbox = createToolBox({
-  fetchPageText: {
-    description: "Fetch the content of a page as markdown from a specific tab.",
+  fetchPageHtml: {
+    description: "Fetch the HTML content of a page from a specific tab.",
     params: z.object({
       tabId: z.number().describe("The ID of the tab to fetch content from."),
     }),
     result: z.object({
       success: z.boolean(),
       url: z.string().optional().describe("The url of the page"),
-      content: z.string().optional().describe("The markdown content of the page"),
+      content: z.string().optional().describe("The HTML content of the page"),
       error: z.string().optional().describe("Error message if operation failed"),
     }),
   },
@@ -499,8 +499,6 @@ export const toolbox = createToolBox({
     result: z.object({
       success: z.boolean(),
       image: z.string().optional().describe("Base64 data URL of the screenshot image"),
-      width: z.number().optional().describe("Screenshot width in pixels"),
-      height: z.number().optional().describe("Screenshot height in pixels"),
       message: z.string().optional().describe("Success message or additional info"),
       error: z.string().optional().describe("Error message if screenshot failed"),
     }),
@@ -509,7 +507,7 @@ export const toolbox = createToolBox({
 
 export type ToolBox = typeof toolbox;
 
-const readonlyTools: (keyof ToolBox)[] = ["fetchPageText", "getCurrentUrl", "getGeolocation", "inspectElements", "findInteractiveElements", "findElementsByText", "captureElementScreenshot"];
+const readonlyTools: (keyof ToolBox)[] = ["fetchPageHtml", "getCurrentUrl", "getGeolocation", "inspectElements", "findInteractiveElements", "findElementsByText", "captureElementScreenshot"];
 
 export function getReadonlyTools() {
   return Object.fromEntries(Object.entries(toolbox).filter(([key]) => readonlyTools.includes(key as keyof ToolBox)));

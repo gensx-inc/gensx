@@ -5,40 +5,78 @@ import $ from 'jquery';
 import { finder } from '@medv/finder';
 import { InferToolParams, InferToolResult } from '@gensx/core';
 import Europa from 'europa';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 
 import { toolbox } from '../shared/toolbox';
 
-const europa = new Europa();
+const europa = new Europa({
+  absolute: true,
+  inline: true,
+});
 
 type OptionalPromise<T> = T | Promise<T>;
 
 // Tool implementations for Chrome extension context
 export const toolImplementations: { [key in keyof typeof toolbox]: (params: InferToolParams<typeof toolbox, key>) => OptionalPromise<InferToolResult<typeof toolbox, key>> } = {
-  fetchPageText: () => {
-    // Clone the HTML to avoid modifying the original DOM
-    const htmlClone = document.querySelector('html')?.cloneNode(true) as HTMLElement;
-    if (!htmlClone) {
+  // fetchPageText: () => {
+  //   // Clone the HTML to avoid modifying the original DOM
+  //   const htmlClone = document.querySelector('html')?.cloneNode(true) as HTMLElement;
+  //   if (!htmlClone) {
+  //     return {
+  //       success: false,
+  //       url: window.location.href ?? "unknown",
+  //       content: "",
+  //       error: "Could not access HTML content",
+  //     };
+  //   }
+
+  //   // Pre-process HTML to reduce content size and noise
+  //   preprocessHtmlForMarkdown(htmlClone);
+
+  //   // Convert to markdown
+  //   const markdown = europa.convert(htmlClone);
+
+  //   // No content truncation here - let the chunking approach handle large content
+  //   return {
+  //     success: true,
+  //     url: window.location.href ?? "unknown",
+  //     content: markdown,
+  //   };
+  // },
+
+  fetchPageHtml: () => {
+    try {
+      const bodyEl = document.body;
+      if (!bodyEl) {
+        return {
+          success: false,
+          url: window.location.href ?? "unknown",
+          content: "",
+          error: "Could not access HTML content",
+        };
+      }
+
+      // Clone to avoid mutating the live DOM
+      const bodyClone = bodyEl.cloneNode(true) as HTMLElement;
+
+      // Preprocess for LLM consumption: remove <style> tags, truncate long href/style attributes
+      preprocessHtmlForLlm(bodyClone);
+
+      const content = bodyClone.innerHTML;
+
+      return {
+        success: true,
+        url: window.location.href ?? "unknown",
+        content,
+      };
+    } catch (error) {
       return {
         success: false,
         url: window.location.href ?? "unknown",
         content: "",
-        error: "Could not access HTML content",
+        error: error instanceof Error ? error.message : String(error),
       };
     }
-
-    // Pre-process HTML to reduce content size and noise
-    preprocessHtmlForMarkdown(htmlClone);
-
-    // Convert to markdown
-    const markdown = europa.convert(htmlClone);
-
-    // No content truncation here - let the chunking approach handle large content
-    return {
-      success: true,
-      url: window.location.href ?? "unknown",
-      content: markdown,
-    };
   },
 
   getCurrentUrl: () => {
@@ -484,7 +522,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             results.push({
               selector: input.selector,
               filled: wasSuccessfullyFilled,
-              error: wasSuccessfullyFilled ? undefined : 
+              error: wasSuccessfullyFilled ? undefined :
                 `Value not set correctly. Expected: "${targetValue}", Got: "${actualValue}"`,
             });
           }
@@ -788,39 +826,39 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
     const foundElements = new Map<HTMLElement, { text: string; matchedTerm: string }>();
     const maxResults = 30; // Reasonable limit for performance
     const minTextLength = 2; // Skip very short text content
-    
+
     try {
       // Pre-compile search patterns for better performance
       const searchTerms = params.content.map(text => text.toLowerCase().trim());
-      
+
       // Find all elements that contain text
       const allElements = document.querySelectorAll('*');
-      
+
       searchTerms.forEach(searchTerm => {
         if (foundElements.size >= maxResults) return;
-        
+
         Array.from(allElements).forEach(element => {
           if (foundElements.size >= maxResults) return;
-          
+
           const el = element as HTMLElement;
-          
+
           // Skip elements that are not visible
           if (!el.offsetParent && el.style.position !== 'fixed' && el.style.display !== 'contents') {
             return;
           }
-          
+
           // Skip script, style, and other non-content elements
           if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'META', 'LINK', 'HEAD'].includes(el.tagName)) {
             return;
           }
-          
+
           // Get only the direct text content of this element (not from children)
           const directTextContent = getDirectTextContent(el);
-          
+
           if (!directTextContent || directTextContent.length < minTextLength) {
             return;
           }
-          
+
           // Check if the direct text content contains our search term
           if (directTextContent.toLowerCase().includes(searchTerm)) {
             // Make sure we haven't already found this element with a different term
@@ -833,7 +871,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           }
         });
       });
-      
+
       // Convert to result format
       const elements = Array.from(foundElements.entries()).map(([element, data]) => ({
         selector: getUniqueSelector(element),
@@ -841,13 +879,13 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         matchedTerm: data.matchedTerm,
         elementType: element.tagName.toLowerCase(),
       }));
-      
+
       return {
         success: true,
         elements,
         totalFound: elements.length,
       };
-      
+
     } catch (error) {
       console.error('findElementsByText error:', error);
       return {
@@ -856,11 +894,11 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         elements: [],
       };
     }
-    
+
     // Helper function to get only direct text content (not from children)
     function getDirectTextContent(element: HTMLElement): string {
       let textContent = '';
-      
+
       // Iterate through all child nodes
       for (const node of element.childNodes) {
         if (node.nodeType === Node.TEXT_NODE) {
@@ -868,7 +906,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           textContent += node.textContent || '';
         }
       }
-      
+
       return textContent.trim();
     }
   },
@@ -878,7 +916,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       // Extract parameters (tabId is not used in content script context, textToFilter is used for post-processing)
       const { tabId, textToFilter } = params;
       console.log('findInteractiveElements called with tabId:', tabId, 'textToFilter:', textToFilter);
-      
+
       const batchSize = 20; // Smaller batches for more responsive UI
       const yieldInterval = 2; // Yield every 2 batches (every 40 elements)
       const maxResults = 100; // Early termination limit
@@ -896,7 +934,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       // Simplified content check for performance
       const hasMinimalContent = (el: HTMLElement): boolean => {
         const tagName = el.tagName.toLowerCase();
-        
+
         // Always include form elements and links
         if (['button', 'a', 'input', 'select', 'textarea'].includes(tagName)) {
           return true;
@@ -905,14 +943,14 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         // Quick checks for other elements
         const text = el.textContent?.trim();
         if (text && text.length > 0) return true;
-        
+
         // Check for important attributes
-        const hasImportantAttrs = el.hasAttribute('onclick') || 
+        const hasImportantAttrs = el.hasAttribute('onclick') ||
                                  el.hasAttribute('data-testid') ||
                                  el.hasAttribute('aria-label') ||
                                  el.hasAttribute('title') ||
                                  el.getAttribute('role') === 'button';
-        
+
         return hasImportantAttrs;
       };
 
@@ -929,20 +967,20 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
         // Bonus for explicit click handlers
         if (el.hasAttribute('onclick') || el.hasAttribute('onClick')) score += 10;
-        
+
         // Bonus for test attributes (likely important for automation)
         if (el.hasAttribute('data-testid') || el.hasAttribute('data-cy')) score += 8;
-        
+
         // Bonus for ARIA attributes (prioritize accessible elements)
-        const ariaAttributeCount = Array.from(el.attributes).filter(attr => 
+        const ariaAttributeCount = Array.from(el.attributes).filter(attr =>
           attr.name.startsWith('aria-')).length;
         if (ariaAttributeCount > 0) score += 8; // Higher priority for ARIA attributes
-        
+
         // Bonus for semantic roles
         const role = el.getAttribute('role');
         if (role) {
           score += 7; // Role attribute indicates semantic purpose
-          
+
           // Extra bonus for interactive roles
           const interactiveRoles = ['button', 'link', 'tab', 'menuitem', 'option', 'checkbox', 'radio', 'slider', 'switch', 'textbox'];
           if (interactiveRoles.includes(role)) {
@@ -953,10 +991,10 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         // Bonus for cursor:pointer (passed as parameter to avoid getComputedStyle)
         if (hasCursorPointer) {
           score += 6; // Good indicator of interactivity
-          
+
           // Extra bonus for cursor:pointer on common React patterns
           const className = el.getAttribute('class') || '';
-          if (className.includes('card') || className.includes('item') || 
+          if (className.includes('card') || className.includes('item') ||
               className.includes('row') || className.includes('tile') ||
               ['div', 'span', 'li'].includes(tagName)) {
             score += 4; // Likely a React clickable component
@@ -988,7 +1026,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           const ariaLabel = el.getAttribute('aria-label')?.toLowerCase() || '';
           const title = el.getAttribute('title')?.toLowerCase() || '';
           const alt = el.getAttribute('alt')?.toLowerCase() || '';
-          
+
           const matchesFilter = textToFilter.some(filterText => {
             const lowerFilterText = filterText.toLowerCase();
             return textContent.includes(lowerFilterText) ||
@@ -996,7 +1034,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                    title.includes(lowerFilterText) ||
                    alt.includes(lowerFilterText);
           });
-          
+
           if (!matchesFilter) {
             return false; // Skip this element entirely - doesn't match text filter
           }
@@ -1055,18 +1093,18 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       // Step 1: Get obvious interactive elements (fast)
       const obviousInteractiveSelectors = "button, a, input, select, textarea, [role='button'], [role='link'], [onclick], [data-testid*='button'], [data-testid*='click']";
       const obviousElements = Array.from(document.querySelectorAll(obviousInteractiveSelectors)) as HTMLElement[];
-      
+
       console.log(`Processing ${obviousElements.length} obvious interactive elements`);
       await processBatch(obviousElements);
 
       // Step 2: Check cursor:pointer on likely interactive elements (balanced approach)
       if (foundElements.size < maxResults) {
         console.log('Checking cursor:pointer on likely interactive elements');
-        
+
         // Broader criteria for cursor:pointer candidates - include common React patterns
         const cursorCandidateSelectors = [
           // Elements that commonly use cursor:pointer in React apps
-          'div, span, li, section, article', 
+          'div, span, li, section, article',
           // Elements with any interactive hints
           '[class*="card"]', '[class*="item"]', '[class*="row"]', '[class*="tile"]',
           '[class*="button"]', '[class*="btn"]', '[class*="click"]', '[class*="link"]',
@@ -1077,7 +1115,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         ];
 
         const allCursorCandidates = new Set<HTMLElement>();
-        
+
         // Collect cursor candidates from multiple selectors
         for (const selector of cursorCandidateSelectors) {
           try {
@@ -1091,10 +1129,10 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         // Filter candidates to focus on those more likely to be interactive
         const filteredCandidates = Array.from(allCursorCandidates).filter(el => {
           if (foundElements.has(el)) return false;
-          
+
           const tagName = el.tagName.toLowerCase();
           const className = el.getAttribute('class') || '';
-          
+
           // Include elements that are commonly interactive in React apps
           return (
             // Has text content (likely a clickable text element)
@@ -1102,7 +1140,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             // Has any class that might indicate interactivity
             className.length > 0 ||
             // Has data attributes (common in React)
-            el.hasAttribute('data-testid') || el.hasAttribute('data-cy') || 
+            el.hasAttribute('data-testid') || el.hasAttribute('data-cy') ||
             Array.from(el.attributes).some(attr => attr.name.startsWith('data-')) ||
             // Has aria attributes
             Array.from(el.attributes).some(attr => attr.name.startsWith('aria-')) ||
@@ -1119,7 +1157,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         const cursorBatchSize = 15; // Smaller batches for expensive operations
         for (let i = 0; i < filteredCandidates.length && foundElements.size < maxResults; i += cursorBatchSize) {
           const batch = filteredCandidates.slice(i, i + cursorBatchSize);
-          
+
           for (const el of batch) {
             if (foundElements.has(el) || foundElements.size >= maxResults) break;
 
@@ -1133,7 +1171,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
               continue;
             }
           }
-          
+
           // Yield every batch when doing expensive operations
           await yieldToBrowser();
         }
@@ -1149,7 +1187,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
         for (const selector of additionalSelectors) {
           if (foundElements.size >= maxResults) break;
-          
+
           try {
             const elements = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
             await processBatch(elements);
@@ -1234,7 +1272,11 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
   captureElementScreenshot: async (params) => {
     try {
-      const { tabId, selector, scrollIntoView = true } = params;
+      const { 
+        tabId, 
+        selector, 
+        scrollIntoView = true
+      } = params;
       console.log('Capturing screenshot for selector:', selector, 'on tab:', tabId);
 
       // Find the element
@@ -1258,80 +1300,109 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
       // Scroll element into view if requested
       if (scrollIntoView) {
-        element.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center', 
-          inline: 'center' 
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'center'
         });
-        
+
         // Wait for scroll to complete
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      // Use html2canvas to capture the element
-      console.log('Using html2canvas to capture element');
-      
+      // Use html2canvas-pro to capture the element (better CSS support than regular html2canvas)
+      console.log('Using html2canvas-pro to capture element');
+
       let canvas;
+      
+      // Smart sizing - automatically scale large elements to reasonable size
+      const originalWidth = element.offsetWidth;
+      const originalHeight = element.offsetHeight;
+      const maxWidth = 800;
+      const maxHeight = 600;
+      
+      let finalScale = 1;
+      
+      // Only scale down if element is larger than max dimensions
+      if (originalWidth > maxWidth || originalHeight > maxHeight) {
+        const widthScale = maxWidth / originalWidth;
+        const heightScale = maxHeight / originalHeight;
+        finalScale = Math.min(widthScale, heightScale); // Use smaller scale to fit both dimensions
+        console.log(`Auto-scaling large element from ${originalWidth}x${originalHeight} (scale: ${finalScale.toFixed(2)})`);
+      } else {
+        console.log(`Element fits within limits: ${originalWidth}x${originalHeight}`);
+      }
+
+      // First attempt: Use html2canvas-pro with modern CSS support
       try {
-        canvas = await html2canvas(element, {
-        backgroundColor: null,
-        scale: 1,
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-        ignoreElements: (element) => {
-          // Skip elements that might have problematic CSS or aren't needed
-          return element.tagName === 'SCRIPT' || element.tagName === 'NOSCRIPT';
-        },
-        onclone: (clonedDoc, element) => {
-          // Remove or replace problematic CSS color functions
-          const stylesheets = clonedDoc.querySelectorAll('style');
-          stylesheets.forEach(sheet => {
-            if (sheet.textContent) {
-              // Replace problematic color functions with fallback colors
-              let content = sheet.textContent;
-              content = content.replace(/oklab\([^)]+\)/g, 'rgb(128, 128, 128)');
-              content = content.replace(/oklch\([^)]+\)/g, 'rgb(128, 128, 128)');
-              content = content.replace(/lch\([^)]+\)/g, 'rgb(128, 128, 128)');
-              content = content.replace(/lab\([^)]+\)/g, 'rgb(128, 128, 128)');
-              sheet.textContent = content;
-            }
-          });
-        }
-      });
-      } catch (html2canvasError) {
-        console.warn('html2canvas failed with advanced options, trying fallback:', html2canvasError);
+        console.log('Attempting html2canvas-pro with viewport-limited capture...');
         
-        // Fallback: Try with minimal options
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        canvas = await html2canvas(element, {
+          backgroundColor: null,
+          scale: finalScale,
+          logging: false,
+          useCORS: true,
+          allowTaint: false,
+          width: originalWidth,
+          height: originalHeight,
+          // Limit to visible viewport
+          windowWidth: viewportWidth,
+          windowHeight: viewportHeight,
+          // html2canvas-pro should handle modern CSS functions better
+          ignoreElements: (el) => {
+            // Still ignore problematic elements
+            const tagName = el.tagName;
+            if (['SCRIPT', 'NOSCRIPT'].includes(tagName)) {
+              return true;
+            }
+            // Skip elements with data-html2canvas-ignore attribute
+            if (el.hasAttribute('data-html2canvas-ignore')) {
+              return true;
+            }
+            return false;
+          }
+        });
+        console.log('html2canvas-pro full CSS support succeeded');
+      } catch (modernError) {
+        console.warn('html2canvas-pro with full CSS failed, trying fallback:', modernError);
+
+        // Fallback: Use safer configuration
         try {
           canvas = await html2canvas(element, {
             backgroundColor: '#ffffff',
-            scale: 1,
+            scale: finalScale, // Use same calculated scale
             logging: false,
             useCORS: false,
             allowTaint: true,
+            width: originalWidth,
+            height: originalHeight,
+            ignoreElements: (el) => {
+              const tagName = el.tagName;
+              return ['SCRIPT', 'NOSCRIPT', 'STYLE', 'LINK'].includes(tagName);
+            }
           });
+          console.log('html2canvas-pro fallback succeeded');
         } catch (fallbackError) {
-          console.error('Both html2canvas attempts failed:', fallbackError);
+          console.error('html2canvas-pro attempts failed:', fallbackError);
           throw new Error(`Screenshot capture failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
         }
       }
 
-      // Convert to data URL
+      // Convert to data URL with good quality
       const dataUrl = canvas.toDataURL('image/png', 0.8);
-      
+
       console.log(`Successfully captured screenshot: ${canvas.width}x${canvas.height} pixels`);
-      
+
       return {
         success: true,
         image: dataUrl,
-        width: canvas.width,
-        height: canvas.height,
-        message: `Screenshot captured for element ${selector} (${canvas.width}x${canvas.height}px)`,
+        message: `Screenshot captured for element ${selector}`,
       };
-      
+
     } catch (error) {
       console.error('captureElementScreenshot error:', error);
       return {
@@ -1552,10 +1623,10 @@ const preprocessHtmlForMarkdown = (htmlElement: HTMLElement): void => {
       // Keep the domain and first part of the path, truncate the rest
       try {
         const url = new URL(href, window.location.origin);
-        const truncatedPath = url.pathname.length > 50 
+        const truncatedPath = url.pathname.length > 50
           ? url.pathname.substring(0, 47) + '...'
           : url.pathname;
-        const truncatedHref = url.origin + truncatedPath + 
+        const truncatedHref = url.origin + truncatedPath +
           (url.search ? (url.search.length > 20 ? '?...' : url.search) : '');
         link.setAttribute('href', truncatedHref);
       } catch {
@@ -1616,6 +1687,65 @@ const preprocessHtmlForMarkdown = (htmlElement: HTMLElement): void => {
 };
 
 
+// Helper for fetchPageHtml: trims DOM for LLM consumption without losing structure/semantics
+// - Removes <style> and other purely presentational tags inside the cloned body
+// - Truncates long href attributes on anchors while keeping origin + first path segment
+// - Truncates verbose inline style attributes to a safe length, preserving accessibility-related styles when possible
+const preprocessHtmlForLlm = (rootElement: HTMLElement): void => {
+  try {
+    const $root = $(rootElement);
+
+    // Remove style/script/noscript tags to reduce noise
+    $root.find('style, script, noscript').remove();
+
+    // Truncate href attributes sensibly
+    $root.find('a[href]').each((_, el) => {
+      const $el = $(el);
+      const href = $el.attr('href');
+      if (!href || href.length <= 140) return;
+      try {
+        const url = new URL(href, window.location.origin);
+        const truncatedPath = url.pathname.length > 60
+          ? url.pathname.substring(0, 57) + '...'
+          : url.pathname;
+        const search = url.search ? (url.search.length > 24 ? '?...' : url.search) : '';
+        const safeHref = url.origin + truncatedPath + search;
+        $el.attr('href', safeHref);
+      } catch {
+        $el.attr('href', href.substring(0, 137) + '...');
+      }
+    });
+
+    // Truncate verbose inline style attributes with priority for key properties
+    $root.find('[style]').each((_, el) => {
+      const $el = $(el);
+      const styleAttr = $el.attr('style');
+      if (!styleAttr) return;
+
+      const importantProps = ['display', 'visibility', 'opacity', 'pointer-events', 'cursor'];
+      const parts = styleAttr.split(';').map((s) => s.trim()).filter(Boolean);
+      const prioritized: string[] = [];
+      const others: string[] = [];
+      for (const part of parts) {
+        const [prop] = part.split(':');
+        if (prop && importantProps.includes(prop.trim().toLowerCase())) {
+          prioritized.push(part);
+        } else {
+          others.push(part);
+        }
+      }
+      const reconstructed = [...prioritized, ...others].join('; ');
+      const maxStyleLen = 180;
+      $el.attr('style', reconstructed.length > maxStyleLen ? reconstructed.substring(0, maxStyleLen - 3) + '...' : reconstructed);
+    });
+
+    // Keep ARIA and role attributes intact
+  } catch (e) {
+    // Fail-soft: ignore errors in preprocessing
+  }
+};
+
+
 // Helper to check if an element is likely to be interactive (optimized and more permissive)
 const checkElementInteractivity = (element: HTMLElement): { isInteractive: boolean; reason?: string } => {
   if (!element) {
@@ -1665,7 +1795,7 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
 
   // For React components and common patterns, be more permissive
   const className = element.getAttribute('class') || '';
-  
+
   // Common interactive class patterns
   const interactiveClassPatterns = ['button', 'btn', 'click', 'link', 'card', 'item', 'tile', 'row'];
   if (interactiveClassPatterns.some(pattern => className.includes(pattern))) {
@@ -1676,7 +1806,7 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
   if (['div', 'span', 'li', 'section', 'article'].includes(tagName)) {
     // Be more permissive for these elements - they might have cursor:pointer
     // We'll let the cursor:pointer check in the main function determine final interactivity
-    if (element.textContent?.trim() || className.length > 0 || 
+    if (element.textContent?.trim() || className.length > 0 ||
         Array.from(element.attributes).some(attr => attr.name.startsWith('data-') || attr.name.startsWith('aria-'))) {
       return { isInteractive: true };
     }

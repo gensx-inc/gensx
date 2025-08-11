@@ -374,6 +374,40 @@
       font-size: 13px;
     }
 
+    /* Thinking spinner styles */
+    .thinking-indicator {
+      display: flex;
+      justify-content: flex-start;
+      margin: 12px 0;
+    }
+
+    .thinking-bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      background: #f3f4f6;
+      color: #374151;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .thinking-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #d1d5db;
+      border-top: 2px solid #6b7280;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .thinking-text {
+      opacity: 0.8;
+    }
+
 
     /* Reconnection status */
     .reconnection-status {

@@ -10,9 +10,9 @@ import { analyzeScreenshotTool, queryPageTool } from "./tools/query";
 import { webSearchTool } from "./tools/search";
 import { createTodoList } from "./tools/todolist";
 import { asToolSet } from "@gensx/vercel-ai";
-import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
 
-const toolsToRemove: (keyof typeof toolbox)[] = ["fetchPageText", "captureElementScreenshot"];
+const toolsToRemove: (keyof typeof toolbox)[] = ["fetchPageHtml", "captureElementScreenshot"];
 
 type ThreadData = {
   messages: CoreMessage[];
@@ -215,8 +215,6 @@ ${initialTodoList.items.map((item, index) => `- ${index}. [${item.completed ? "x
 </todoList>` : ""}`,
         };
 
-        console.log("systemMessage", systemMessage);
-
         existingMessages.unshift(systemMessage);
       } else if (
         existingMessages[0].role === "system" &&
@@ -297,14 +295,14 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         },
       };
 
-      // const model = anthropic("claude-3-7-sonnet-latest");
+      const model = anthropic("claude-sonnet-4-20250514");
 
       // const groqClient = createOpenAI({
       //   apiKey: process.env.GROQ_API_KEY!,
       //   baseURL: "https://api.groq.com/openai/v1",
       // });
       // const model = groqClient("moonshotai/kimi-k2-instruct");
-      const model = openai("gpt-5-2025-08-07");
+      // const model = openai("gpt-5-2025-08-07");
       const result = await Agent({
         messages,
         tools,
