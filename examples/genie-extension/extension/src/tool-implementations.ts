@@ -7,7 +7,7 @@ import { InferToolParams, InferToolResult } from '@gensx/core';
 import Europa from 'europa';
 import html2canvas from 'html2canvas-pro';
 
-import { toolbox } from '../shared/toolbox';
+import { toolbox } from '../../shared/toolbox';
 
 const europa = new Europa({
   absolute: true,
@@ -1272,9 +1272,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
   captureElementScreenshot: async (params) => {
     try {
-      const { 
-        tabId, 
-        selector, 
+      const {
+        tabId,
+        selector,
         scrollIntoView = true
       } = params;
       console.log('Capturing screenshot for selector:', selector, 'on tab:', tabId);
@@ -1314,15 +1314,15 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       console.log('Using html2canvas-pro to capture element');
 
       let canvas;
-      
+
       // Smart sizing - automatically scale large elements to reasonable size
       const originalWidth = element.offsetWidth;
       const originalHeight = element.offsetHeight;
       const maxWidth = 800;
       const maxHeight = 600;
-      
+
       let finalScale = 1;
-      
+
       // Only scale down if element is larger than max dimensions
       if (originalWidth > maxWidth || originalHeight > maxHeight) {
         const widthScale = maxWidth / originalWidth;
@@ -1336,11 +1336,11 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       // First attempt: Use html2canvas-pro with modern CSS support
       try {
         console.log('Attempting html2canvas-pro with viewport-limited capture...');
-        
+
         // Get viewport dimensions
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
-        
+
         canvas = await html2canvas(element, {
           backgroundColor: null,
           scale: finalScale,

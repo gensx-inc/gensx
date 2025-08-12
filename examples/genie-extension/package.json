@@ -4,15 +4,14 @@
   "description": "Chrome extension for Genie - AI-powered web page interaction assistant",
   "main": "dist/background.js",
   "scripts": {
-    "dev": "gensx start gensx/workflows.ts",
-    "build": "webpack --mode=production",
-    "build:dev": "webpack --mode=development",
-    "watch": "webpack --mode=development --watch",
+    "watch:gensx": "gensx start gensx/workflows.ts",
+    "build:extension": "cd extension && webpack --mode=production",
+    "watch:extension": "cd extension && webpack --mode=development --watch",
     "package": "npm run build && cd dist && zip -r ../gensx-copilot-extension.zip . -x '*.DS_Store'",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
     "lint": "echo 'Linting not configured yet'",
-    "deploy-gensx": "npx gensx deploy -e OPENAI_API_KEY -e ANTHROPIC_API_KEY -e GROQ_API_KEY -e TAVILY_API_KEY gensx/workflows.ts"
+    "deploy:gensx": "npx gensx deploy -e OPENAI_API_KEY -e ANTHROPIC_API_KEY -e GROQ_API_KEY -e TAVILY_API_KEY gensx/workflows.ts"
   },
   "keywords": [
     "chrome-extension",

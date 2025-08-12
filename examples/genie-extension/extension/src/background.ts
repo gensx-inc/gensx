@@ -1,4 +1,6 @@
 // Genie Chrome Extension Background Script
+import { GenSX } from "@gensx/client";
+import { type CoreMessage } from "ai";
 
 import {
   ExtensionMessage,
@@ -7,9 +9,7 @@ import {
   SettingsManager,
   TodoList,
 } from "./types/copilot";
-import { GenSX } from "@gensx/client";
 import { applyObjectPatches } from "./utils/workflow-state";
-import { type CoreMessage } from "ai";
 
 // Legacy: currentWorkflowTabId removed - now using explicit tab selection
 

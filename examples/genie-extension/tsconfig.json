@@ -36,11 +36,11 @@
     ],
     "typeRoots": [
       "./node_modules/@types",
-      "./src/types"
+      "extension/src/types"
     ]
   },
   "include": [
-    "src/**/*",
+    "extension/src/**/*",
     "gensx/**/*",
     "shared/**/*"
   ],
