@@ -215,12 +215,14 @@ PAGE CONTENT:
 ${pageContent.content}
 `,
               },
-              ...(screenshot.image ? [{
-                    type: "image" as const,
-                    image: screenshot.image,
-                  },
-                ]
-              : []),
+              ...(screenshot.image
+                ? [
+                    {
+                      type: "image" as const,
+                      image: screenshot.image,
+                    },
+                  ]
+                : []),
             ],
           },
         ],
@@ -300,12 +302,14 @@ ${chunk}
 
 `,
                 },
-                ...(screenshot.image ? [{
-                    type: "image" as const,
-                    image: screenshot.image,
-                  },
-                ]
-              : []),
+                ...(screenshot.image
+                  ? [
+                      {
+                        type: "image" as const,
+                        image: screenshot.image,
+                      },
+                    ]
+                  : []),
               ],
             },
           ],
@@ -381,7 +385,9 @@ GUIDELINES:
               text: `USER QUERY: ${query}
 `,
             },
-            ...(screenshot.image ? [{
+            ...(screenshot.image
+              ? [
+                  {
                     type: "image" as const,
                     image: screenshot.image,
                   },

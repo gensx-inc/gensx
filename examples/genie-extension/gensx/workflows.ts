@@ -11,7 +11,10 @@ import { createTodoList } from "./tools/todolist";
 import { asToolSet } from "@gensx/vercel-ai";
 import { anthropic } from "@ai-sdk/anthropic";
 
-const toolsToRemove: (keyof typeof toolbox)[] = ["fetchPageHtml", "captureElementScreenshot"];
+const toolsToRemove: (keyof typeof toolbox)[] = [
+  "fetchPageHtml",
+  "captureElementScreenshot",
+];
 
 type ThreadData = {
   messages: CoreMessage[];
@@ -50,12 +53,19 @@ export const copilotWorkflow = gensx.Workflow(
   }): Promise<{ response: string; messages: CoreMessage[] }> => {
     const { userId } = gensx.getExecutionScope() as { userId: string };
 
-    console.log("Running copilot workflow for threadId:", threadId, "for userId:", userId);
+    console.log(
+      "Running copilot workflow for threadId:",
+      threadId,
+      "for userId:",
+      userId,
+    );
 
     try {
       // For testing: Simulate workflow error if prompt contains "ERROR"
-      if (prompt.includes('ERROR')) {
-        throw new Error('Workflow execution failed: Simulated error for testing error handling and retry functionality');
+      if (prompt.includes("ERROR")) {
+        throw new Error(
+          "Workflow execution failed: Simulated error for testing error handling and retry functionality",
+        );
       }
 
       // Get blob instance for chat history storage
@@ -86,8 +96,7 @@ export const copilotWorkflow = gensx.Workflow(
         // Load user preferences working memory scratchpad
         const userPrefsExists = await userPreferencesBlob.exists();
         if (userPrefsExists) {
-          userPreferences =
-            (await userPreferencesBlob.getString()) ?? "";
+          userPreferences = (await userPreferencesBlob.getString()) ?? "";
         }
       } catch (error) {
         console.error("Error loading working memory", error);
@@ -108,12 +117,13 @@ export const copilotWorkflow = gensx.Workflow(
         // Determine tab context for system message
         const tabContextInfo = `## TAB CONTEXT
 You are working with ${conversationMode} mode:
-${selectedTabs.length === 1 ?
-  `- **Single Tab Mode**: Focus on "${selectedTabs[0].title}" (${selectedTabs[0].domain}) (tabId: ${selectedTabs[0].tabId})`
-  : selectedTabs.length > 1 ?
-  `- **Multi-Tab Mode**: Working with ${selectedTabs.length} tabs. These tabs have been selected by the user for this task:
-${selectedTabs.map(tab => `  [tabId: ${tab.tabId}] "${tab.title}" (${tab.domain})`).join('\n')}`
-  : '- **General Mode**: No tabs selected, you cannot use page inspection tools or navigation/interaction tools. You can still use any tools that do not require a tabId.'
+${
+  selectedTabs.length === 1
+    ? `- **Single Tab Mode**: Focus on "${selectedTabs[0].title}" (${selectedTabs[0].domain}) (tabId: ${selectedTabs[0].tabId})`
+    : selectedTabs.length > 1
+      ? `- **Multi-Tab Mode**: Working with ${selectedTabs.length} tabs. These tabs have been selected by the user for this task:
+${selectedTabs.map((tab) => `  [tabId: ${tab.tabId}] "${tab.title}" (${tab.domain})`).join("\n")}`
+      : "- **General Mode**: No tabs selected, you cannot use page inspection tools or navigation/interaction tools. You can still use any tools that do not require a tabId."
 }
 
 When using inspection tools, you target specific tabs by providing the tabId parameter.
@@ -209,9 +219,13 @@ ${userContext || "No user context provided"}
 ${userPreferences}
 </userPreferences>
 
-${initialTodoList.items.length > 0 ? `<todoList>
+${
+  initialTodoList.items.length > 0
+    ? `<todoList>
 ${initialTodoList.items.map((item, index) => `- ${index}. [${item.completed ? "x" : " "}] ${item.title}`).join("\n")}
-</todoList>` : ""}`,
+</todoList>`
+    : ""
+}`,
         };
 
         existingMessages.unshift(systemMessage);
@@ -254,7 +268,8 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
         },
       ];
 
-      const { tools: todoListTools, getFinalTodoList } = createTodoList(initialTodoList);
+      const { tools: todoListTools, getFinalTodoList } =
+        createTodoList(initialTodoList);
 
       const tools = {
         ...asToolSet(toolsForModel),
@@ -272,10 +287,7 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
                 success: true,
               };
             } catch (error) {
-              console.error(
-                "Error updating user preferences",
-                error,
-              );
+              console.error("Error updating user preferences", error);
               return {
                 success: false,
                 error: "Error updating user preferences",
@@ -319,14 +331,18 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
       const lastMessage = result.messages[result.messages.length - 1];
       if (
         typeof lastMessage.content === "string" &&
-        (lastMessage.content.trim().endsWith("<|tool_calls_section_end|>") || lastMessage.content.trim().endsWith("<|tool_calls_section_begin|>"))
+        (lastMessage.content.trim().endsWith("<|tool_calls_section_end|>") ||
+          lastMessage.content.trim().endsWith("<|tool_calls_section_begin|>"))
       ) {
         // sometimes the k2 model will end the message with a tool call section begin or end marker and stop, so we need to continue for tools
         continueForTools = true;
       }
 
       const finalTodoList = getFinalTodoList();
-      await saveThreadData({ messages: result.messages, todoList: finalTodoList });
+      await saveThreadData({
+        messages: result.messages,
+        todoList: finalTodoList,
+      });
 
       if (continueForTools && recursionDepth < 5) {
         console.warn("continuing for tools", finalTodoList);
@@ -354,7 +370,7 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
 
 function extractApiCalErrorMessage(error: any): string {
   if (error instanceof APICallError) {
-    return error.message
+    return error.message;
   }
   if (error instanceof ToolExecutionError) {
     return extractApiCalErrorMessage(error.cause) ?? error.message;
@@ -371,7 +387,12 @@ export const getChatHistoryWorkflow = gensx.Workflow(
   async ({ threadId }: { threadId: string }) => {
     const { userId } = gensx.getExecutionScope() as { userId: string };
 
-    console.log("Fetching chat history for threadId:", threadId, "for userId:", userId);
+    console.log(
+      "Fetching chat history for threadId:",
+      threadId,
+      "for userId:",
+      userId,
+    );
 
     // Get blob instance for chat history storage
     const chatHistoryBlob = useBlob<ThreadData>(

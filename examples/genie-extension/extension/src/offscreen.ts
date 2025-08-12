@@ -35,7 +35,7 @@ chrome.runtime.onMessage.addListener(handleMessages);
 function handleMessages(
   message: any,
   sender: chrome.runtime.MessageSender,
-  sendResponse: (response: GeolocationResult) => void
+  sendResponse: (response: GeolocationResult) => void,
 ): boolean {
   // Return early if this message isn't meant for the offscreen document.
   if (message.target !== "offscreen") {
@@ -74,7 +74,9 @@ function clone(obj: any): any {
   return copy;
 }
 
-async function getLocation(options: GeolocationOptions = {}): Promise<GeolocationResult> {
+async function getLocation(
+  options: GeolocationOptions = {},
+): Promise<GeolocationResult> {
   // Use a raw Promise here so you can pass `resolve` and `reject` into the
   // callbacks for getCurrentPosition().
   return new Promise((resolve, reject) => {

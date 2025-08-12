@@ -1,13 +1,13 @@
 // Chrome Extension Tool Implementations
 // Based on examples/copilot/src/components/copilot/tool-implementations.ts
 
-import $ from 'jquery';
-import { finder } from '@medv/finder';
-import { InferToolParams, InferToolResult } from '@gensx/core';
-import Europa from 'europa';
-import html2canvas from 'html2canvas-pro';
+import $ from "jquery";
+import { finder } from "@medv/finder";
+import { InferToolParams, InferToolResult } from "@gensx/core";
+import Europa from "europa";
+import html2canvas from "html2canvas-pro";
 
-import { toolbox } from '../../shared/toolbox';
+import { toolbox } from "../../shared/toolbox";
 
 const europa = new Europa({
   absolute: true,
@@ -17,7 +17,11 @@ const europa = new Europa({
 type OptionalPromise<T> = T | Promise<T>;
 
 // Tool implementations for Chrome extension context
-export const toolImplementations: { [key in keyof typeof toolbox]: (params: InferToolParams<typeof toolbox, key>) => OptionalPromise<InferToolResult<typeof toolbox, key>> } = {
+export const toolImplementations: {
+  [key in keyof typeof toolbox]: (
+    params: InferToolParams<typeof toolbox, key>,
+  ) => OptionalPromise<InferToolResult<typeof toolbox, key>>;
+} = {
   // fetchPageText: () => {
   //   // Clone the HTML to avoid modifying the original DOM
   //   const htmlClone = document.querySelector('html')?.cloneNode(true) as HTMLElement;
@@ -131,25 +135,29 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
                 // Create a concise summary
                 let summary = `${tagName}`;
-                if (value && ['input', 'textarea', 'select'].includes(tagName)) {
-                  summary += ` (value: "${value.length > 50 ? value.substring(0, 47) + '...' : value}")`;
+                if (
+                  value &&
+                  ["input", "textarea", "select"].includes(tagName)
+                ) {
+                  summary += ` (value: "${value.length > 50 ? value.substring(0, 47) + "..." : value}")`;
                 } else if (text) {
-                  summary += `: "${text.length > 100 ? text.substring(0, 97) + '...' : text}"`;
+                  summary += `: "${text.length > 100 ? text.substring(0, 97) + "..." : text}"`;
                 }
 
                 // Add key attributes for context
-                const id = $el.attr('id');
-                const className = $el.attr('class');
-                const role = $el.attr('role');
-                const ariaLabel = $el.attr('aria-label');
+                const id = $el.attr("id");
+                const className = $el.attr("class");
+                const role = $el.attr("role");
+                const ariaLabel = $el.attr("aria-label");
 
                 if (id) summary += ` #${id}`;
                 if (className) {
-                  const classes = className.split(' ').slice(0, 3).join(' '); // First 3 classes
-                  summary += ` .${classes}${className.split(' ').length > 3 ? '...' : ''}`;
+                  const classes = className.split(" ").slice(0, 3).join(" "); // First 3 classes
+                  summary += ` .${classes}${className.split(" ").length > 3 ? "..." : ""}`;
                 }
                 if (role) summary += ` [role=${role}]`;
-                if (ariaLabel) summary += ` [aria-label="${ariaLabel.substring(0, 30)}${ariaLabel.length > 30 ? '...' : ''}"]`;
+                if (ariaLabel)
+                  summary += ` [aria-label="${ariaLabel.substring(0, 30)}${ariaLabel.length > 30 ? "..." : ""}"]`;
 
                 data.summary = summary;
 
@@ -163,7 +171,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
                 const childCounts = new Map<string, number>();
 
-                $el.children().each(function(this: HTMLElement) {
+                $el.children().each(function (this: HTMLElement) {
                   const childTag = this.tagName.toLowerCase();
                   const currentCount = childCounts.get(childTag) || 0;
                   childCounts.set(childTag, currentCount + 1);
@@ -175,7 +183,10 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                     childrenSummary.push({
                       tag: childTag,
                       selector: getUniqueSelector(this),
-                      text: childText.length > 50 ? childText.substring(0, 47) + '...' : childText || undefined,
+                      text:
+                        childText.length > 50
+                          ? childText.substring(0, 47) + "..."
+                          : childText || undefined,
                     });
                   }
                 });
@@ -183,7 +194,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                 // Add count summaries for elements with many children
                 childCounts.forEach((count, tag) => {
                   if (count > 3) {
-                    const existing = childrenSummary.find(c => c.tag === tag && c.count === undefined);
+                    const existing = childrenSummary.find(
+                      (c) => c.tag === tag && c.count === undefined,
+                    );
                     if (existing) {
                       existing.count = count;
                     } else {
@@ -196,8 +209,8 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                   }
                 });
 
-                data.children = childrenSummary.length > 0 ? childrenSummary : undefined;
-
+                data.children =
+                  childrenSummary.length > 0 ? childrenSummary : undefined;
               } else {
                 // Specific properties requested (HTML option removed)
                 if (elementParams.properties.includes("text")) {
@@ -212,7 +225,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                 if (elementParams.attributeName) {
                   const attrValue = $el.attr(elementParams.attributeName);
                   data.attributes = {
-                    [elementParams.attributeName]: (attrValue?.toString() ?? ""),
+                    [elementParams.attributeName]: attrValue?.toString() ?? "",
                   };
                 } else {
                   const attrs: Record<string, string> = {};
@@ -228,7 +241,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                 if (elementParams.cssProperty) {
                   const cssValue = $el.css(elementParams.cssProperty);
                   data.css = {
-                    [elementParams.cssProperty]: (cssValue?.toString() ?? ""),
+                    [elementParams.cssProperty]: cssValue?.toString() ?? "",
                   };
                 } else {
                   data.css = {};
@@ -246,19 +259,39 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           if (elementParams.properties && elementParams.properties.length > 0) {
             elementData = elementData.filter((element) => {
               // Check if at least one requested property has meaningful content
-              if (elementParams.properties.includes('text') && element.text && element.text.length > 0) {
+              if (
+                elementParams.properties.includes("text") &&
+                element.text &&
+                element.text.length > 0
+              ) {
                 return true;
               }
-              if (elementParams.properties.includes('value') && element.value && element.value.length > 0) {
+              if (
+                elementParams.properties.includes("value") &&
+                element.value &&
+                element.value.length > 0
+              ) {
                 return true;
               }
-              if (elementParams.properties.includes('attr') && element.attributes && Object.keys(element.attributes).length > 0) {
+              if (
+                elementParams.properties.includes("attr") &&
+                element.attributes &&
+                Object.keys(element.attributes).length > 0
+              ) {
                 return true;
               }
-              if (elementParams.properties.includes('css') && element.css && Object.keys(element.css).length > 0) {
+              if (
+                elementParams.properties.includes("css") &&
+                element.css &&
+                Object.keys(element.css).length > 0
+              ) {
                 return true;
               }
-              if (elementParams.properties.includes('data') && element.data && Object.keys(element.data).length > 0) {
+              if (
+                elementParams.properties.includes("data") &&
+                element.data &&
+                Object.keys(element.data).length > 0
+              ) {
                 return true;
               }
               return false;
@@ -283,7 +316,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         }
       });
 
-      const successCount = inspections.filter((i: { success: boolean; }) => i.success).length;
+      const successCount = inspections.filter(
+        (i: { success: boolean }) => i.success,
+      ).length;
       return {
         success: successCount > 0,
         inspections,
@@ -345,7 +380,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           const interactivityCheck = checkElementInteractivity(nativeElement);
 
           if (!interactivityCheck.isInteractive) {
-            warnings.push(`Element may not be interactive: ${interactivityCheck.reason}`);
+            warnings.push(
+              `Element may not be interactive: ${interactivityCheck.reason}`,
+            );
           }
 
           // Simple click implementation - native click() works for React and most cases
@@ -366,7 +403,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       }
 
       const clickedCount = results.filter((r) => r.clicked).length;
-      const elementsNotFound = results.filter((r) => !r.clicked && r.error?.includes("No elements found")).length;
+      const elementsNotFound = results.filter(
+        (r) => !r.clicked && r.error?.includes("No elements found"),
+      ).length;
 
       // Success only if we clicked at least one element AND no elements were missing
       const success = clickedCount > 0 && elementsNotFound === 0;
@@ -424,8 +463,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             results.push({
               selector: input.selector,
               filled: false,
-              error:
-                "Use toggleCheckboxes for checkboxes and radio buttons",
+              error: "Use toggleCheckboxes for checkboxes and radio buttons",
             });
             continue;
           } else if (tagName === "select") {
@@ -461,7 +499,10 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             }
 
             // Check if element is visible and interactable
-            if (inputElement.offsetParent === null && inputElement.style.position !== 'fixed') {
+            if (
+              inputElement.offsetParent === null &&
+              inputElement.style.position !== "fixed"
+            ) {
               results.push({
                 selector: input.selector,
                 filled: false,
@@ -475,11 +516,10 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
             // Use native value setter to bypass React's controlled component
             if (inputElement instanceof HTMLInputElement) {
-              const nativeInputValueSetter =
-                Object.getOwnPropertyDescriptor(
-                  window.HTMLInputElement.prototype,
-                  "value",
-                )?.set;
+              const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype,
+                "value",
+              )?.set;
 
               if (nativeInputValueSetter) {
                 nativeInputValueSetter.call(inputElement, targetValue);
@@ -487,11 +527,10 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
                 inputElement.value = targetValue;
               }
             } else if (inputElement instanceof HTMLTextAreaElement) {
-              const nativeTextAreaValueSetter =
-                Object.getOwnPropertyDescriptor(
-                  window.HTMLTextAreaElement.prototype,
-                  "value",
-                )?.set;
+              const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(
+                window.HTMLTextAreaElement.prototype,
+                "value",
+              )?.set;
 
               if (nativeTextAreaValueSetter) {
                 nativeTextAreaValueSetter.call(inputElement, targetValue);
@@ -513,7 +552,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             }
 
             // Wait a moment for events to process and verify the value was actually set
-            await new Promise(resolve => setTimeout(resolve, 50));
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             // Verify the value was actually set
             const actualValue = inputElement.value;
@@ -522,8 +561,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             results.push({
               selector: input.selector,
               filled: wasSuccessfullyFilled,
-              error: wasSuccessfullyFilled ? undefined :
-                `Value not set correctly. Expected: "${targetValue}", Got: "${actualValue}"`,
+              error: wasSuccessfullyFilled
+                ? undefined
+                : `Value not set correctly. Expected: "${targetValue}", Got: "${actualValue}"`,
             });
           }
         } catch (err) {
@@ -823,32 +863,45 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
   },
 
   findElementsByText: (params) => {
-    const foundElements = new Map<HTMLElement, { text: string; matchedTerm: string }>();
+    const foundElements = new Map<
+      HTMLElement,
+      { text: string; matchedTerm: string }
+    >();
     const maxResults = 30; // Reasonable limit for performance
     const minTextLength = 2; // Skip very short text content
 
     try {
       // Pre-compile search patterns for better performance
-      const searchTerms = params.content.map(text => text.toLowerCase().trim());
+      const searchTerms = params.content.map((text) =>
+        text.toLowerCase().trim(),
+      );
 
       // Find all elements that contain text
-      const allElements = document.querySelectorAll('*');
+      const allElements = document.querySelectorAll("*");
 
-      searchTerms.forEach(searchTerm => {
+      searchTerms.forEach((searchTerm) => {
         if (foundElements.size >= maxResults) return;
 
-        Array.from(allElements).forEach(element => {
+        Array.from(allElements).forEach((element) => {
           if (foundElements.size >= maxResults) return;
 
           const el = element as HTMLElement;
 
           // Skip elements that are not visible
-          if (!el.offsetParent && el.style.position !== 'fixed' && el.style.display !== 'contents') {
+          if (
+            !el.offsetParent &&
+            el.style.position !== "fixed" &&
+            el.style.display !== "contents"
+          ) {
             return;
           }
 
           // Skip script, style, and other non-content elements
-          if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'META', 'LINK', 'HEAD'].includes(el.tagName)) {
+          if (
+            ["SCRIPT", "STYLE", "NOSCRIPT", "META", "LINK", "HEAD"].includes(
+              el.tagName,
+            )
+          ) {
             return;
           }
 
@@ -865,7 +918,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             if (!foundElements.has(el)) {
               foundElements.set(el, {
                 text: directTextContent.trim(),
-                matchedTerm: searchTerm
+                matchedTerm: searchTerm,
               });
             }
           }
@@ -873,21 +926,22 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       });
 
       // Convert to result format
-      const elements = Array.from(foundElements.entries()).map(([element, data]) => ({
-        selector: getUniqueSelector(element),
-        text: data.text,
-        matchedTerm: data.matchedTerm,
-        elementType: element.tagName.toLowerCase(),
-      }));
+      const elements = Array.from(foundElements.entries()).map(
+        ([element, data]) => ({
+          selector: getUniqueSelector(element),
+          text: data.text,
+          matchedTerm: data.matchedTerm,
+          elementType: element.tagName.toLowerCase(),
+        }),
+      );
 
       return {
         success: true,
         elements,
         totalFound: elements.length,
       };
-
     } catch (error) {
-      console.error('findElementsByText error:', error);
+      console.error("findElementsByText error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -897,13 +951,13 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
     // Helper function to get only direct text content (not from children)
     function getDirectTextContent(element: HTMLElement): string {
-      let textContent = '';
+      let textContent = "";
 
       // Iterate through all child nodes
       for (const node of element.childNodes) {
         if (node.nodeType === Node.TEXT_NODE) {
           // This is a text node - add its content
-          textContent += node.textContent || '';
+          textContent += node.textContent || "";
         }
       }
 
@@ -915,7 +969,12 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
     try {
       // Extract parameters (tabId is not used in content script context, textToFilter is used for post-processing)
       const { tabId, textToFilter } = params;
-      console.log('findInteractiveElements called with tabId:', tabId, 'textToFilter:', textToFilter);
+      console.log(
+        "findInteractiveElements called with tabId:",
+        tabId,
+        "textToFilter:",
+        textToFilter,
+      );
 
       const batchSize = 20; // Smaller batches for more responsive UI
       const yieldInterval = 2; // Yield every 2 batches (every 40 elements)
@@ -928,7 +987,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
       // Helper function to yield control back to the browser
       const yieldToBrowser = async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
+        await new Promise((resolve) => setTimeout(resolve, 0));
       };
 
       // Simplified content check for performance
@@ -936,7 +995,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         const tagName = el.tagName.toLowerCase();
 
         // Always include form elements and links
-        if (['button', 'a', 'input', 'select', 'textarea'].includes(tagName)) {
+        if (["button", "a", "input", "select", "textarea"].includes(tagName)) {
           return true;
         }
 
@@ -945,44 +1004,62 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         if (text && text.length > 0) return true;
 
         // Check for important attributes
-        const hasImportantAttrs = el.hasAttribute('onclick') ||
-                                 el.hasAttribute('data-testid') ||
-                                 el.hasAttribute('aria-label') ||
-                                 el.hasAttribute('title') ||
-                                 el.getAttribute('role') === 'button';
+        const hasImportantAttrs =
+          el.hasAttribute("onclick") ||
+          el.hasAttribute("data-testid") ||
+          el.hasAttribute("aria-label") ||
+          el.hasAttribute("title") ||
+          el.getAttribute("role") === "button";
 
         return hasImportantAttrs;
       };
 
       // Simplified scoring system (without expensive getComputedStyle)
-      const calculateSimpleScore = (el: HTMLElement, hasCursorPointer = false): number => {
+      const calculateSimpleScore = (
+        el: HTMLElement,
+        hasCursorPointer = false,
+      ): number => {
         const tagName = el.tagName.toLowerCase();
         let score = 0;
 
         // Base scores for known interactive elements
-        if (tagName === 'button') score = 20;
-        else if (tagName === 'a') score = 15;
-        else if (['input', 'select', 'textarea'].includes(tagName)) score = 12;
+        if (tagName === "button") score = 20;
+        else if (tagName === "a") score = 15;
+        else if (["input", "select", "textarea"].includes(tagName)) score = 12;
         else score = 5; // Default for other elements
 
         // Bonus for explicit click handlers
-        if (el.hasAttribute('onclick') || el.hasAttribute('onClick')) score += 10;
+        if (el.hasAttribute("onclick") || el.hasAttribute("onClick"))
+          score += 10;
 
         // Bonus for test attributes (likely important for automation)
-        if (el.hasAttribute('data-testid') || el.hasAttribute('data-cy')) score += 8;
+        if (el.hasAttribute("data-testid") || el.hasAttribute("data-cy"))
+          score += 8;
 
         // Bonus for ARIA attributes (prioritize accessible elements)
-        const ariaAttributeCount = Array.from(el.attributes).filter(attr =>
-          attr.name.startsWith('aria-')).length;
+        const ariaAttributeCount = Array.from(el.attributes).filter((attr) =>
+          attr.name.startsWith("aria-"),
+        ).length;
         if (ariaAttributeCount > 0) score += 8; // Higher priority for ARIA attributes
 
         // Bonus for semantic roles
-        const role = el.getAttribute('role');
+        const role = el.getAttribute("role");
         if (role) {
           score += 7; // Role attribute indicates semantic purpose
 
           // Extra bonus for interactive roles
-          const interactiveRoles = ['button', 'link', 'tab', 'menuitem', 'option', 'checkbox', 'radio', 'slider', 'switch', 'textbox'];
+          const interactiveRoles = [
+            "button",
+            "link",
+            "tab",
+            "menuitem",
+            "option",
+            "checkbox",
+            "radio",
+            "slider",
+            "switch",
+            "textbox",
+          ];
           if (interactiveRoles.includes(role)) {
             score += 5; // These roles clearly indicate interactive elements
           }
@@ -993,20 +1070,32 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           score += 6; // Good indicator of interactivity
 
           // Extra bonus for cursor:pointer on common React patterns
-          const className = el.getAttribute('class') || '';
-          if (className.includes('card') || className.includes('item') ||
-              className.includes('row') || className.includes('tile') ||
-              ['div', 'span', 'li'].includes(tagName)) {
+          const className = el.getAttribute("class") || "";
+          if (
+            className.includes("card") ||
+            className.includes("item") ||
+            className.includes("row") ||
+            className.includes("tile") ||
+            ["div", "span", "li"].includes(tagName)
+          ) {
             score += 4; // Likely a React clickable component
           }
         }
 
         // Bonus for common interactive class patterns
-        const className = el.getAttribute('class') || '';
-        if (className.includes('btn') || className.includes('button') || className.includes('click')) {
+        const className = el.getAttribute("class") || "";
+        if (
+          className.includes("btn") ||
+          className.includes("button") ||
+          className.includes("click")
+        ) {
           score += 7;
         }
-        if (className.includes('card') || className.includes('item') || className.includes('tile')) {
+        if (
+          className.includes("card") ||
+          className.includes("item") ||
+          className.includes("tile")
+        ) {
           score += 3; // Common React interactive patterns
         }
 
@@ -1014,25 +1103,34 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       };
 
       // Fast element processing without expensive getComputedStyle in most cases
-      const processElement = (el: HTMLElement, hasCursorPointer = false): boolean => {
+      const processElement = (
+        el: HTMLElement,
+        hasCursorPointer = false,
+      ): boolean => {
         // Quick visibility check (avoid getComputedStyle if possible)
-        if (el.hidden || el.style.display === 'none' || el.style.visibility === 'hidden') {
+        if (
+          el.hidden ||
+          el.style.display === "none" ||
+          el.style.visibility === "hidden"
+        ) {
           return false;
         }
 
         // Early text filtering - skip processing if element doesn't match any filter text
         if (textToFilter && textToFilter.length > 0) {
-          const textContent = el.textContent?.toLowerCase().trim() || '';
-          const ariaLabel = el.getAttribute('aria-label')?.toLowerCase() || '';
-          const title = el.getAttribute('title')?.toLowerCase() || '';
-          const alt = el.getAttribute('alt')?.toLowerCase() || '';
+          const textContent = el.textContent?.toLowerCase().trim() || "";
+          const ariaLabel = el.getAttribute("aria-label")?.toLowerCase() || "";
+          const title = el.getAttribute("title")?.toLowerCase() || "";
+          const alt = el.getAttribute("alt")?.toLowerCase() || "";
 
-          const matchesFilter = textToFilter.some(filterText => {
+          const matchesFilter = textToFilter.some((filterText) => {
             const lowerFilterText = filterText.toLowerCase();
-            return textContent.includes(lowerFilterText) ||
-                   ariaLabel.includes(lowerFilterText) ||
-                   title.includes(lowerFilterText) ||
-                   alt.includes(lowerFilterText);
+            return (
+              textContent.includes(lowerFilterText) ||
+              ariaLabel.includes(lowerFilterText) ||
+              title.includes(lowerFilterText) ||
+              alt.includes(lowerFilterText)
+            );
           });
 
           if (!matchesFilter) {
@@ -1067,7 +1165,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         for (let i = 0; i < elements.length; i += batchSize) {
           // Early termination if we have enough results
           if (foundElements.size >= maxResults) {
-            console.log(`Early termination: found ${foundElements.size} elements`);
+            console.log(
+              `Early termination: found ${foundElements.size} elements`,
+            );
             break;
           }
 
@@ -1091,27 +1191,40 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       };
 
       // Step 1: Get obvious interactive elements (fast)
-      const obviousInteractiveSelectors = "button, a, input, select, textarea, [role='button'], [role='link'], [onclick], [data-testid*='button'], [data-testid*='click']";
-      const obviousElements = Array.from(document.querySelectorAll(obviousInteractiveSelectors)) as HTMLElement[];
+      const obviousInteractiveSelectors =
+        "button, a, input, select, textarea, [role='button'], [role='link'], [onclick], [data-testid*='button'], [data-testid*='click']";
+      const obviousElements = Array.from(
+        document.querySelectorAll(obviousInteractiveSelectors),
+      ) as HTMLElement[];
 
-      console.log(`Processing ${obviousElements.length} obvious interactive elements`);
+      console.log(
+        `Processing ${obviousElements.length} obvious interactive elements`,
+      );
       await processBatch(obviousElements);
 
       // Step 2: Check cursor:pointer on likely interactive elements (balanced approach)
       if (foundElements.size < maxResults) {
-        console.log('Checking cursor:pointer on likely interactive elements');
+        console.log("Checking cursor:pointer on likely interactive elements");
 
         // Broader criteria for cursor:pointer candidates - include common React patterns
         const cursorCandidateSelectors = [
           // Elements that commonly use cursor:pointer in React apps
-          'div, span, li, section, article',
+          "div, span, li, section, article",
           // Elements with any interactive hints
-          '[class*="card"]', '[class*="item"]', '[class*="row"]', '[class*="tile"]',
-          '[class*="button"]', '[class*="btn"]', '[class*="click"]', '[class*="link"]',
+          '[class*="card"]',
+          '[class*="item"]',
+          '[class*="row"]',
+          '[class*="tile"]',
+          '[class*="button"]',
+          '[class*="btn"]',
+          '[class*="click"]',
+          '[class*="link"]',
           // Elements with data attributes (often used in React)
-          '[data-*]', '[aria-*]',
+          "[data-*]",
+          "[aria-*]",
           // Elements with tabindex or roles
-          '[tabindex]', '[role]'
+          "[tabindex]",
+          "[role]",
         ];
 
         const allCursorCandidates = new Set<HTMLElement>();
@@ -1120,50 +1233,67 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         for (const selector of cursorCandidateSelectors) {
           try {
             const elements = document.querySelectorAll(selector);
-            elements.forEach(el => allCursorCandidates.add(el as HTMLElement));
+            elements.forEach((el) =>
+              allCursorCandidates.add(el as HTMLElement),
+            );
           } catch (e) {
             continue;
           }
         }
 
         // Filter candidates to focus on those more likely to be interactive
-        const filteredCandidates = Array.from(allCursorCandidates).filter(el => {
-          if (foundElements.has(el)) return false;
+        const filteredCandidates = Array.from(allCursorCandidates).filter(
+          (el) => {
+            if (foundElements.has(el)) return false;
 
-          const tagName = el.tagName.toLowerCase();
-          const className = el.getAttribute('class') || '';
+            const tagName = el.tagName.toLowerCase();
+            const className = el.getAttribute("class") || "";
 
-          // Include elements that are commonly interactive in React apps
-          return (
-            // Has text content (likely a clickable text element)
-            (el.textContent?.trim() && el.textContent.trim().length > 0) ||
-            // Has any class that might indicate interactivity
-            className.length > 0 ||
-            // Has data attributes (common in React)
-            el.hasAttribute('data-testid') || el.hasAttribute('data-cy') ||
-            Array.from(el.attributes).some(attr => attr.name.startsWith('data-')) ||
-            // Has aria attributes
-            Array.from(el.attributes).some(attr => attr.name.startsWith('aria-')) ||
-            // Has role or tabindex
-            el.hasAttribute('role') || el.hasAttribute('tabindex') ||
-            // Common interactive containers
-            ['li', 'section', 'article'].includes(tagName)
-          );
-        });
+            // Include elements that are commonly interactive in React apps
+            return (
+              // Has text content (likely a clickable text element)
+              (el.textContent?.trim() && el.textContent.trim().length > 0) ||
+              // Has any class that might indicate interactivity
+              className.length > 0 ||
+              // Has data attributes (common in React)
+              el.hasAttribute("data-testid") ||
+              el.hasAttribute("data-cy") ||
+              Array.from(el.attributes).some((attr) =>
+                attr.name.startsWith("data-"),
+              ) ||
+              // Has aria attributes
+              Array.from(el.attributes).some((attr) =>
+                attr.name.startsWith("aria-"),
+              ) ||
+              // Has role or tabindex
+              el.hasAttribute("role") ||
+              el.hasAttribute("tabindex") ||
+              // Common interactive containers
+              ["li", "section", "article"].includes(tagName)
+            );
+          },
+        );
 
-        console.log(`Checking cursor:pointer on ${filteredCandidates.length} candidate elements`);
+        console.log(
+          `Checking cursor:pointer on ${filteredCandidates.length} candidate elements`,
+        );
 
         // Process cursor candidates in small batches
         const cursorBatchSize = 15; // Smaller batches for expensive operations
-        for (let i = 0; i < filteredCandidates.length && foundElements.size < maxResults; i += cursorBatchSize) {
+        for (
+          let i = 0;
+          i < filteredCandidates.length && foundElements.size < maxResults;
+          i += cursorBatchSize
+        ) {
           const batch = filteredCandidates.slice(i, i + cursorBatchSize);
 
           for (const el of batch) {
-            if (foundElements.has(el) || foundElements.size >= maxResults) break;
+            if (foundElements.has(el) || foundElements.size >= maxResults)
+              break;
 
             try {
               const style = window.getComputedStyle(el);
-              if (style.cursor === 'pointer') {
+              if (style.cursor === "pointer") {
                 processElement(el, true); // Pass hasCursorPointer=true
               }
             } catch (error) {
@@ -1180,16 +1310,24 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       // Step 3: If still need more, look for additional common interactive patterns
       if (foundElements.size < Math.min(maxResults, 80)) {
         const additionalSelectors = [
-          '[role="tab"]', '[role="menuitem"]', '[role="option"]',
-          '[class*="nav"]', '[class*="menu"]', '[class*="toggle"]',
-          '[class*="expand"]', '[class*="collapse"]', '[class*="dropdown"]'
+          '[role="tab"]',
+          '[role="menuitem"]',
+          '[role="option"]',
+          '[class*="nav"]',
+          '[class*="menu"]',
+          '[class*="toggle"]',
+          '[class*="expand"]',
+          '[class*="collapse"]',
+          '[class*="dropdown"]',
         ];
 
         for (const selector of additionalSelectors) {
           if (foundElements.size >= maxResults) break;
 
           try {
-            const elements = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
+            const elements = Array.from(
+              document.querySelectorAll(selector),
+            ) as HTMLElement[];
             await processBatch(elements);
           } catch (e) {
             continue;
@@ -1207,8 +1345,8 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             // Try fast selector generation first
             if (el.id) {
               selector = `#${CSS.escape(el.id)}`;
-            } else if (el.getAttribute('data-testid')) {
-              selector = `[data-testid="${CSS.escape(el.getAttribute('data-testid')!)}"]`;
+            } else if (el.getAttribute("data-testid")) {
+              selector = `[data-testid="${CSS.escape(el.getAttribute("data-testid")!)}"]`;
             } else {
               // Use slower but more reliable selector generation
               selector = getUniqueSelector(el);
@@ -1216,32 +1354,39 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           } catch (error) {
             // Fallback selector
             selector = el.tagName.toLowerCase();
-            console.warn('Selector generation failed for element:', el, error);
+            console.warn("Selector generation failed for element:", el, error);
           }
 
           // Collect ARIA attributes
           const ariaAttributes: Record<string, string> = {};
-          Array.from(el.attributes).forEach(attr => {
-            if (attr.name.startsWith('aria-')) {
+          Array.from(el.attributes).forEach((attr) => {
+            if (attr.name.startsWith("aria-")) {
               ariaAttributes[attr.name] = attr.value;
             }
           });
 
           // Get role attribute
-          const role = el.getAttribute('role');
+          const role = el.getAttribute("role");
 
           // Get other useful accessibility attributes
-          const title = el.getAttribute('title');
-          const altText = el.getAttribute('alt');
+          const title = el.getAttribute("title");
+          const altText = el.getAttribute("alt");
 
           return {
             type: el.tagName.toLowerCase(),
             selector,
-            text: (el.textContent?.trim() || '').substring(0, 200), // Limit text length
-            value: (el as HTMLInputElement).value ? String((el as HTMLInputElement).value).trim().substring(0, 100) : undefined,
+            text: (el.textContent?.trim() || "").substring(0, 200), // Limit text length
+            value: (el as HTMLInputElement).value
+              ? String((el as HTMLInputElement).value)
+                  .trim()
+                  .substring(0, 100)
+              : undefined,
             href: (el as HTMLAnchorElement).href,
             role: role || undefined,
-            ariaAttributes: Object.keys(ariaAttributes).length > 0 ? ariaAttributes : undefined,
+            ariaAttributes:
+              Object.keys(ariaAttributes).length > 0
+                ? ariaAttributes
+                : undefined,
             title: title || undefined,
             alt: altText || undefined,
           };
@@ -1249,7 +1394,9 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
       const endTime = performance.now();
       const duration = Math.round(endTime - startTime);
-      console.log(`findInteractiveElements took ${duration}ms to process ${processedCount} elements and find ${sortedElements.length} interactive elements${textToFilter && textToFilter.length > 0 ? ' (with text filtering applied)' : ''}`);
+      console.log(
+        `findInteractiveElements took ${duration}ms to process ${processedCount} elements and find ${sortedElements.length} interactive elements${textToFilter && textToFilter.length > 0 ? " (with text filtering applied)" : ""}`,
+      );
 
       return {
         success: true,
@@ -1257,11 +1404,11 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         performance: {
           duration,
           processedCount,
-          foundCount: sortedElements.length
-        }
+          foundCount: sortedElements.length,
+        },
       };
     } catch (error) {
-      console.error('findInteractiveElements error:', error);
+      console.error("findInteractiveElements error:", error);
       return {
         success: false,
         elements: [],
@@ -1272,12 +1419,13 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 
   captureElementScreenshot: async (params) => {
     try {
-      const {
-        tabId,
+      const { tabId, selector, scrollIntoView = true } = params;
+      console.log(
+        "Capturing screenshot for selector:",
         selector,
-        scrollIntoView = true
-      } = params;
-      console.log('Capturing screenshot for selector:', selector, 'on tab:', tabId);
+        "on tab:",
+        tabId,
+      );
 
       // Find the element
       const $element = $(selector);
@@ -1291,7 +1439,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       const element = $element[0] as HTMLElement;
 
       // Check if element is visible using jQuery's built-in helper
-      if (!$element.is(':visible')) {
+      if (!$element.is(":visible")) {
         return {
           success: false,
           error: `Element is not visible: ${selector}`,
@@ -1301,17 +1449,17 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       // Scroll element into view if requested
       if (scrollIntoView) {
         element.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center',
-          inline: 'center'
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
         });
 
         // Wait for scroll to complete
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       // Use html2canvas-pro to capture the element (better CSS support than regular html2canvas)
-      console.log('Using html2canvas-pro to capture element');
+      console.log("Using html2canvas-pro to capture element");
 
       let canvas;
 
@@ -1328,14 +1476,20 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         const widthScale = maxWidth / originalWidth;
         const heightScale = maxHeight / originalHeight;
         finalScale = Math.min(widthScale, heightScale); // Use smaller scale to fit both dimensions
-        console.log(`Auto-scaling large element from ${originalWidth}x${originalHeight} (scale: ${finalScale.toFixed(2)})`);
+        console.log(
+          `Auto-scaling large element from ${originalWidth}x${originalHeight} (scale: ${finalScale.toFixed(2)})`,
+        );
       } else {
-        console.log(`Element fits within limits: ${originalWidth}x${originalHeight}`);
+        console.log(
+          `Element fits within limits: ${originalWidth}x${originalHeight}`,
+        );
       }
 
       // First attempt: Use html2canvas-pro with modern CSS support
       try {
-        console.log('Attempting html2canvas-pro with viewport-limited capture...');
+        console.log(
+          "Attempting html2canvas-pro with viewport-limited capture...",
+        );
 
         // Get viewport dimensions
         const viewportWidth = window.innerWidth;
@@ -1356,24 +1510,27 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           ignoreElements: (el) => {
             // Still ignore problematic elements
             const tagName = el.tagName;
-            if (['SCRIPT', 'NOSCRIPT'].includes(tagName)) {
+            if (["SCRIPT", "NOSCRIPT"].includes(tagName)) {
               return true;
             }
             // Skip elements with data-html2canvas-ignore attribute
-            if (el.hasAttribute('data-html2canvas-ignore')) {
+            if (el.hasAttribute("data-html2canvas-ignore")) {
               return true;
             }
             return false;
-          }
+          },
         });
-        console.log('html2canvas-pro full CSS support succeeded');
+        console.log("html2canvas-pro full CSS support succeeded");
       } catch (modernError) {
-        console.warn('html2canvas-pro with full CSS failed, trying fallback:', modernError);
+        console.warn(
+          "html2canvas-pro with full CSS failed, trying fallback:",
+          modernError,
+        );
 
         // Fallback: Use safer configuration
         try {
           canvas = await html2canvas(element, {
-            backgroundColor: '#ffffff',
+            backgroundColor: "#ffffff",
             scale: finalScale, // Use same calculated scale
             logging: false,
             useCORS: false,
@@ -1382,29 +1539,32 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
             height: originalHeight,
             ignoreElements: (el) => {
               const tagName = el.tagName;
-              return ['SCRIPT', 'NOSCRIPT', 'STYLE', 'LINK'].includes(tagName);
-            }
+              return ["SCRIPT", "NOSCRIPT", "STYLE", "LINK"].includes(tagName);
+            },
           });
-          console.log('html2canvas-pro fallback succeeded');
+          console.log("html2canvas-pro fallback succeeded");
         } catch (fallbackError) {
-          console.error('html2canvas-pro attempts failed:', fallbackError);
-          throw new Error(`Screenshot capture failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`);
+          console.error("html2canvas-pro attempts failed:", fallbackError);
+          throw new Error(
+            `Screenshot capture failed: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
+          );
         }
       }
 
       // Convert to data URL with good quality
-      const dataUrl = canvas.toDataURL('image/png', 0.8);
+      const dataUrl = canvas.toDataURL("image/png", 0.8);
 
-      console.log(`Successfully captured screenshot: ${canvas.width}x${canvas.height} pixels`);
+      console.log(
+        `Successfully captured screenshot: ${canvas.width}x${canvas.height} pixels`,
+      );
 
       return {
         success: true,
         image: dataUrl,
         message: `Screenshot captured for element ${selector}`,
       };
-
     } catch (error) {
-      console.error('captureElementScreenshot error:', error);
+      console.error("captureElementScreenshot error:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -1451,7 +1611,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
           }
 
           // Validate that path starts with '/'
-          if (!params.path.startsWith('/')) {
+          if (!params.path.startsWith("/")) {
             return {
               success: false,
               action: params.action,
@@ -1491,7 +1651,8 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
               currentUrl: previousUrl,
               previousUrl,
               message: "Invalid URL format",
-              error: "URL must be a valid absolute URL with protocol (e.g., https://example.com)",
+              error:
+                "URL must be a valid absolute URL with protocol (e.g., https://example.com)",
             };
           }
 
@@ -1517,7 +1678,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         let elapsed = 0;
 
         // For back/forward, wait a bit for the navigation to start
-        if (params.action === 'back' || params.action === 'forward') {
+        if (params.action === "back" || params.action === "forward") {
           await new Promise((resolve) => setTimeout(resolve, 200));
 
           // Poll for URL change or timeout
@@ -1544,7 +1705,7 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
         currentUrl,
         previousUrl,
         loadTime,
-        message: `Successfully initiated ${params.action} navigation${params.action === 'path' ? ` to ${params.path}` : params.action === 'url' ? ` to ${params.url}` : ''}`,
+        message: `Successfully initiated ${params.action} navigation${params.action === "path" ? ` to ${params.path}` : params.action === "url" ? ` to ${params.url}` : ""}`,
       };
     } catch (error) {
       return {
@@ -1562,8 +1723,8 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
     try {
       // Send geolocation request to background script which will use offscreen document
       const response = await chrome.runtime.sendMessage({
-        type: 'GET_GEOLOCATION',
-        data: params
+        type: "GET_GEOLOCATION",
+        data: params,
       });
 
       if (response.success) {
@@ -1571,13 +1732,13 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
       } else {
         return {
           success: false,
-          error: response.error || 'Geolocation request failed'
+          error: response.error || "Geolocation request failed",
         };
       }
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   },
@@ -1587,7 +1748,8 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
     // This is just a placeholder to satisfy TypeScript
     return {
       success: false,
-      error: 'openTab should be handled by background script, not content script'
+      error:
+        "openTab should be handled by background script, not content script",
     };
   },
 
@@ -1596,7 +1758,8 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
     // This is just a placeholder to satisfy TypeScript
     return {
       success: false,
-      error: 'closeTab should be handled by background script, not content script'
+      error:
+        "closeTab should be handled by background script, not content script",
     };
   },
 };
@@ -1605,57 +1768,77 @@ export const toolImplementations: { [key in keyof typeof toolbox]: (params: Infe
 const preprocessHtmlForMarkdown = (htmlElement: HTMLElement): void => {
   // Remove elements that don't contribute to meaningful content
   const elementsToRemove = [
-    'script', 'style', 'noscript', 'iframe', 'embed', 'object',
-    'meta', 'link[rel="stylesheet"]', 'link[rel="preload"]',
-    'svg', 'canvas', 'audio', 'video'
+    "script",
+    "style",
+    "noscript",
+    "iframe",
+    "embed",
+    "object",
+    "meta",
+    'link[rel="stylesheet"]',
+    'link[rel="preload"]',
+    "svg",
+    "canvas",
+    "audio",
+    "video",
   ];
 
-  elementsToRemove.forEach(selector => {
+  elementsToRemove.forEach((selector) => {
     const elements = htmlElement.querySelectorAll(selector);
-    elements.forEach(el => el.remove());
+    elements.forEach((el) => el.remove());
   });
 
   // Truncate very long href attributes to prevent context bloat
-  const links = htmlElement.querySelectorAll('a[href]');
+  const links = htmlElement.querySelectorAll("a[href]");
   links.forEach((link: Element) => {
-    const href = link.getAttribute('href');
+    const href = link.getAttribute("href");
     if (href && href.length > 100) {
       // Keep the domain and first part of the path, truncate the rest
       try {
         const url = new URL(href, window.location.origin);
-        const truncatedPath = url.pathname.length > 50
-          ? url.pathname.substring(0, 47) + '...'
-          : url.pathname;
-        const truncatedHref = url.origin + truncatedPath +
-          (url.search ? (url.search.length > 20 ? '?...' : url.search) : '');
-        link.setAttribute('href', truncatedHref);
+        const truncatedPath =
+          url.pathname.length > 50
+            ? url.pathname.substring(0, 47) + "..."
+            : url.pathname;
+        const truncatedHref =
+          url.origin +
+          truncatedPath +
+          (url.search ? (url.search.length > 20 ? "?..." : url.search) : "");
+        link.setAttribute("href", truncatedHref);
       } catch {
         // If URL parsing fails, just truncate the string
-        link.setAttribute('href', href.substring(0, 97) + '...');
+        link.setAttribute("href", href.substring(0, 97) + "...");
       }
     }
   });
 
   // Truncate very long src attributes for images
-  const images = htmlElement.querySelectorAll('img[src]');
+  const images = htmlElement.querySelectorAll("img[src]");
   images.forEach((img: Element) => {
-    const src = img.getAttribute('src');
+    const src = img.getAttribute("src");
     if (src && src.length > 150) {
-      img.setAttribute('src', src.substring(0, 147) + '...');
+      img.setAttribute("src", src.substring(0, 147) + "...");
     }
   });
 
   // Remove or truncate very long data attributes that might contain base64 or large JSON
-  const allElements = htmlElement.querySelectorAll('*');
+  const allElements = htmlElement.querySelectorAll("*");
   allElements.forEach((el: Element) => {
-    Array.from(el.attributes).forEach(attr => {
-      if (attr.name.startsWith('data-') && attr.value.length > 200) {
-        if (attr.value.startsWith('data:') || attr.value.startsWith('{') || attr.value.startsWith('[')) {
+    Array.from(el.attributes).forEach((attr) => {
+      if (attr.name.startsWith("data-") && attr.value.length > 200) {
+        if (
+          attr.value.startsWith("data:") ||
+          attr.value.startsWith("{") ||
+          attr.value.startsWith("[")
+        ) {
           // Likely base64 data or JSON, truncate heavily
-          el.setAttribute(attr.name, attr.value.substring(0, 50) + '... [truncated]');
+          el.setAttribute(
+            attr.name,
+            attr.value.substring(0, 50) + "... [truncated]",
+          );
         } else if (attr.value.length > 500) {
           // Other long data attributes, moderate truncation
-          el.setAttribute(attr.name, attr.value.substring(0, 197) + '...');
+          el.setAttribute(attr.name, attr.value.substring(0, 197) + "...");
         }
       }
     });
@@ -1666,7 +1849,7 @@ const preprocessHtmlForMarkdown = (htmlElement: HTMLElement): void => {
   const textNodes = document.createTreeWalker(
     htmlElement,
     NodeFilter.SHOW_TEXT,
-    null
+    null,
   );
 
   const nodesToProcess: Text[] = [];
@@ -1676,16 +1859,15 @@ const preprocessHtmlForMarkdown = (htmlElement: HTMLElement): void => {
     textNode = textNodes.nextNode() as Text;
   }
 
-  nodesToProcess.forEach(node => {
+  nodesToProcess.forEach((node) => {
     if (node.textContent) {
       // Only normalize excessive whitespace, preserve structure
       node.textContent = node.textContent
-        .replace(/[ \t]{3,}/g, ' ')  // Only collapse 3+ spaces/tabs to single space
-        .replace(/\n{4,}/g, '\n\n\n'); // Only collapse 4+ line breaks to max 3
+        .replace(/[ \t]{3,}/g, " ") // Only collapse 3+ spaces/tabs to single space
+        .replace(/\n{4,}/g, "\n\n\n"); // Only collapse 4+ line breaks to max 3
     }
   });
 };
-
 
 // Helper for fetchPageHtml: trims DOM for LLM consumption without losing structure/semantics
 // - Removes <style> and other purely presentational tags inside the cloned body
@@ -1696,47 +1878,66 @@ const preprocessHtmlForLlm = (rootElement: HTMLElement): void => {
     const $root = $(rootElement);
 
     // Remove style/script/noscript tags to reduce noise
-    $root.find('style, script, noscript').remove();
+    $root.find("style, script, noscript").remove();
 
     // Truncate href attributes sensibly
-    $root.find('a[href]').each((_, el) => {
+    $root.find("a[href]").each((_, el) => {
       const $el = $(el);
-      const href = $el.attr('href');
+      const href = $el.attr("href");
       if (!href || href.length <= 140) return;
       try {
         const url = new URL(href, window.location.origin);
-        const truncatedPath = url.pathname.length > 60
-          ? url.pathname.substring(0, 57) + '...'
-          : url.pathname;
-        const search = url.search ? (url.search.length > 24 ? '?...' : url.search) : '';
+        const truncatedPath =
+          url.pathname.length > 60
+            ? url.pathname.substring(0, 57) + "..."
+            : url.pathname;
+        const search = url.search
+          ? url.search.length > 24
+            ? "?..."
+            : url.search
+          : "";
         const safeHref = url.origin + truncatedPath + search;
-        $el.attr('href', safeHref);
+        $el.attr("href", safeHref);
       } catch {
-        $el.attr('href', href.substring(0, 137) + '...');
+        $el.attr("href", href.substring(0, 137) + "...");
       }
     });
 
     // Truncate verbose inline style attributes with priority for key properties
-    $root.find('[style]').each((_, el) => {
+    $root.find("[style]").each((_, el) => {
       const $el = $(el);
-      const styleAttr = $el.attr('style');
+      const styleAttr = $el.attr("style");
       if (!styleAttr) return;
 
-      const importantProps = ['display', 'visibility', 'opacity', 'pointer-events', 'cursor'];
-      const parts = styleAttr.split(';').map((s) => s.trim()).filter(Boolean);
+      const importantProps = [
+        "display",
+        "visibility",
+        "opacity",
+        "pointer-events",
+        "cursor",
+      ];
+      const parts = styleAttr
+        .split(";")
+        .map((s) => s.trim())
+        .filter(Boolean);
       const prioritized: string[] = [];
       const others: string[] = [];
       for (const part of parts) {
-        const [prop] = part.split(':');
+        const [prop] = part.split(":");
         if (prop && importantProps.includes(prop.trim().toLowerCase())) {
           prioritized.push(part);
         } else {
           others.push(part);
         }
       }
-      const reconstructed = [...prioritized, ...others].join('; ');
+      const reconstructed = [...prioritized, ...others].join("; ");
       const maxStyleLen = 180;
-      $el.attr('style', reconstructed.length > maxStyleLen ? reconstructed.substring(0, maxStyleLen - 3) + '...' : reconstructed);
+      $el.attr(
+        "style",
+        reconstructed.length > maxStyleLen
+          ? reconstructed.substring(0, maxStyleLen - 3) + "..."
+          : reconstructed,
+      );
     });
 
     // Keep ARIA and role attributes intact
@@ -1745,9 +1946,10 @@ const preprocessHtmlForLlm = (rootElement: HTMLElement): void => {
   }
 };
 
-
 // Helper to check if an element is likely to be interactive (optimized and more permissive)
-const checkElementInteractivity = (element: HTMLElement): { isInteractive: boolean; reason?: string } => {
+const checkElementInteractivity = (
+  element: HTMLElement,
+): { isInteractive: boolean; reason?: string } => {
   if (!element) {
     return { isInteractive: false, reason: "Element is null or undefined" };
   }
@@ -1755,72 +1957,125 @@ const checkElementInteractivity = (element: HTMLElement): { isInteractive: boole
   const tagName = element.tagName.toLowerCase();
 
   // Obviously interactive elements
-  const interactiveTags = ['button', 'a', 'input', 'select', 'textarea', 'option'];
+  const interactiveTags = [
+    "button",
+    "a",
+    "input",
+    "select",
+    "textarea",
+    "option",
+  ];
   if (interactiveTags.includes(tagName)) {
     return { isInteractive: true };
   }
 
   // Check for interactive roles
-  const role = element.getAttribute('role');
-  const interactiveRoles = ['button', 'link', 'tab', 'menuitem', 'checkbox', 'radio', 'option'];
+  const role = element.getAttribute("role");
+  const interactiveRoles = [
+    "button",
+    "link",
+    "tab",
+    "menuitem",
+    "checkbox",
+    "radio",
+    "option",
+  ];
   if (role && interactiveRoles.includes(role)) {
     return { isInteractive: true };
   }
 
   // Check for click handlers
-  if (element.onclick || element.getAttribute('onclick') || element.getAttribute('onClick')) {
+  if (
+    element.onclick ||
+    element.getAttribute("onclick") ||
+    element.getAttribute("onClick")
+  ) {
     return { isInteractive: true };
   }
 
   // Check for common data attributes that suggest interactivity
-  const interactiveDataAttrs = ['data-testid', 'data-cy', 'data-click', 'data-action', 'data-handler'];
-  if (interactiveDataAttrs.some(attr => element.hasAttribute(attr))) {
+  const interactiveDataAttrs = [
+    "data-testid",
+    "data-cy",
+    "data-click",
+    "data-action",
+    "data-handler",
+  ];
+  if (interactiveDataAttrs.some((attr) => element.hasAttribute(attr))) {
     return { isInteractive: true };
   }
 
   // Check for tabindex (keyboard accessible)
-  if (element.hasAttribute('tabindex')) {
+  if (element.hasAttribute("tabindex")) {
     return { isInteractive: true };
   }
 
   // Check if element is disabled
-  if (element.hasAttribute('disabled') || element.getAttribute('aria-disabled') === 'true') {
+  if (
+    element.hasAttribute("disabled") ||
+    element.getAttribute("aria-disabled") === "true"
+  ) {
     return { isInteractive: false, reason: "Element is disabled" };
   }
 
   // Quick visibility checks (avoid getComputedStyle)
-  if (element.hidden || element.style.display === 'none' || element.style.visibility === 'hidden') {
+  if (
+    element.hidden ||
+    element.style.display === "none" ||
+    element.style.visibility === "hidden"
+  ) {
     return { isInteractive: false, reason: "Element is hidden" };
   }
 
   // For React components and common patterns, be more permissive
-  const className = element.getAttribute('class') || '';
+  const className = element.getAttribute("class") || "";
 
   // Common interactive class patterns
-  const interactiveClassPatterns = ['button', 'btn', 'click', 'link', 'card', 'item', 'tile', 'row'];
-  if (interactiveClassPatterns.some(pattern => className.includes(pattern))) {
+  const interactiveClassPatterns = [
+    "button",
+    "btn",
+    "click",
+    "link",
+    "card",
+    "item",
+    "tile",
+    "row",
+  ];
+  if (interactiveClassPatterns.some((pattern) => className.includes(pattern))) {
     return { isInteractive: true };
   }
 
   // Elements that commonly have cursor:pointer in React apps
-  if (['div', 'span', 'li', 'section', 'article'].includes(tagName)) {
+  if (["div", "span", "li", "section", "article"].includes(tagName)) {
     // Be more permissive for these elements - they might have cursor:pointer
     // We'll let the cursor:pointer check in the main function determine final interactivity
-    if (element.textContent?.trim() || className.length > 0 ||
-        Array.from(element.attributes).some(attr => attr.name.startsWith('data-') || attr.name.startsWith('aria-'))) {
+    if (
+      element.textContent?.trim() ||
+      className.length > 0 ||
+      Array.from(element.attributes).some(
+        (attr) =>
+          attr.name.startsWith("data-") || attr.name.startsWith("aria-"),
+      )
+    ) {
       return { isInteractive: true };
     }
   }
 
   // For generic elements without obvious interactive indicators, check more carefully
-  if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName) && !className && !element.textContent?.trim()) {
-    return { isInteractive: false, reason: `${tagName} element without content or interactive indicators` };
+  if (
+    ["p", "h1", "h2", "h3", "h4", "h5", "h6"].includes(tagName) &&
+    !className &&
+    !element.textContent?.trim()
+  ) {
+    return {
+      isInteractive: false,
+      reason: `${tagName} element without content or interactive indicators`,
+    };
   }
 
   // Default to potentially interactive for other elements (err on the side of inclusion)
   return { isInteractive: true };
 };
-
 
 // Helper to get unique selector using the finder library
 const getUniqueSelector = (el: HTMLElement): string => {
@@ -1829,14 +2084,14 @@ const getUniqueSelector = (el: HTMLElement): string => {
       timeoutMs: 500,
     });
   } catch (error) {
-    console.warn('Finder library failed, using fallback selector:', error);
+    console.warn("Finder library failed, using fallback selector:", error);
     // Fallback to simple selector if finder fails
     if (el.id) {
       return `#${CSS.escape(el.id)}`;
     }
 
     // Try data-testid first
-    const testId = el.getAttribute('data-testid');
+    const testId = el.getAttribute("data-testid");
     if (testId) {
       return `[data-testid="${CSS.escape(testId)}"]`;
     }
@@ -1844,8 +2099,8 @@ const getUniqueSelector = (el: HTMLElement): string => {
     // Fall back to tag + nth-child
     const tagName = el.tagName.toLowerCase();
     if (el.parentElement) {
-      const siblings = Array.from(el.parentElement.children).filter(child =>
-        child.tagName.toLowerCase() === tagName
+      const siblings = Array.from(el.parentElement.children).filter(
+        (child) => child.tagName.toLowerCase() === tagName,
       );
       if (siblings.length > 1) {
         const index = siblings.indexOf(el) + 1;

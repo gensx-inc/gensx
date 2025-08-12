@@ -39,7 +39,7 @@ export function applyObjectPatches(
         }
         continue;
       }
-      
+
       const pathParts = operation.path.split("/").slice(1); // Remove empty first element
       const target = getValueByPath(document, pathParts.slice(0, -1));
       const property = pathParts[pathParts.length - 1];
@@ -71,22 +71,22 @@ function deepClone(obj: any): any {
   if (obj === null || typeof obj !== "object") {
     return obj;
   }
-  
+
   if (obj instanceof Date) {
     return new Date(obj.getTime());
   }
-  
+
   if (Array.isArray(obj)) {
     return obj.map(deepClone);
   }
-  
+
   const cloned: any = {};
   for (const key in obj) {
     if (obj.hasOwnProperty(key)) {
       cloned[key] = deepClone(obj[key]);
     }
   }
-  
+
   return cloned;
 }
 
@@ -114,8 +114,9 @@ function getValueByPath(obj: any, path: string[]): any {
 }
 
 function applyStandardPatch(document: any, operation: JsonPatchOperation): any {
-  const pathParts = operation.path === "" ? [] : operation.path.split("/").slice(1);
-  
+  const pathParts =
+    operation.path === "" ? [] : operation.path.split("/").slice(1);
+
   switch (operation.op) {
     case "add":
       return addOperation(document, pathParts, operation.value);
@@ -133,10 +134,10 @@ function addOperation(document: any, pathParts: string[], value: any): any {
   if (pathParts.length === 0) {
     return value;
   }
-  
+
   const cloned = deepClone(document);
   let current = cloned;
-  
+
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i];
     if (Array.isArray(current)) {
@@ -146,7 +147,7 @@ function addOperation(document: any, pathParts: string[], value: any): any {
       current = current[part];
     }
   }
-  
+
   const lastPart = pathParts[pathParts.length - 1];
   if (Array.isArray(current)) {
     const idx = Number(lastPart);
@@ -158,7 +159,7 @@ function addOperation(document: any, pathParts: string[], value: any): any {
   } else {
     current[lastPart] = value;
   }
-  
+
   return cloned;
 }
 
@@ -166,10 +167,10 @@ function replaceOperation(document: any, pathParts: string[], value: any): any {
   if (pathParts.length === 0) {
     return value;
   }
-  
+
   const cloned = deepClone(document);
   let current = cloned;
-  
+
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i];
     if (Array.isArray(current)) {
@@ -179,7 +180,7 @@ function replaceOperation(document: any, pathParts: string[], value: any): any {
       current = current[part];
     }
   }
-  
+
   const lastPart = pathParts[pathParts.length - 1];
   if (Array.isArray(current)) {
     const idx = Number(lastPart);
@@ -187,7 +188,7 @@ function replaceOperation(document: any, pathParts: string[], value: any): any {
   } else {
     current[lastPart] = value;
   }
-  
+
   return cloned;
 }
 
@@ -195,10 +196,10 @@ function removeOperation(document: any, pathParts: string[]): any {
   if (pathParts.length === 0) {
     return undefined;
   }
-  
+
   const cloned = deepClone(document);
   let current = cloned;
-  
+
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i];
     if (Array.isArray(current)) {
@@ -208,7 +209,7 @@ function removeOperation(document: any, pathParts: string[]): any {
       current = current[part];
     }
   }
-  
+
   const lastPart = pathParts[pathParts.length - 1];
   if (Array.isArray(current)) {
     const idx = Number(lastPart);
@@ -216,6 +217,6 @@ function removeOperation(document: any, pathParts: string[]): any {
   } else {
     delete current[lastPart];
   }
-  
+
   return cloned;
 }

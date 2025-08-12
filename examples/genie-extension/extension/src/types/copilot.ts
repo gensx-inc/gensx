@@ -17,7 +17,13 @@ export interface CopilotState {
   isOpen: boolean;
   paneWidth: number;
   isResizing: boolean;
-  activeTab: 'chat' | 'tools' | 'history' | 'details' | 'preferences' | 'knowledge';
+  activeTab:
+    | "chat"
+    | "tools"
+    | "history"
+    | "details"
+    | "preferences"
+    | "knowledge";
   messages: CopilotMessage[];
   expandedTools: Set<string>;
   isStreaming: boolean;
@@ -36,7 +42,7 @@ export interface TodoList {
 
 export interface CopilotMessage {
   id?: string;
-  role: 'user' | 'assistant' | 'system' | 'tool';
+  role: "user" | "assistant" | "system" | "tool";
   content: string | MessageContent[];
   timestamp?: number;
   toolCalls?: ToolCall[];
@@ -45,19 +51,19 @@ export interface CopilotMessage {
 export type MessageContent = TextPart | ToolCallPart | ToolResultPart;
 
 export interface TextPart {
-  type: 'text';
+  type: "text";
   text: string;
 }
 
 export interface ToolCallPart {
-  type: 'tool-call';
+  type: "tool-call";
   toolCallId: string;
   toolName: string;
   args: any;
 }
 
 export interface ToolResultPart {
-  type: 'tool-result';
+  type: "tool-result";
   toolCallId: string;
   result: any;
 }
@@ -74,7 +80,30 @@ export interface ToolCall {
 }
 
 export interface ExtensionMessage {
-  type: 'GET_TAB_INFO' | 'EXECUTE_TOOL' | 'SEND_MESSAGE' | 'TOGGLE_COPILOT' | 'WORKFLOW_REQUEST' | 'WORKFLOW_RESPONSE' | 'WORKFLOW_ERROR' | 'WORKFLOW_STREAM_UPDATE' | 'WORKFLOW_STREAM_COMPLETE' | 'WORKFLOW_MESSAGES_UPDATE' | 'WORKFLOW_TODO_LIST_UPDATE' | 'WORKFLOW_RECONNECT' | 'WORKFLOW_EXECUTION_STARTED' | 'EXTERNAL_TOOL_CALL' | 'EXTERNAL_TOOL_RESPONSE' | 'GET_THREAD_HISTORY' | 'CONTENT_SCRIPT_READY' | 'UPDATE_CURRENT_TAB' | 'GET_GEOLOCATION' | 'TAB_OPENED_ADD_TO_SELECTED' | 'GET_USER_ID' | 'GET_THREAD_ID' | 'NEW_THREAD_ID';
+  type:
+    | "GET_TAB_INFO"
+    | "EXECUTE_TOOL"
+    | "SEND_MESSAGE"
+    | "TOGGLE_COPILOT"
+    | "WORKFLOW_REQUEST"
+    | "WORKFLOW_RESPONSE"
+    | "WORKFLOW_ERROR"
+    | "WORKFLOW_STREAM_UPDATE"
+    | "WORKFLOW_STREAM_COMPLETE"
+    | "WORKFLOW_MESSAGES_UPDATE"
+    | "WORKFLOW_TODO_LIST_UPDATE"
+    | "WORKFLOW_RECONNECT"
+    | "WORKFLOW_EXECUTION_STARTED"
+    | "EXTERNAL_TOOL_CALL"
+    | "EXTERNAL_TOOL_RESPONSE"
+    | "GET_THREAD_HISTORY"
+    | "CONTENT_SCRIPT_READY"
+    | "UPDATE_CURRENT_TAB"
+    | "GET_GEOLOCATION"
+    | "TAB_OPENED_ADD_TO_SELECTED"
+    | "GET_USER_ID"
+    | "GET_THREAD_ID"
+    | "NEW_THREAD_ID";
   data?: any;
   tabId?: number;
   requestId?: string;
@@ -83,14 +112,14 @@ export interface ExtensionMessage {
 }
 
 export interface WorkflowMessage {
-  type: 'WORKFLOW_REQUEST';
+  type: "WORKFLOW_REQUEST";
   requestId: string;
   data: {
     prompt: string;
     userName?: string;
     userContext?: string;
     selectedTabs?: TabContext[];
-    conversationMode?: 'general' | 'single-tab' | 'multi-tab';
+    conversationMode?: "general" | "single-tab" | "multi-tab";
   };
 }
 
@@ -104,7 +133,7 @@ export interface TabContext {
 }
 
 export interface WorkflowResponseMessage {
-  type: 'WORKFLOW_RESPONSE';
+  type: "WORKFLOW_RESPONSE";
   requestId: string;
   data: {
     result: string;
@@ -113,13 +142,13 @@ export interface WorkflowResponseMessage {
 }
 
 export interface WorkflowErrorMessage {
-  type: 'WORKFLOW_ERROR';
+  type: "WORKFLOW_ERROR";
   requestId: string;
   error: string;
 }
 
 export interface WorkflowStreamUpdateMessage {
-  type: 'WORKFLOW_STREAM_UPDATE';
+  type: "WORKFLOW_STREAM_UPDATE";
   requestId: string;
   data: {
     text: string;
@@ -128,7 +157,7 @@ export interface WorkflowStreamUpdateMessage {
 }
 
 export interface WorkflowStreamCompleteMessage {
-  type: 'WORKFLOW_STREAM_COMPLETE';
+  type: "WORKFLOW_STREAM_COMPLETE";
   requestId: string;
   data: {
     finalMessage: string;
@@ -136,7 +165,7 @@ export interface WorkflowStreamCompleteMessage {
 }
 
 export interface ExternalToolCallMessage {
-  type: 'EXTERNAL_TOOL_CALL';
+  type: "EXTERNAL_TOOL_CALL";
   requestId: string;
   data: {
     toolName: string;
@@ -148,7 +177,7 @@ export interface ExternalToolCallMessage {
 }
 
 export interface ExternalToolResponseMessage {
-  type: 'EXTERNAL_TOOL_RESPONSE';
+  type: "EXTERNAL_TOOL_RESPONSE";
   requestId: string;
   data: {
     toolName: string;
@@ -159,7 +188,7 @@ export interface ExternalToolResponseMessage {
 }
 
 export interface WorkflowMessagesUpdateMessage {
-  type: 'WORKFLOW_MESSAGES_UPDATE';
+  type: "WORKFLOW_MESSAGES_UPDATE";
   requestId: string;
   data: {
     messages: CopilotMessage[];
@@ -168,7 +197,7 @@ export interface WorkflowMessagesUpdateMessage {
 }
 
 export interface WorkflowTodoListUpdateMessage {
-  type: 'WORKFLOW_TODO_LIST_UPDATE';
+  type: "WORKFLOW_TODO_LIST_UPDATE";
   requestId: string;
   data: {
     todoList: TodoList;
@@ -199,21 +228,23 @@ export interface WorkflowResponse {
 // Settings storage utilities
 export class SettingsManager {
   private static readonly DEFAULT_SETTINGS: CopilotSettings = {
-    apiEndpoint: 'http://localhost:1337',
-    scopedTokenEndpoint: 'https://genie.gensx.com/api/scoped-tokens',
-    org: 'gensx',
-    project: 'chrome-copilot',
-    environment: 'default',
-    userName: '',
-    userContext: ''
+    apiEndpoint: "http://localhost:1337",
+    scopedTokenEndpoint: "https://genie.gensx.com/api/scoped-tokens",
+    org: "gensx",
+    project: "chrome-copilot",
+    environment: "default",
+    userName: "",
+    userContext: "",
   };
 
   static async get(): Promise<CopilotSettings> {
     try {
-      const settings = await chrome.storage.sync.get(this.DEFAULT_SETTINGS) as CopilotSettings;
+      const settings = (await chrome.storage.sync.get(
+        this.DEFAULT_SETTINGS,
+      )) as CopilotSettings;
       return settings;
     } catch (error) {
-      console.error('Error getting settings:', error);
+      console.error("Error getting settings:", error);
       return this.DEFAULT_SETTINGS;
     }
   }
@@ -224,12 +255,14 @@ export class SettingsManager {
       const validatedSettings = this.validate(settings);
       await chrome.storage.sync.set(validatedSettings);
     } catch (error) {
-      console.error('Error setting settings:', error);
+      console.error("Error setting settings:", error);
       throw error;
     }
   }
 
-  static validate(settings: Partial<CopilotSettings>): Partial<CopilotSettings> {
+  static validate(
+    settings: Partial<CopilotSettings>,
+  ): Partial<CopilotSettings> {
     const validated: Partial<CopilotSettings> = { ...settings };
 
     // Validate API endpoint
@@ -240,7 +273,7 @@ export class SettingsManager {
         try {
           new URL(validated.apiEndpoint);
         } catch {
-          throw new Error('Invalid API endpoint URL');
+          throw new Error("Invalid API endpoint URL");
         }
       }
     }
@@ -248,16 +281,16 @@ export class SettingsManager {
     // Validate scoped token endpoint
     if (validated.scopedTokenEndpoint !== undefined) {
       if (!validated.scopedTokenEndpoint.trim()) {
-        validated.scopedTokenEndpoint = this.DEFAULT_SETTINGS.scopedTokenEndpoint;
+        validated.scopedTokenEndpoint =
+          this.DEFAULT_SETTINGS.scopedTokenEndpoint;
       } else {
         try {
           new URL(validated.scopedTokenEndpoint);
         } catch {
-          throw new Error('Invalid scoped token endpoint URL');
+          throw new Error("Invalid scoped token endpoint URL");
         }
       }
     }
-
 
     // Sanitize text inputs
     if (validated.userName !== undefined) {
@@ -274,11 +307,13 @@ export class SettingsManager {
     }
 
     if (validated.project !== undefined) {
-      validated.project = validated.project.trim() || this.DEFAULT_SETTINGS.project;
+      validated.project =
+        validated.project.trim() || this.DEFAULT_SETTINGS.project;
     }
 
     if (validated.environment !== undefined) {
-      validated.environment = validated.environment.trim() || this.DEFAULT_SETTINGS.environment;
+      validated.environment =
+        validated.environment.trim() || this.DEFAULT_SETTINGS.environment;
     }
 
     return validated;
@@ -288,7 +323,7 @@ export class SettingsManager {
     try {
       await chrome.storage.sync.set(this.DEFAULT_SETTINGS);
     } catch (error) {
-      console.error('Error resetting settings:', error);
+      console.error("Error resetting settings:", error);
       throw error;
     }
   }

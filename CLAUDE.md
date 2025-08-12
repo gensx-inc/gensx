@@ -7,13 +7,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 GenSX is a **TypeScript monorepo** for building complex LLM applications using a component-based approach. The repository contains:
 
 - **`/packages/`** - Core framework packages published to npm
-- **`/examples/`** - Example applications demonstrating framework capabilities  
+- **`/examples/`** - Example applications demonstrating framework capabilities
 - **`/website/`** - Documentation and marketing website
 - **`/extensions/`** - Browser extensions and integrations
 
 ## Key Commands
 
 ### Development and Building
+
 ```bash
 # Development (watch and build packages)
 pnpm dev
@@ -31,6 +32,7 @@ pnpm clean
 ```
 
 ### Testing and Quality
+
 ```bash
 # Run tests for all packages
 pnpm test
@@ -52,6 +54,7 @@ pnpm format:check      # Check formatting
 ```
 
 ### Package Management
+
 ```bash
 # Install dependencies
 pnpm install
@@ -68,16 +71,18 @@ pnpm --filter <workspace> <command>
 ### Core Package Structure
 
 **Framework Packages:**
+
 - **`@gensx/core`** - Core component system and workflow execution engine
 - **`gensx`** - Main CLI tool with development server and deployment capabilities
 - **`@gensx/openai`** - OpenAI integration components
-- **`@gensx/anthropic`** - Anthropic integration components  
+- **`@gensx/anthropic`** - Anthropic integration components
 - **`@gensx/storage`** - Built-in storage (blob, database, vector search)
 - **`@gensx/vercel-ai`** - Vercel AI SDK integration
 - **`@gensx/react`** - React hooks and utilities
 - **`create-gensx`** - Project scaffolding tool
 
 **AI Development Tools:**
+
 - **`@gensx/cursor-rules`** - Cursor editor rules for GenSX components
 - **`@gensx/windsurf-rules`** - Windsurf editor integration
 - **`@gensx/cline-rules`** - Cline AI assistant integration
@@ -85,12 +90,14 @@ pnpm --filter <workspace> <command>
 ### Build System Architecture
 
 **Monorepo Management:**
+
 - **pnpm workspaces** with catalog system for dependency version management
 - **Turbo** for build orchestration and caching
 - **Rollup** for library bundling (generates both ESM and CJS outputs)
 - Build dependencies: packages depend on `^build` (dependencies must build first)
 
 **Key Configuration Files:**
+
 - `turbo.json` - Build orchestration and task dependencies
 - `pnpm-workspace.yaml` - Workspace configuration
 - `eslint.config.mjs` - Strict TypeScript and JavaScript linting
@@ -99,29 +106,29 @@ pnpm --filter <workspace> <command>
 ## Development Patterns
 
 ### GenSX Component Pattern
+
 ```typescript
 const MyComponent = gensx.Component(
   "ComponentName",
   async (input: InputType): Promise<OutputType> => {
     // Component logic here
     return output;
-  }
+  },
 );
 ```
 
 ### GenSX Workflow Pattern
+
 ```typescript
-const MyWorkflow = gensx.Workflow(
-  "WorkflowName", 
-  async (input) => {
-    const step1 = await Component1(input);
-    const step2 = await Component2(step1);
-    return step2;
-  }
-);
+const MyWorkflow = gensx.Workflow("WorkflowName", async (input) => {
+  const step1 = await Component1(input);
+  const step2 = await Component2(step1);
+  return step2;
+});
 ```
 
 ### JSX Component Pattern
+
 ```typescript
 // Uses JSX with @gensx/core as jsxImportSource
 const MyJSXComponent = gensx.Component(
@@ -139,25 +146,29 @@ const MyJSXComponent = gensx.Component(
 ## Code Style Guidelines
 
 ### TypeScript Standards
+
 - Use **strict TypeScript** - no `any` types allowed
 - Prefer async/await over promise chains
 - Use proper JSDoc comments for exported functions/types
 - Naming conventions:
   - Components: PascalCase
-  - Functions/variables: camelCase  
+  - Functions/variables: camelCase
   - Constants: UPPER_SNAKE_CASE
   - Types/Interfaces: PascalCase
 
 ### Import Organization
+
 - Uses `simple-import-sort` ESLint plugin
 - Order: Node.js built-ins → external packages → relative imports
 - Always use explicit imports, avoid default imports where possible
 
 ### JSX Standards
+
 - All components should use JSX syntax with `@gensx/core` as jsxImportSource
 - Configured in TypeScript: `"jsx": "react-jsx"`, `"jsxImportSource": "@gensx/core"`
 
 ### Error Handling
+
 - Always use try/catch for async operations
 - Use specific error types, not generic Error
 - Proper error logging with structured context
@@ -165,11 +176,13 @@ const MyJSXComponent = gensx.Component(
 ## Testing Guidelines
 
 ### Testing Framework: Vitest
+
 - Uses **Vitest** across all packages with **Istanbul** coverage
 - Tests located in `/tests/` directory for each package
 - Test files follow pattern `*.test.ts` or `*.test.tsx`
 
 ### Testing Patterns
+
 ```typescript
 // Component testing
 import { gensx } from "@gensx/core";
@@ -183,12 +196,14 @@ suite("MyComponent", () => {
 ```
 
 ### Test Philosophy
+
 - **Test real behavior**, minimize mocking of internal code
 - Only mock external third-party services (APIs, etc.)
 - Each test should be isolated and repeatable
 - Use environment variables for API keys: `OPENAI_API_KEY`, etc.
 
 ### Running Tests
+
 ```bash
 # All tests
 pnpm test
@@ -206,12 +221,14 @@ pnpm test --coverage
 ## Build System Details
 
 ### Turbo Configuration
+
 - Parallel builds with dependency caching
 - Tasks: `build`, `test`, `lint`, `type-check`
 - Build dependencies ensure packages build in correct order
 - Incremental builds based on file changes
 
 ### Package Dependencies
+
 ```bash
 # Core packages have minimal external dependencies
 # Examples depend on core packages
@@ -220,6 +237,7 @@ pnpm test --coverage
 ```
 
 ### Important Build Notes
+
 - **Always run `pnpm lint:fix` after code changes**
 - Dependencies managed through pnpm catalog for version consistency
 - Build artifacts in `dist/` directories (gitignored)
@@ -227,7 +245,9 @@ pnpm test --coverage
 ## Development Environment
 
 ### VSCode Configuration
+
 The repository includes `.vscode/settings.json` with:
+
 - Auto-format on save with Prettier
 - ESLint auto-fix on save
 - Unused import removal
@@ -235,11 +255,13 @@ The repository includes `.vscode/settings.json` with:
 - Spell check for GenSX-specific terms
 
 ### Cursor Rules Standards
+
 - Cursor rule files (.mdc) must be placed in `.cursor/rules/` directory
 - Use kebab-case naming convention
 - Never place rule files in project root or other locations
 
 ### Editor Integration
+
 - **Format on save** enabled
 - **ESLint validation** for JS/TS/JSX/TSX files
 - **Auto-fix imports** and remove unused imports
@@ -248,6 +270,7 @@ The repository includes `.vscode/settings.json` with:
 ## Chrome Extension Development
 
 ### Extension Structure (`/extensions/chrome-copilot/`)
+
 ```bash
 # Start GenSX workflow server
 pnpm dev
@@ -266,6 +289,7 @@ pnpm type-check
 ```
 
 **Architecture:**
+
 - TypeScript source in `src/` directory
 - Webpack bundling with Chrome extension support
 - GenSX workflows in `gensx/` directory

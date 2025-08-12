@@ -14,17 +14,20 @@ A Chrome extension that brings the power of AI directly to any webpage. This ext
 ### Build and install the extension
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/gensx-inc/gensx.git
    cd gensx/examples/genie-extension
    ```
 
 2. **Install dependencies**:
+
    ```bash
    pnpm install
    ```
 
 3. **Build the extension**:
+
    ```bash
    pnpm build:extension
    ```
@@ -37,18 +40,22 @@ A Chrome extension that brings the power of AI directly to any webpage. This ext
 ### Development Installation
 
 1. **Install dependencies**:
+
    ```bash
    cd extensions/chrome-copilot/
    pnpm install
    ```
 
 2. **Start the GenSX workflow server**:
+
    ```bash
    pnpm dev
    ```
+
    This starts the GenSX workflow server that the extension communicates with.
 
 3. **Build the extension** (in a separate terminal):
+
    ```bash
    pnpm build:dev
    ```

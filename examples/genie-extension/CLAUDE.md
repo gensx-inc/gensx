@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 ## Key Commands
 
 ### Development
+
 ```bash
 # Start GenSX workflow development server
 npm run dev
@@ -29,6 +30,7 @@ npm run type-check
 ```
 
 ### Distribution
+
 ```bash
 # Create distribution package
 npm run package
@@ -43,6 +45,7 @@ npm run clean
 ## Architecture Overview
 
 ### Extension Structure
+
 - **`/src/`** - TypeScript source files for extension components
   - `background.ts` - Service worker (Manifest V3)
   - `content.ts` - Content script injected into web pages
@@ -59,12 +62,14 @@ npm run clean
 - **`/icons/`** - Extension icons and assets
 
 ### Extension Components
+
 - **Background Script**: Service worker handling extension lifecycle and API communications
 - **Content Script**: Injected into web pages for DOM interaction and GenSX workflow execution
 - **Popup**: User interface for extension controls and workflow triggers
 - **Options Page**: Configuration interface for extension settings
 
 ### GenSX Integration
+
 - Uses GenSX workflows for AI-powered web page analysis and interaction
 - Integrates with OpenAI and Anthropic APIs through GenSX providers
 - Custom tools for Chrome extension APIs (tabs, storage, etc.)
@@ -72,59 +77,65 @@ npm run clean
 ## Development Patterns
 
 ### Extension Script Communication
+
 ```typescript
 // Background to content script messaging
 chrome.tabs.sendMessage(tabId, {
   type: "EXECUTE_WORKFLOW",
-  payload: workflowData
+  payload: workflowData,
 });
 
 // Content script to background messaging
 chrome.runtime.sendMessage({
   type: "WORKFLOW_RESULT",
-  payload: result
+  payload: result,
 });
 ```
 
 ### GenSX Workflow Integration
+
 ```typescript
 const WebAnalysisWorkflow = gensx.Component(
   "WebAnalysisWorkflow",
   async (input: { url: string; task: string }) => {
     // Workflow logic using GenSX components
     return analysisResult;
-  }
+  },
 );
 ```
 
 ### Chrome API Integration
+
 ```typescript
 // Storage API usage
 await chrome.storage.local.set({ key: value });
-const data = await chrome.storage.local.get(['key']);
+const data = await chrome.storage.local.get(["key"]);
 
 // Tabs API usage
-const activeTab = await chrome.tabs.query({ 
-  active: true, 
-  currentWindow: true 
+const activeTab = await chrome.tabs.query({
+  active: true,
+  currentWindow: true,
 });
 ```
 
 ## Code Style Guidelines
 
 ### TypeScript Standards
+
 - **Strict TypeScript** - no `any` types
 - Use Chrome extension type definitions from `@types/chrome`
 - Proper async/await patterns for Chrome APIs
 - JSDoc comments for exported functions
 
 ### Extension-Specific Patterns
+
 - Use Chrome's Promise-based APIs (Manifest V3 style)
 - Proper error handling for extension API calls
 - Security-conscious coding (no eval, proper CSP compliance)
 - Message passing between extension contexts
 
 ### GenSX Integration Patterns
+
 - Follow GenSX component patterns for workflows
 - Use GenSX providers for AI model integration
 - Implement custom tools for Chrome-specific functionality
@@ -132,6 +143,7 @@ const activeTab = await chrome.tabs.query({
 ## Build System
 
 ### Webpack Configuration
+
 - **Entry points**: `background.ts`, `content.ts`, `popup.ts`, `options.ts`
 - **TypeScript compilation** with ts-loader
 - **Asset copying** for manifest, HTML, CSS, and icons
@@ -139,6 +151,7 @@ const activeTab = await chrome.tabs.query({
 - **Source maps** in development mode
 
 ### Chrome Extension Manifest (V3)
+
 - Service worker background script
 - Content script injection for all URLs
 - Required permissions: `activeTab`, `storage`, `tabs`
@@ -147,6 +160,7 @@ const activeTab = await chrome.tabs.query({
 ## Development Guidelines
 
 ### Extension Development Best Practices
+
 - **Manifest V3 compliance** - use service workers, not background pages
 - **Minimal permissions** - only request necessary permissions
 - **Content Security Policy** compliance
@@ -154,12 +168,14 @@ const activeTab = await chrome.tabs.query({
 - **Storage management** using Chrome storage APIs
 
 ### GenSX Workflow Development
+
 - Workflows should be stateless and handle browser context properly
 - Use Chrome APIs through content scripts, not directly in workflows
 - Implement proper error handling for network failures
 - Consider user privacy when processing web page content
 
 ### Security Considerations
+
 - Never inject untrusted code into web pages
 - Sanitize user inputs before processing
 - Use Chrome's built-in APIs for secure operations
@@ -168,6 +184,7 @@ const activeTab = await chrome.tabs.query({
 ## Testing and Debugging
 
 ### Development Testing
+
 ```bash
 # Load unpacked extension in Chrome
 # 1. Run `npm run build:dev`
@@ -177,12 +194,14 @@ const activeTab = await chrome.tabs.query({
 ```
 
 ### Debugging Techniques
+
 - **Background script**: Debug in Chrome DevTools > Extensions
 - **Content script**: Debug in page DevTools console
 - **Popup**: Right-click extension icon > "Inspect popup"
 - **Workflow logs**: Check GenSX workflow execution logs
 
 ### Common Issues
+
 - **CORS errors**: Use Chrome extension permissions instead of direct fetch
 - **CSP violations**: Ensure all scripts comply with Content Security Policy
 - **Permission errors**: Verify manifest permissions match API usage
@@ -191,6 +210,7 @@ const activeTab = await chrome.tabs.query({
 ## File Organization
 
 ### Source Code Structure
+
 ```
 src/
 ├── background.ts      # Service worker
@@ -205,6 +225,7 @@ src/
 ```
 
 ### GenSX Structure
+
 ```
 gensx/
 ├── workflows.ts      # Main workflows
@@ -216,6 +237,7 @@ gensx/
 ## Key Dependencies
 
 ### Core Dependencies
+
 - **@gensx/core** - GenSX framework core
 - **@gensx/client** - GenSX client SDK
 - **@ai-sdk/openai** - OpenAI integration
@@ -223,6 +245,7 @@ gensx/
 - **jquery** - DOM manipulation utilities
 
 ### Development Dependencies
+
 - **@types/chrome** - Chrome extension type definitions
 - **webpack** - Build system and bundling
 - **typescript** - TypeScript compiler
@@ -231,11 +254,13 @@ gensx/
 ## Environment Setup
 
 ### Prerequisites
+
 - Node.js 18+ and pnpm
 - Chrome browser for testing
 - GenSX development environment set up
 
 ### Development Workflow
+
 1. Make changes to source files in `src/` or `gensx/`
 2. Run `npm run build:dev` to build with source maps
 3. Reload extension in Chrome DevTools
@@ -243,6 +268,7 @@ gensx/
 5. Use `npm run type-check` to validate TypeScript
 
 ### Production Deployment
+
 1. Run `npm run build` for optimized production build
 2. Run `npm run package` to create distribution ZIP
 3. Upload to Chrome Web Store or distribute manually

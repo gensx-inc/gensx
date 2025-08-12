@@ -48,7 +48,8 @@ chrome.runtime.onStartup.addListener(async () => {
 });
 
 async function getScopedToken(): Promise<string> {
-  const token = (await chrome.storage.local.get("scopedToken"))?.scopedToken as { token: string; expiresAt: string };
+  const token = (await chrome.storage.local.get("scopedToken"))
+    ?.scopedToken as { token: string; expiresAt: string };
 
   console.log("Scoped token:", token);
 
@@ -82,16 +83,13 @@ async function fetchScopedTokenFromApi(): Promise<string> {
 
   // In prod, go through the configured endpoint.
   console.log("Fetching scoped token from configured endpoint");
-  const response = await fetch(
-    settings.scopedTokenEndpoint,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        // We are assuming here that userIds are basically unguessable. Its not great security, but it will do for now until we integrate a real user management system.
-        userId,
-      }),
-    },
-  );
+  const response = await fetch(settings.scopedTokenEndpoint, {
+    method: "POST",
+    body: JSON.stringify({
+      // We are assuming here that userIds are basically unguessable. Its not great security, but it will do for now until we integrate a real user management system.
+      userId,
+    }),
+  });
 
   if (!response.ok) {
     console.error("Failed to fetch scoped token:", response);
@@ -203,7 +201,6 @@ chrome.action.onClicked.addListener(async (tab) => {
     await chrome.sidePanel.open({ tabId: tab.id });
   }
 });
-
 
 const getClient = async (skipToken = false) => {
   const settings = await SettingsManager.get();

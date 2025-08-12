@@ -40,16 +40,22 @@ export const Agent = gensx.Component(
 
     const publishMessages = () => {
       gensx.publishObject("messages", {
-        messages: JSON.parse(JSON.stringify(allMessages
-          .filter(m => m.role !== 'system') // Filter out system messages to prevent leaking prompts
-          .map(m => {
-            if (typeof m.content !== "string") {
-              return m;
-            }
+        messages: JSON.parse(
+          JSON.stringify(
+            allMessages
+              .filter((m) => m.role !== "system") // Filter out system messages to prevent leaking prompts
+              .map((m) => {
+                if (typeof m.content !== "string") {
+                  return m;
+                }
 
-            m.content = m.content.replace(/<|tool_calls_section_begin|>/g, "").replace(/<|tool_calls_section_end|>/g, "");
-            return m;
-          }))),
+                m.content = m.content
+                  .replace(/<|tool_calls_section_begin|>/g, "")
+                  .replace(/<|tool_calls_section_end|>/g, "");
+                return m;
+              }),
+          ),
+        ),
       });
     };
 

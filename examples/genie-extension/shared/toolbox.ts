@@ -11,7 +11,10 @@ export const toolbox = createToolBox({
       success: z.boolean(),
       url: z.string().optional().describe("The url of the page"),
       content: z.string().optional().describe("The HTML content of the page"),
-      error: z.string().optional().describe("Error message if operation failed"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if operation failed"),
     }),
   },
 
@@ -23,7 +26,10 @@ export const toolbox = createToolBox({
     result: z.object({
       success: z.boolean(),
       url: z.string().optional().describe("The url of the page"),
-      error: z.string().optional().describe("Error message if operation failed"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if operation failed"),
     }),
   },
 
@@ -32,7 +38,12 @@ export const toolbox = createToolBox({
       "Show interactive elements on a specific tab (buttons, links, inputs, etc.).",
     params: z.object({
       tabId: z.number().describe("The ID of the tab to search in."),
-      textToFilter: z.array(z.string()).describe("Return only elements that contain any of the text in this array.").optional(),
+      textToFilter: z
+        .array(z.string())
+        .describe(
+          "Return only elements that contain any of the text in this array.",
+        )
+        .optional(),
     }),
     result: z.object({
       success: z.boolean(),
@@ -44,14 +55,31 @@ export const toolbox = createToolBox({
             text: z.string(),
             href: z.string().optional(),
             value: z.string().optional(),
-            role: z.string().optional().describe("ARIA role attribute indicating element purpose"),
-            ariaAttributes: z.record(z.string()).optional().describe("ARIA attributes for accessibility (aria-label, aria-describedby, etc.)"),
-            title: z.string().optional().describe("Title attribute for additional context"),
+            role: z
+              .string()
+              .optional()
+              .describe("ARIA role attribute indicating element purpose"),
+            ariaAttributes: z
+              .record(z.string())
+              .optional()
+              .describe(
+                "ARIA attributes for accessibility (aria-label, aria-describedby, etc.)",
+              ),
+            title: z
+              .string()
+              .optional()
+              .describe("Title attribute for additional context"),
             alt: z.string().optional().describe("Alt text for images"),
           }),
         )
-        .describe("The interactive elements on the page with ARIA and accessibility information").optional(),
-      error: z.string().optional().describe("Error message if operation failed"),
+        .describe(
+          "The interactive elements on the page with ARIA and accessibility information",
+        )
+        .optional(),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if operation failed"),
     }),
   },
 
@@ -90,34 +118,56 @@ export const toolbox = createToolBox({
     }),
     result: z.object({
       success: z.boolean(),
-      inspections: z.array(
-        z.object({
-          selector: z.string(),
-          success: z.boolean(),
-          count: z.number().describe("Number of elements returned (after filtering empty results)"),
-          originalCount: z.number().optional().describe("Original number of elements found before filtering (only shown if different from count)"),
-          elements: z.array(
-            z.object({
-              index: z.number(),
-              text: z.string().optional(),
-              value: z.string().optional(),
-              summary: z.string().optional().describe("Element summary (when no properties specified)"),
-              children: z.array(z.object({
-                tag: z.string(),
-                selector: z.string(),
+      inspections: z
+        .array(
+          z.object({
+            selector: z.string(),
+            success: z.boolean(),
+            count: z
+              .number()
+              .describe(
+                "Number of elements returned (after filtering empty results)",
+              ),
+            originalCount: z
+              .number()
+              .optional()
+              .describe(
+                "Original number of elements found before filtering (only shown if different from count)",
+              ),
+            elements: z.array(
+              z.object({
+                index: z.number(),
                 text: z.string().optional(),
-                count: z.number().optional()
-              })).optional().describe("Child elements summary"),
-              attributes: z.record(z.string()).optional(),
-              css: z.record(z.string()).optional(),
-              data: z.record(z.any()).optional(),
-            }),
-          ),
-          error: z.string().optional(),
-        }),
-      ).optional(),
+                value: z.string().optional(),
+                summary: z
+                  .string()
+                  .optional()
+                  .describe("Element summary (when no properties specified)"),
+                children: z
+                  .array(
+                    z.object({
+                      tag: z.string(),
+                      selector: z.string(),
+                      text: z.string().optional(),
+                      count: z.number().optional(),
+                    }),
+                  )
+                  .optional()
+                  .describe("Child elements summary"),
+                attributes: z.record(z.string()).optional(),
+                css: z.record(z.string()).optional(),
+                data: z.record(z.any()).optional(),
+              }),
+            ),
+            error: z.string().optional(),
+          }),
+        )
+        .optional(),
       message: z.string().optional(),
-      error: z.string().optional().describe("Error message if operation failed"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if operation failed"),
     }),
   },
 
@@ -148,15 +198,20 @@ export const toolbox = createToolBox({
     }),
     result: z.object({
       success: z.boolean(),
-      clicks: z.array(
-        z.object({
-          selector: z.string(),
-          clicked: z.boolean(),
-          error: z.string().optional(),
-        }),
-      ).optional(),
+      clicks: z
+        .array(
+          z.object({
+            selector: z.string(),
+            clicked: z.boolean(),
+            error: z.string().optional(),
+          }),
+        )
+        .optional(),
       message: z.string().optional(),
-      error: z.string().optional().describe("Error message if operation failed"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if operation failed"),
     }),
   },
 
@@ -166,7 +221,9 @@ export const toolbox = createToolBox({
     params: z.object({
       tabId: z
         .number()
-        .describe("REQUIRED: The ID of the browser tab containing the input elements to fill."),
+        .describe(
+          "REQUIRED: The ID of the browser tab containing the input elements to fill.",
+        ),
       inputs: z
         .array(
           z.object({
@@ -202,7 +259,9 @@ export const toolbox = createToolBox({
     params: z.object({
       tabId: z
         .number()
-        .describe("REQUIRED: The ID of the browser tab containing the select elements."),
+        .describe(
+          "REQUIRED: The ID of the browser tab containing the select elements.",
+        ),
       selects: z
         .array(
           z.object({
@@ -240,7 +299,9 @@ export const toolbox = createToolBox({
     params: z.object({
       tabId: z
         .number()
-        .describe("REQUIRED: The ID of the browser tab containing the checkbox elements."),
+        .describe(
+          "REQUIRED: The ID of the browser tab containing the checkbox elements.",
+        ),
       checkboxes: z
         .array(
           z.object({
@@ -274,7 +335,9 @@ export const toolbox = createToolBox({
     params: z.object({
       tabId: z
         .number()
-        .describe("REQUIRED: The ID of the browser tab containing the form elements."),
+        .describe(
+          "REQUIRED: The ID of the browser tab containing the form elements.",
+        ),
       forms: z
         .array(
           z.object({
@@ -307,11 +370,14 @@ export const toolbox = createToolBox({
   },
 
   waitForElements: {
-    description: "Wait for multiple elements to appear on the page. Requires a tabId to specify which browser tab to monitor.",
+    description:
+      "Wait for multiple elements to appear on the page. Requires a tabId to specify which browser tab to monitor.",
     params: z.object({
       tabId: z
         .number()
-        .describe("REQUIRED: The ID of the browser tab to wait for elements in."),
+        .describe(
+          "REQUIRED: The ID of the browser tab to wait for elements in.",
+        ),
       elements: z
         .array(
           z.object({
@@ -339,21 +405,41 @@ export const toolbox = createToolBox({
   },
 
   findElementsByText: {
-    description: "Find specific elements containing text content. Returns only the deepest elements that directly contain the text, not their parent containers.",
+    description:
+      "Find specific elements containing text content. Returns only the deepest elements that directly contain the text, not their parent containers.",
     params: z.object({
       tabId: z.number().describe("The ID of the tab to search in."),
-      content: z.array(z.string()).describe("The text content to search for in elements"),
+      content: z
+        .array(z.string())
+        .describe("The text content to search for in elements"),
     }),
     result: z.object({
       success: z.boolean(),
-      elements: z.array(z.object({
-        selector: z.string().describe("CSS selector to uniquely identify the element"),
-        text: z.string().describe("The actual text content found in the element"),
-        matchedTerm: z.string().describe("Which search term matched this element"),
-        elementType: z.string().describe("HTML tag name of the element"),
-      })).optional().describe("Array of specific elements containing the search text"),
-      totalFound: z.number().optional().describe("Total number of elements found (before any limits)"),
-      error: z.string().optional().describe("Error message if operation failed"),
+      elements: z
+        .array(
+          z.object({
+            selector: z
+              .string()
+              .describe("CSS selector to uniquely identify the element"),
+            text: z
+              .string()
+              .describe("The actual text content found in the element"),
+            matchedTerm: z
+              .string()
+              .describe("Which search term matched this element"),
+            elementType: z.string().describe("HTML tag name of the element"),
+          }),
+        )
+        .optional()
+        .describe("Array of specific elements containing the search text"),
+      totalFound: z
+        .number()
+        .optional()
+        .describe("Total number of elements found (before any limits)"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if operation failed"),
     }),
   },
 
@@ -363,7 +449,9 @@ export const toolbox = createToolBox({
     params: z.object({
       tabId: z
         .number()
-        .describe("REQUIRED: The ID of the existing browser tab to navigate. If you need a new tab, use openTab tool instead."),
+        .describe(
+          "REQUIRED: The ID of the existing browser tab to navigate. If you need a new tab, use openTab tool instead.",
+        ),
       action: z
         .enum(["back", "forward", "path", "url"])
         .describe(
@@ -430,33 +518,55 @@ export const toolbox = createToolBox({
         .number()
         .optional()
         .default(300000)
-        .describe("Maximum age of cached position in milliseconds (5 minutes default)"),
+        .describe(
+          "Maximum age of cached position in milliseconds (5 minutes default)",
+        ),
     }),
     result: z.object({
       success: z.boolean(),
       latitude: z.number().optional().describe("Latitude in decimal degrees"),
       longitude: z.number().optional().describe("Longitude in decimal degrees"),
       accuracy: z.number().optional().describe("Accuracy in meters"),
-      altitude: z.number().optional().describe("Altitude in meters above sea level"),
-      altitudeAccuracy: z.number().optional().describe("Altitude accuracy in meters"),
-      heading: z.number().optional().describe("Heading in degrees from true north"),
+      altitude: z
+        .number()
+        .optional()
+        .describe("Altitude in meters above sea level"),
+      altitudeAccuracy: z
+        .number()
+        .optional()
+        .describe("Altitude accuracy in meters"),
+      heading: z
+        .number()
+        .optional()
+        .describe("Heading in degrees from true north"),
       speed: z.number().optional().describe("Speed in meters per second"),
-      timestamp: z.number().optional().describe("Timestamp when position was obtained"),
-      error: z.string().optional().describe("Error message if geolocation failed"),
+      timestamp: z
+        .number()
+        .optional()
+        .describe("Timestamp when position was obtained"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if geolocation failed"),
     }),
   },
 
   openTab: {
-    description: "Open a new browser tab with a specified URL. Use this to show information or results to the user. You can also use this when you need to access a specific application that is not available in the selected tabs.",
+    description:
+      "Open a new browser tab with a specified URL. Use this to show information or results to the user. You can also use this when you need to access a specific application that is not available in the selected tabs.",
     params: z.object({
       url: z
         .string()
-        .describe("The URL to open in the new tab. Must be a valid HTTP/HTTPS URL."),
+        .describe(
+          "The URL to open in the new tab. Must be a valid HTTP/HTTPS URL.",
+        ),
       active: z
         .boolean()
         .optional()
         .default(true)
-        .describe("Whether to make the new tab active (focused). Default is true."),
+        .describe(
+          "Whether to make the new tab active (focused). Default is true.",
+        ),
     }),
     result: z.object({
       success: z.boolean(),
@@ -465,54 +575,103 @@ export const toolbox = createToolBox({
       title: z.string().optional().describe("The title of the new tab"),
       domain: z.string().optional().describe("The domain of the new tab"),
       message: z.string().optional().describe("Success or error message"),
-      error: z.string().optional().describe("Error message if tab creation failed"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if tab creation failed"),
     }),
   },
 
   closeTab: {
-    description: "Close one or more browser tabs that were previously opened by the openTab tool. For security, this tool can ONLY close tabs that were created by the extension itself, not user's existing tabs.",
+    description:
+      "Close one or more browser tabs that were previously opened by the openTab tool. For security, this tool can ONLY close tabs that were created by the extension itself, not user's existing tabs.",
     params: z.object({
       tabIds: z
         .array(z.number())
         .min(1)
-        .describe("Array of tab IDs to close. Pass a single-element array [tabId] to close one tab, or multiple IDs [tabId1, tabId2, ...] to close multiple tabs. All tabs must have been opened by the openTab tool."),
+        .describe(
+          "Array of tab IDs to close. Pass a single-element array [tabId] to close one tab, or multiple IDs [tabId1, tabId2, ...] to close multiple tabs. All tabs must have been opened by the openTab tool.",
+        ),
     }),
     result: z.object({
-      success: z.boolean().describe("True if all tabs were successfully closed"),
-      closedTabs: z.array(z.number()).optional().describe("Array of tab IDs that were successfully closed"),
-      failedTabs: z.array(z.object({
-        tabId: z.number(),
-        error: z.string()
-      })).optional().describe("Array of tabs that failed to close with error messages"),
+      success: z
+        .boolean()
+        .describe("True if all tabs were successfully closed"),
+      closedTabs: z
+        .array(z.number())
+        .optional()
+        .describe("Array of tab IDs that were successfully closed"),
+      failedTabs: z
+        .array(
+          z.object({
+            tabId: z.number(),
+            error: z.string(),
+          }),
+        )
+        .optional()
+        .describe("Array of tabs that failed to close with error messages"),
       message: z.string().optional().describe("Summary message"),
-      error: z.string().optional().describe("Error message if all tabs failed to close"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if all tabs failed to close"),
     }),
   },
 
   captureElementScreenshot: {
-    description: "Take a screenshot of a specific element on the page. Returns the image for visual analysis. Useful for understanding element appearance, layout, styling, or troubleshooting visual issues.",
+    description:
+      "Take a screenshot of a specific element on the page. Returns the image for visual analysis. Useful for understanding element appearance, layout, styling, or troubleshooting visual issues.",
     params: z.object({
       tabId: z.number().describe("The ID of the tab containing the element"),
       selector: z.string().describe("CSS selector of the element to capture"),
-      scrollIntoView: z.boolean().optional().default(true).describe("Whether to scroll the element into view before capturing"),
+      scrollIntoView: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe("Whether to scroll the element into view before capturing"),
     }),
     result: z.object({
       success: z.boolean(),
-      image: z.string().optional().describe("Base64 data URL of the screenshot image"),
-      message: z.string().optional().describe("Success message or additional info"),
-      error: z.string().optional().describe("Error message if screenshot failed"),
+      image: z
+        .string()
+        .optional()
+        .describe("Base64 data URL of the screenshot image"),
+      message: z
+        .string()
+        .optional()
+        .describe("Success message or additional info"),
+      error: z
+        .string()
+        .optional()
+        .describe("Error message if screenshot failed"),
     }),
   },
 });
 
 export type ToolBox = typeof toolbox;
 
-const readonlyTools: (keyof ToolBox)[] = ["fetchPageHtml", "getCurrentUrl", "getGeolocation", "inspectElements", "findInteractiveElements", "findElementsByText", "captureElementScreenshot"];
+const readonlyTools: (keyof ToolBox)[] = [
+  "fetchPageHtml",
+  "getCurrentUrl",
+  "getGeolocation",
+  "inspectElements",
+  "findInteractiveElements",
+  "findElementsByText",
+  "captureElementScreenshot",
+];
 
 export function getReadonlyTools() {
-  return Object.fromEntries(Object.entries(toolbox).filter(([key]) => readonlyTools.includes(key as keyof ToolBox)));
+  return Object.fromEntries(
+    Object.entries(toolbox).filter(([key]) =>
+      readonlyTools.includes(key as keyof ToolBox),
+    ),
+  );
 }
 
 export function getFilteredTools(toolsToRemove: (keyof ToolBox)[]) {
-  return Object.fromEntries(Object.entries(toolbox).filter(([key]) => !toolsToRemove.includes(key as keyof ToolBox)));
+  return Object.fromEntries(
+    Object.entries(toolbox).filter(
+      ([key]) => !toolsToRemove.includes(key as keyof ToolBox),
+    ),
+  );
 }

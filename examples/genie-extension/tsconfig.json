@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": [
-      "ES2020",
-      "DOM",
-      "DOM.Iterable"
-    ],
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
@@ -30,24 +26,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
-    "types": [
-      "chrome",
-      "node"
-    ],
-    "typeRoots": [
-      "./node_modules/@types",
-      "extension/src/types"
-    ]
+    "types": ["chrome", "node"],
+    "typeRoots": ["./node_modules/@types", "extension/src/types"]
   },
-  "include": [
-    "extension/src/**/*",
-    "gensx/**/*",
-    "shared/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.js",
-    "**/*.d.ts"
-  ]
+  "include": ["extension/src/**/*", "gensx/**/*", "shared/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.js", "**/*.d.ts"]
 }

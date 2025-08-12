@@ -11,21 +11,27 @@ This Chrome extension is built using TypeScript and Webpack for proper bundling 
 ## Development Setup
 
 1. **Install dependencies**:
+
    ```bash
    pnpm install
    ```
 
 2. **Start the GenSX workflow server**:
+
    ```bash
    pnpm dev
    ```
+
    This runs `npx gensx start gensx/workflows.ts` which starts the GenSX workflow server for the extension to communicate with.
 
 3. **Build the extension** (in a separate terminal):
+
    ```bash
    pnpm build:dev
    ```
+
    Or for production:
+
    ```bash
    pnpm build
    ```
@@ -99,6 +105,7 @@ The GenSX workflows are in the `gensx/` directory and use TypeScript with the Ge
 - **slashcommands/** - Special commands like `/init`
 
 To modify the AI behavior:
+
 1. Edit files in `gensx/`
 2. Restart the workflow server (`pnpm dev`)
 3. The extension will automatically use the updated workflows
@@ -106,6 +113,7 @@ To modify the AI behavior:
 ## Chrome Extension Permissions
 
 The extension requires these permissions (defined in `manifest.json`):
+
 - `activeTab` - Access to the current tab
 - `storage` - For saving user settings
 - `tabs` - For tab management
@@ -114,22 +122,26 @@ The extension requires these permissions (defined in `manifest.json`):
 ## Troubleshooting
 
 **Build errors**:
+
 - Ensure all GenSX dependencies are installed in the monorepo
 - Check TypeScript errors with `pnpm type-check`
 - Clear build cache with `pnpm clean && pnpm build`
 - If webpack hangs, check TypeScript configuration for proper include/exclude paths
 
 **Extension not loading**:
+
 - Check the `dist/` folder exists and contains built files
 - Verify manifest.json is valid
 - Check Chrome developer console for errors
 
 **Workflow server issues**:
+
 - Ensure GenSX CLI is installed globally or use `npx`
 - Check that required environment variables are set
 - Verify the workflow server is running on the expected port
 
 **Type errors**:
+
 - Ensure `@types/chrome` is installed
 - Check that Chrome API usage matches the type definitions
 - Use `pnpm type-check` to identify issues
