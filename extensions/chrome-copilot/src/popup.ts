@@ -1,16 +1,16 @@
 // Genie Popup Script - Full Chat Interface
 
 import {
-  CopilotMessage,
-  ToolCall,
-  ExtensionMessage,
-  SettingsManager,
-  WorkflowMessage,
-  WorkflowStreamUpdateMessage,
-  WorkflowStreamCompleteMessage,
-  WorkflowMessagesUpdateMessage,
-  WorkflowTodoListUpdateMessage, TodoList,
-  TodoItem, TabContext
+    CopilotMessage,
+    ToolCall,
+    ExtensionMessage,
+    SettingsManager,
+    WorkflowMessage,
+    WorkflowStreamUpdateMessage,
+    WorkflowStreamCompleteMessage,
+    WorkflowMessagesUpdateMessage,
+    WorkflowTodoListUpdateMessage, TodoList,
+    TodoItem, TabContext
 } from './types/copilot';
 
 interface MentionState {
@@ -469,7 +469,7 @@ class PopupChatInterface {
       this.state.activeExecutionId = data.executionId;
       console.log('Workflow execution started:', data.executionId, 'isWaitingForFirstToken:', this.isWaitingForFirstToken);
       this.persistState();
-      
+
       // Render to ensure thinking spinner is visible when execution starts
       this.render();
     }
@@ -812,6 +812,9 @@ class PopupChatInterface {
   }
 
   private render(): void {
+    // Capture pre-render scroll position so we know if user was at bottom
+    const shouldScrollAfterRender = this.shouldAutoScroll();
+
     this.elements.messagesContainer.innerHTML = '';
 
     // Render messages
@@ -869,6 +872,11 @@ class PopupChatInterface {
       this.elements.sendButton.innerHTML = '<div class="loading"></div>';
     } else {
       this.elements.sendButton.innerHTML = 'Send';
+    }
+
+    // If the user was at the bottom before render, keep them at the bottom
+    if (shouldScrollAfterRender) {
+      this.forceScrollToBottom();
     }
   }
 
@@ -1151,7 +1159,7 @@ class PopupChatInterface {
     requestAnimationFrame(() => {
       const todoItemsContainer = this.elements.todoListItems;
       todoItemsContainer.scrollTop = todoItemsContainer.scrollHeight;
-      
+
       // Double-check and correct if needed (handles dynamic content)
       requestAnimationFrame(() => {
         todoItemsContainer.scrollTop = todoItemsContainer.scrollHeight;
