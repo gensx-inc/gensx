@@ -4,11 +4,12 @@
   "description": "Chrome extension for Genie - AI-powered web page interaction assistant",
   "main": "dist/background.js",
   "scripts": {
+    "dev": "concurrently \"pnpm watch:web\" \"pnpm watch:gensx\" \"pnpm watch:extension\"",
+    "watch:web": "cd genie-web && pnpm dev",
     "watch:gensx": "gensx start gensx/workflows.ts",
     "build:extension": "cd extension && webpack --mode=production",
     "watch:extension": "cd extension && webpack --mode=development --watch",
-    "package": "npm run build && cd dist && zip -r ../gensx-copilot-extension.zip . -x '*.DS_Store'",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf extension/dist && rm -rf genie-web/.next && rm -rf .gensx/dist",
     "type-check": "tsc --noEmit",
     "lint": "echo 'Linting not configured yet'",
     "deploy:gensx": "npx gensx deploy -e OPENAI_API_KEY -e ANTHROPIC_API_KEY -e GROQ_API_KEY -e TAVILY_API_KEY gensx/workflows.ts"
@@ -34,6 +35,7 @@
     "@types/jquery": "^3.5.32",
     "@types/node": "^20.0.0",
     "clean-webpack-plugin": "^4.0.0",
+    "concurrently": "^9.1.2",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
     "style-loader": "^3.3.3",
