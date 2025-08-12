@@ -8,7 +8,13 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "www.gensx.com",
+      },
+    ],
   },
-}
+};
 
-export default nextConfig
+export default nextConfig;
