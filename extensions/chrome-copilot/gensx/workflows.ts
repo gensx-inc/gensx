@@ -1,7 +1,6 @@
 import * as gensx from "@gensx/core";
 import { useBlob } from "@gensx/storage";
-import { CoreMessage } from "ai";
-import { serializeError } from "serialize-error";
+import { APICallError, CoreMessage, ToolExecutionError } from "ai";
 
 import { Agent } from "./agent";
 import { getFilteredTools, toolbox } from "../shared/toolbox";
@@ -346,12 +345,22 @@ ${initialTodoList.items.map((item) => `- [${item.completed ? "x" : " "}] ${item.
     } catch (error) {
       console.error(
         "Error in copilot workflow",
-        JSON.stringify(serializeError(error), null, 2),
+        extractApiCalErrorMessage(error),
       );
       throw error;
     }
   },
 );
+
+function extractApiCalErrorMessage(error: any): string {
+  if (error instanceof APICallError) {
+    return error.message
+  }
+  if (error instanceof ToolExecutionError) {
+    return extractApiCalErrorMessage(error.cause) ?? error.message;
+  }
+  return error.message;
+}
 
 function chatHistoryBlobPath(userId: string, threadId: string): string {
   return `chat-history/${userId}/${threadId}.json`;

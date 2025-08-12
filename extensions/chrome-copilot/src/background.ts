@@ -80,10 +80,10 @@ async function fetchScopedTokenFromApi(): Promise<string> {
     return token.token;
   }
 
-  // In prod, go through the genie API.
-  console.log("Fetching scoped token from genie API");
+  // In prod, go through the configured endpoint.
+  console.log("Fetching scoped token from configured endpoint");
   const response = await fetch(
-    `https://genie.gensx.com/api/scoped-tokens`,
+    settings.scopedTokenEndpoint,
     {
       method: "POST",
       body: JSON.stringify({
@@ -94,7 +94,7 @@ async function fetchScopedTokenFromApi(): Promise<string> {
   );
 
   if (!response.ok) {
-    console.error("Failed to fetch scoped token:", response.statusText);
+    console.error("Failed to fetch scoped token:", response);
     throw new Error("Failed to fetch scoped token");
   }
 
@@ -212,6 +212,9 @@ const getClient = async (skipToken = false) => {
   return new GenSX({
     apiKey: token,
     baseUrl: settings.apiEndpoint,
+    org: settings.org,
+    project: settings.project,
+    environment: settings.environment,
   });
 };
 

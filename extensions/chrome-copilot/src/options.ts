@@ -4,6 +4,7 @@ import { CopilotSettings } from './types/copilot';
 
 const DEFAULT_SETTINGS: CopilotSettings = {
   apiEndpoint: 'https://api.gensx.com',
+  scopedTokenEndpoint: 'https://genie.gensx.com/api/scoped-tokens',
   userName: '',
   userContext: '',
   org: 'gensx',
@@ -14,8 +15,10 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 interface OptionsElements {
   form: HTMLFormElement;
   resetBtn: HTMLButtonElement;
+  clearTokenBtn?: HTMLButtonElement;
   savedAlert: HTMLElement;
   apiEndpoint: HTMLInputElement;
+  scopedTokenEndpoint: HTMLInputElement;
   org: HTMLInputElement;
   project: HTMLInputElement;
   environment: HTMLInputElement;
@@ -29,8 +32,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const elements: OptionsElements = {
     form: document.getElementById('settings-form') as HTMLFormElement,
     resetBtn: document.getElementById('reset-btn') as HTMLButtonElement,
+    clearTokenBtn: document.getElementById('clear-token-btn') as HTMLButtonElement,
     savedAlert: document.getElementById('saved-alert') as HTMLElement,
     apiEndpoint: document.getElementById('apiEndpoint') as HTMLInputElement,
+    scopedTokenEndpoint: document.getElementById('scopedTokenEndpoint') as HTMLInputElement,
     org: document.getElementById('org') as HTMLInputElement,
     project: document.getElementById('project') as HTMLInputElement,
     environment: document.getElementById('environment') as HTMLInputElement,
@@ -80,11 +85,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
+  // Handle clear access token button
+  if (elements.clearTokenBtn) {
+    elements.clearTokenBtn.addEventListener('click', async () => {
+      try {
+        await chrome.storage.local.remove('scopedToken');
+        showSavedAlert();
+      } catch (error) {
+        console.error('Error clearing scoped token:', error);
+      }
+    });
+  }
+
   async function loadSettings(): Promise<void> {
     try {
       const settings = await chrome.storage.sync.get(DEFAULT_SETTINGS) as CopilotSettings;
 
       elements.apiEndpoint.value = settings.apiEndpoint;
+      if (elements.scopedTokenEndpoint) {
+        elements.scopedTokenEndpoint.value = settings.scopedTokenEndpoint || DEFAULT_SETTINGS.scopedTokenEndpoint;
+      }
       elements.org.value = settings.org;
       elements.project.value = settings.project;
       elements.environment.value = settings.environment;
@@ -99,6 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const settings: CopilotSettings = {
         apiEndpoint: elements.apiEndpoint.value || DEFAULT_SETTINGS.apiEndpoint,
+        scopedTokenEndpoint: (elements.scopedTokenEndpoint?.value || DEFAULT_SETTINGS.scopedTokenEndpoint),
         org: elements.org.value || DEFAULT_SETTINGS.org,
         project: elements.project.value || DEFAULT_SETTINGS.project,
         environment: elements.environment.value || DEFAULT_SETTINGS.environment,

@@ -242,7 +242,7 @@
 
     <div class="section">
       <h2>Keyboard Shortcut</h2>
-      
+
       <div class="alert alert-info">
         <strong>Ctrl+Shift+K</strong> (Cmd+Shift+K on Mac) - Opens Genie AI assistant<br>
         <small>You can customize this shortcut in Chrome's extension shortcuts settings: <code>chrome://extensions/shortcuts</code></small>
@@ -278,18 +278,26 @@
     <div id="developer-section" class="developer-section">
       <div class="developer-warning">
         <strong>⚠️ Developer Settings</strong><br>
-        These settings are for developers running local GenSX servers. 
+        These settings are for developers running local GenSX servers.
         Changing these values may break the extension functionality.
       </div>
-      
+
       <div class="section">
         <h2>🛠️ API Configuration</h2>
 
         <div class="form-group">
           <label for="apiEndpoint">GenSX API Endpoint</label>
-          <input type="url" id="apiEndpoint" placeholder="http://localhost:1337">
+          <input type="url" id="apiEndpoint" placeholder="https://api.gensx.com">
           <div class="help-text">
-            The base URL where your GenSX server is running (the client will handle the API path)
+            The base URL where your GenSX server is running
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="scopedTokenEndpoint">Scoped Token Endpoint</label>
+          <input type="url" id="scopedTokenEndpoint" placeholder="https://genie.gensx.com/api/scoped-tokens">
+          <div class="help-text">
+            The endpoint used to mint scoped tokens for the extension
           </div>
         </div>
 
@@ -314,6 +322,13 @@
           <input type="text" id="environment" placeholder="default">
           <div class="help-text">
             The deployment environment (e.g., default, staging, production)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button type="button" id="clear-token-btn" class="btn-secondary">Clear Access Token</button>
+          <div class="help-text">
+            Removes the cached scoped token from local storage; a new one will be minted when needed
           </div>
         </div>
       </div>

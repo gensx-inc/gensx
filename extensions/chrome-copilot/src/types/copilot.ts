@@ -3,6 +3,7 @@
 export interface CopilotSettings {
   // API Configuration
   apiEndpoint: string;
+  scopedTokenEndpoint: string;
   org: string;
   project: string;
   environment: string;
@@ -199,6 +200,7 @@ export interface WorkflowResponse {
 export class SettingsManager {
   private static readonly DEFAULT_SETTINGS: CopilotSettings = {
     apiEndpoint: 'http://localhost:1337',
+    scopedTokenEndpoint: 'https://genie.gensx.com/api/scoped-tokens',
     org: 'gensx',
     project: 'chrome-copilot',
     environment: 'default',
@@ -239,6 +241,19 @@ export class SettingsManager {
           new URL(validated.apiEndpoint);
         } catch {
           throw new Error('Invalid API endpoint URL');
+        }
+      }
+    }
+
+    // Validate scoped token endpoint
+    if (validated.scopedTokenEndpoint !== undefined) {
+      if (!validated.scopedTokenEndpoint.trim()) {
+        validated.scopedTokenEndpoint = this.DEFAULT_SETTINGS.scopedTokenEndpoint;
+      } else {
+        try {
+          new URL(validated.scopedTokenEndpoint);
+        } catch {
+          throw new Error('Invalid scoped token endpoint URL');
         }
       }
     }
