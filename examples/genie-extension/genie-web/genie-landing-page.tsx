@@ -7,7 +7,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Chrome,
   Github,
   Zap,
   Globe,
@@ -25,7 +24,7 @@ export default function Component() {
     <div className="flex flex-col min-h-screen bg-white">
       {/* Header */}
       <header className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
-        <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
@@ -50,16 +49,12 @@ export default function Component() {
               Powered by GenSX
             </Link>
             <Link
-              href="https://github.com/gensx-inc/gensx"
+              href="https://github.com/gensx-inc/gensx/tree/main/examples/genie-extension"
               className="text-sm font-medium hover:text-purple-600 transition-colors flex items-center gap-1"
             >
               <Github className="w-4 h-4" />
               GitHub
             </Link>
-            <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
-              <Chrome className="w-4 h-4 mr-2" />
-              Add to Chrome
-            </Button>
           </nav>
         </div>
       </header>
@@ -67,7 +62,7 @@ export default function Component() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 md:py-32 bg-gradient-to-b from-purple-50 to-white">
-          <div className="container px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="max-w-4xl mx-auto text-center space-y-8">
               <div className="flex justify-center">
                 <Link href="https://gensx.com">
@@ -100,18 +95,22 @@ export default function Component() {
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
+                  asChild
                   size="lg"
                   className="bg-purple-600 hover:bg-purple-700 text-lg px-8 py-3"
                 >
-                  <Chrome className="w-5 h-5 mr-2" />
-                  Install Extension
+                  <Link href="https://github.com/gensx-inc/gensx/tree/main/examples/genie-extension">
+                    <Github className="w-5 h-5 mr-2" />
+                    View Source
+                  </Link>
                 </Button>
                 <Button
+                  asChild
                   size="lg"
                   variant="outline"
                   className="text-lg px-8 py-3"
                 >
-                  Watch Demo
+                  <Link href="#demo">Watch Demo</Link>
                 </Button>
               </div>
             </div>
@@ -119,25 +118,28 @@ export default function Component() {
         </section>
 
         {/* Demo Video Section */}
-        <section className="py-16 bg-gray-50">
-          <div className="container px-4 md:px-6">
-            <div className="max-w-4xl mx-auto">
-              <div className="relative rounded-xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/genie-ai-copilot-demo.png"
-                  alt="Genie Chrome Extension Demo"
-                  width={1000}
-                  height={600}
-                  className="w-full aspect-video object-cover"
+        <section id="demo" className="py-16 bg-gray-50 scroll-mt-20">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="max-w-4xl mx-auto space-y-8">
+              <div className="w-full rounded-xl shadow-2xl overflow-hidden aspect-video bg-black">
+                <iframe
+                  src="https://screen.studio/share/fy3ZuflS"
+                  title="GenSX Genie Demo"
+                  className="w-full h-full"
+                  loading="lazy"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
                 />
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                  <Button
-                    size="lg"
-                    className="bg-white/90 text-black hover:bg-white"
-                  >
-                    <div className="w-0 h-0 border-l-[12px] border-l-black border-y-[8px] border-y-transparent ml-1" />
-                  </Button>
-                </div>
+              </div>
+              <div className="w-full rounded-xl shadow-2xl overflow-hidden aspect-video bg-black">
+                <iframe
+                  src="https://screen.studio/share/dvdt3uhQ"
+                  title="Genie Instacart Demo"
+                  className="w-full h-full"
+                  loading="lazy"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
               </div>
             </div>
           </div>
@@ -145,7 +147,7 @@ export default function Component() {
 
         {/* Features Section */}
         <section className="py-20">
-          <div className="container px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center space-y-4 mb-16">
               <h2 className="text-3xl md:text-4xl font-bold">
                 Powerful Browser Automation
@@ -240,7 +242,7 @@ export default function Component() {
 
         {/* Screenshots Section */}
         <section className="py-20 bg-gray-50">
-          <div className="container px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="text-center space-y-4 mb-16">
               <h2 className="text-3xl md:text-4xl font-bold">
                 See Genie in Action
@@ -289,7 +291,7 @@ export default function Component() {
 
         {/* CTA Section */}
         <section className="py-20 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
-          <div className="container px-4 md:px-6">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="max-w-3xl mx-auto text-center space-y-8">
               <h2 className="text-3xl md:text-4xl font-bold">
                 Ready to Transform Your Browsing Experience?
@@ -300,22 +302,16 @@ export default function Component() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button
-                  size="lg"
-                  className="bg-white text-purple-600 hover:bg-gray-100 text-lg px-8 py-3"
-                >
-                  <Chrome className="w-5 h-5 mr-2" />
-                  Add to Chrome - Free
-                </Button>
-                <Button
+                  asChild
                   size="lg"
                   className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-purple-600 text-lg px-8 py-3"
                 >
-                  View on GitHub
+                  <Link href="https://github.com/gensx-inc/gensx/tree/main/examples/genie-extension">
+                    View on GitHub
+                  </Link>
                 </Button>
               </div>
-              <p className="text-sm opacity-75">
-                Free to install • No account required • Privacy focused
-              </p>
+              <p className="text-sm opacity-75">No account required</p>
             </div>
           </div>
         </section>
@@ -323,8 +319,8 @@ export default function Component() {
 
       {/* Footer */}
       <footer className="border-t bg-gray-50">
-        <div className="container px-4 md:px-6 py-12">
-          <div className="grid md:grid-cols-4 gap-8">
+        <div className="container mx-auto px-4 md:px-6 py-12">
+          <div className="grid md:grid-cols-3 gap-8">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
@@ -338,30 +334,6 @@ export default function Component() {
             </div>
 
             <div className="space-y-4">
-              <h4 className="font-semibold">Product</h4>
-              <div className="space-y-2 text-sm">
-                <Link
-                  href="#"
-                  className="block text-gray-600 hover:text-purple-600"
-                >
-                  Features
-                </Link>
-                <Link
-                  href="#"
-                  className="block text-gray-600 hover:text-purple-600"
-                >
-                  Pricing
-                </Link>
-                <Link
-                  href="#"
-                  className="block text-gray-600 hover:text-purple-600"
-                >
-                  Changelog
-                </Link>
-              </div>
-            </div>
-
-            <div className="space-y-4">
               <h4 className="font-semibold">Resources</h4>
               <div className="space-y-2 text-sm">
                 <Link
@@ -369,18 +341,6 @@ export default function Component() {
                   className="block text-gray-600 hover:text-purple-600"
                 >
                   GenSX Docs
-                </Link>
-                <Link
-                  href="#"
-                  className="block text-gray-600 hover:text-purple-600"
-                >
-                  Support
-                </Link>
-                <Link
-                  href="#"
-                  className="block text-gray-600 hover:text-purple-600"
-                >
-                  Community
                 </Link>
               </div>
             </div>
@@ -396,13 +356,19 @@ export default function Component() {
                   GitHub
                 </Link>
                 <Link
-                  href="#"
+                  href="https://www.linkedin.com/company/gensx-inc"
+                  className="block text-gray-600 hover:text-purple-600"
+                >
+                  LinkedIn
+                </Link>
+                <Link
+                  href="https://twitter.com/gensx_inc"
                   className="block text-gray-600 hover:text-purple-600"
                 >
                   Twitter
                 </Link>
                 <Link
-                  href="#"
+                  href="https://discord.gg/wRmwfz5tCy"
                   className="block text-gray-600 hover:text-purple-600"
                 >
                   Discord
@@ -415,14 +381,6 @@ export default function Component() {
             <p className="text-sm text-gray-600">
               © 2024 Genie. Powered by GenSX. All rights reserved.
             </p>
-            <div className="flex space-x-6 text-sm text-gray-600 mt-4 md:mt-0">
-              <Link href="#" className="hover:text-purple-600">
-                Privacy Policy
-              </Link>
-              <Link href="#" className="hover:text-purple-600">
-                Terms of Service
-              </Link>
-            </div>
           </div>
         </div>
       </footer>

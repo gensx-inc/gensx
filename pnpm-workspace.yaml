@@ -1,6 +1,7 @@
 packages:
   - "packages/*"
   - "examples/*"
+  - "examples/genie-extension/genie-web"
   - "docs"
   - "website/docs"
   - "website/home"
