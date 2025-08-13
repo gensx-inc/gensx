@@ -32,7 +32,7 @@ export const Agent = gensx.Component(
     messages,
     tools,
     model,
-    maxSteps = 50,
+    maxSteps = 100,
     providerOptions,
   }: AgentProps) => {
     // Track all messages including responses - start with the input messages

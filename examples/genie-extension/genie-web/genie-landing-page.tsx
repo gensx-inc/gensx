@@ -113,21 +113,11 @@ export default function Component() {
         {/* Demo Video Section */}
         <section id="demo" className="py-16 bg-gray-50 scroll-mt-20">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="max-w-4xl mx-auto space-y-8">
+            <div className="max-w-4xl mx-auto">
               <div className="w-full rounded-xl shadow-2xl overflow-hidden aspect-video bg-black">
                 <iframe
-                  src="https://screen.studio/share/fy3ZuflS"
-                  title="GenSX Genie Demo"
-                  className="w-full h-full"
-                  loading="lazy"
-                  allow="autoplay; fullscreen; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-              <div className="w-full rounded-xl shadow-2xl overflow-hidden aspect-video bg-black">
-                <iframe
-                  src="https://screen.studio/share/dvdt3uhQ"
-                  title="Genie Instacart Demo"
+                  src="https://screen.studio/share/YWu2sHvX"
+                  title="GenSX Genie Instacart Demo"
                   className="w-full h-full"
                   loading="lazy"
                   allow="autoplay; fullscreen; picture-in-picture"
