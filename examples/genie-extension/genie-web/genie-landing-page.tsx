@@ -69,7 +69,7 @@ export default function Component() {
                       height={16}
                       className="w-4 h-4"
                     />
-                    Built with GenSX Workflows
+                    Built with GenSX
                   </Badge>
                 </Link>
               </div>
@@ -80,10 +80,8 @@ export default function Component() {
               </h1>
 
               <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                This example shows how to build a real, tool-using browser agent
-                with GenSX. It demonstrates component-based workflows, planning
-                and tool execution, and how the Chrome extension bridges GenSX
-                actions to the page.
+                A Chrome extension to drive and automate any web page via
+                natural language — powered by GenSX.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
