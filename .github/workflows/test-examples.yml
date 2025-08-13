@@ -5,11 +5,13 @@ on:
     paths:
       - "examples/**/*"
       - "packages/**/*"
+      - ".github/workflows/test-examples.yml"
   push:
     branches: [main]
     paths:
       - "examples/**/*"
       - "packages/**/*"
+      - ".github/workflows/test-examples.yml"
 
 permissions:
   contents: read

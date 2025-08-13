@@ -4,10 +4,12 @@ on:
   pull_request:
     paths:
       - "packages/**/*"
+      - ".github/workflows/test.yml"
   push:
     branches: [main]
     paths:
       - "packages/**/*"
+      - ".github/workflows/test.yml"
 
 permissions:
   contents: read
