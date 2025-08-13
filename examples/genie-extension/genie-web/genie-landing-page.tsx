@@ -390,12 +390,23 @@ export const copilotWorkflow = gensx.Workflow(
                 </p>
                 <div className="rounded-lg overflow-hidden">
                   <CodeBlock
-                    language="bash"
+                    language="shell"
                     font="mono"
-                    code={`git clone https://github.com/gensx-inc/gensx
+                    code={`# 1) Clone
+git clone https://github.com/gensx-inc/gensx
 cd gensx/examples/genie-extension
+
+# 2) Install deps
 pnpm install
-pnpm -w dev`}
+
+# 3) Build the Chrome extension
+pnpm build:extension
+
+# 4) Load in Chrome (manual step)
+# - Open: chrome://extensions
+# - Enable: Developer mode
+# - Click: Load unpacked
+# - Select: gensx/examples/genie-extension/extension/dist/`}
                   />
                 </div>
                 <div className="mt-4">
