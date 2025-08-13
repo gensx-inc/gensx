@@ -114,8 +114,8 @@ export default function Component() {
             <div className="max-w-4xl mx-auto">
               <div className="w-full rounded-xl shadow-2xl overflow-hidden aspect-video bg-black">
                 <iframe
-                  src="https://screen.studio/share/YWu2sHvX"
-                  title="GenSX Genie Instacart Demo"
+                  src="https://screen.studio/share/ZyE5pLPo"
+                  title="GenSX Genie Demo"
                   className="w-full h-full"
                   loading="lazy"
                   allow="autoplay; fullscreen; picture-in-picture"
