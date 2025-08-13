@@ -3,11 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "mastra dev",
-    "build": "mastra build",
-    "start": "mastra start",
-    "deploy": "gensx deploy --env default -e ANTHROPIC_API_KEY ./gensx/workflows.ts"
+    "dev": "npx gensx start ./gensx/workflows.ts",
+    "build": "tsc",
+    "deploy": "npx gensx deploy -e ANTHROPIC_API_KEY ./gensx/workflows.ts"
   },
   "keywords": [],
   "author": "",
