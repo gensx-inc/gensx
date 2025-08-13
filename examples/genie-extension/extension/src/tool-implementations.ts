@@ -22,32 +22,6 @@ export const toolImplementations: {
     params: InferToolParams<typeof toolbox, key>,
   ) => OptionalPromise<InferToolResult<typeof toolbox, key>>;
 } = {
-  // fetchPageText: () => {
-  //   // Clone the HTML to avoid modifying the original DOM
-  //   const htmlClone = document.querySelector('html')?.cloneNode(true) as HTMLElement;
-  //   if (!htmlClone) {
-  //     return {
-  //       success: false,
-  //       url: window.location.href ?? "unknown",
-  //       content: "",
-  //       error: "Could not access HTML content",
-  //     };
-  //   }
-
-  //   // Pre-process HTML to reduce content size and noise
-  //   preprocessHtmlForMarkdown(htmlClone);
-
-  //   // Convert to markdown
-  //   const markdown = europa.convert(htmlClone);
-
-  //   // No content truncation here - let the chunking approach handle large content
-  //   return {
-  //     success: true,
-  //     url: window.location.href ?? "unknown",
-  //     content: markdown,
-  //   };
-  // },
-
   fetchPageHtml: () => {
     try {
       const bodyEl = document.body;
