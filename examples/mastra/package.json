@@ -15,7 +15,7 @@
   "description": "",
   "type": "module",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=18.17.0"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
