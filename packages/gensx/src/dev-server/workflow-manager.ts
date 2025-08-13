@@ -40,32 +40,47 @@ export class WorkflowManager {
    */
   registerWorkflows(workflows: Record<string, unknown>): void {
     for (const [exportName, workflow] of Object.entries(workflows)) {
-      // GenSX Workflows are functions with a __gensxWorkflow property (created by gensx.Workflow())
+      if (typeof workflow !== "function") continue;
 
-      if (typeof workflow === "function") {
-        // Handle GenSX workflow functions
-        const workflowFn = workflow as unknown as ((
-          input: unknown,
-          options: { messageListener: (event: WorkflowMessage) => void },
-        ) => Promise<unknown>) & {
-          __gensxWorkflow: boolean;
-          name?: string;
+      const workflowFn = workflow as unknown as ((
+        input: unknown,
+        options: { messageListener: (event: WorkflowMessage) => void },
+      ) => Promise<unknown>) & {
+        __gensxWorkflow?: boolean;
+        name?: string;
+      };
+
+      // If it's a GenSX workflow function, register with its name
+      if (workflowFn.__gensxWorkflow) {
+        const workflowName =
+          // Prefer explicit bundler-safe name if available
+          (workflowFn as unknown as { __gensxWorkflowName?: string })
+            .__gensxWorkflowName ??
+          workflowFn.name ??
+          exportName;
+        const wrappedWorkflow = {
+          name: workflowName,
+          run: workflowFn,
         };
-
-        // Check if this is a GenSX workflow function
-        if (workflowFn.__gensxWorkflow) {
-          const workflowName = workflowFn.name ?? exportName;
-
-          // Wrap the function to match the expected interface
-
-          const wrappedWorkflow = {
-            name: workflowName,
-            run: workflowFn,
-          };
-
-          this.workflowMap.set(workflowName, wrappedWorkflow);
-        }
+        this.workflowMap.set(workflowName, wrappedWorkflow);
+        continue;
       }
+
+      // Otherwise, support plain callable exports (schema extractor supports these)
+      // Prefer the export name to align with schema generation and intended public name
+      const callableName = exportName;
+      const wrappedCallable = {
+        name: callableName,
+        run: async (
+          input: unknown,
+          _options: { messageListener: (event: WorkflowMessage) => void },
+        ): Promise<unknown> => {
+          return await (
+            workflow as unknown as (input: unknown) => Promise<unknown>
+          )(input);
+        },
+      };
+      this.workflowMap.set(callableName, wrappedCallable);
     }
   }
 

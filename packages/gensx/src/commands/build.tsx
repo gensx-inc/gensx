@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 import { Box, Text, useApp } from "ink";
@@ -57,6 +57,8 @@ function useBuild(file: string, options: BuildOptions): UseBuildResult {
         const outDir = options.outDir ?? resolve(process.cwd(), ".gensx");
         const schemaFilePath = resolve(outDir, "schema.json");
         let bundlePath: string | undefined;
+
+        mkdirSync(outDir, { recursive: true });
 
         if (!options.schemaOnly) {
           setPhase("bundling");

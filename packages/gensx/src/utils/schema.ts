@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
 // eslint-disable @typescript-eslint/no-unnecessary-condition
 
 import { readFileSync } from "node:fs";
@@ -302,14 +303,10 @@ function findWorkflowDefinitions(
         const workflowName = callExpression.arguments[0]
           .getText(sourceFile)
           .replace(/['"]/g, "");
-        const workflowFunction = callExpression.arguments[1];
+        // Resolve second argument below for type extraction when present
 
         // Validate workflow function
-        if (
-          workflowName &&
-          (ts.isArrowFunction(workflowFunction) ||
-            ts.isFunctionExpression(workflowFunction))
-        ) {
+        if (workflowName) {
           const variableName = node.name.getText(sourceFile);
           // Check if this is exported (either directly or through re-export)
           const isExported =
@@ -317,10 +314,18 @@ function findWorkflowDefinitions(
             context.reExportedWorkflows.has(variableName);
 
           if (isExported) {
-            const { inputType, outputType } = extractWorkflowTypes(
-              workflowFunction,
-              typeChecker,
-            );
+            const wfExpr = callExpression.arguments[1] as
+              | ts.Expression
+              | undefined;
+            const isFn = wfExpr
+              ? ts.isArrowFunction(wfExpr) || ts.isFunctionExpression(wfExpr)
+              : false;
+            const { inputType, outputType } = isFn
+              ? extractWorkflowTypes(
+                  wfExpr as ts.ArrowFunction | ts.FunctionExpression,
+                  typeChecker,
+                )
+              : extractCallableTypes(wfExpr ?? callExpression, typeChecker);
 
             workflowInfos.push({
               name: workflowName,
@@ -330,6 +335,33 @@ function findWorkflowDefinitions(
               isStreamComponent: false,
             });
           }
+        }
+      }
+    } else if (ts.isVariableDeclaration(node) && node.initializer) {
+      // Robust path: exported const referencing any callable (map access, factory return, identifier)
+      const variableName = node.name.getText(sourceFile);
+      const isExported =
+        context.exportedNames.has(variableName) ||
+        context.reExportedWorkflows.has(variableName);
+      if (isExported) {
+        // Only proceed if initializer is callable
+        const exprType = typeChecker.getTypeAtLocation(node.initializer);
+        const signatures = typeChecker.getSignaturesOfType(
+          exprType,
+          ts.SignatureKind.Call,
+        );
+        if (signatures.length > 0) {
+          const { inputType, outputType } = extractCallableTypes(
+            node.initializer,
+            typeChecker,
+          );
+          workflowInfos.push({
+            name: variableName,
+            componentName: variableName,
+            inputType,
+            outputType,
+            isStreamComponent: false,
+          });
         }
       }
     }
@@ -368,6 +400,42 @@ function extractWorkflowTypes(
       if (typeArgs && typeArgs.length > 0) {
         outputType = typeArgs[0];
       }
+    }
+  }
+
+  return { inputType, outputType };
+}
+
+// Extract input/output types from any callable expression (identifier, call, property access, etc.)
+function extractCallableTypes(
+  expr: ts.Expression,
+  typeChecker: ts.TypeChecker,
+): { inputType: ts.Type; outputType: ts.Type } {
+  const anyType = typeChecker.getAnyType();
+  const exprType = typeChecker.getTypeAtLocation(expr);
+  const signatures = typeChecker.getSignaturesOfType(
+    exprType,
+    ts.SignatureKind.Call,
+  );
+  if (signatures.length === 0) {
+    return { inputType: anyType, outputType: anyType };
+  }
+  const sig = signatures[0];
+
+  // First parameter is the input type
+  let inputType: ts.Type = anyType;
+  if (sig.parameters.length > 0) {
+    const firstParam = sig.parameters[0];
+    inputType = typeChecker.getTypeOfSymbolAtLocation(firstParam, expr);
+  }
+
+  // Return type (unwrap Promise<T>)
+  let outputType: ts.Type = sig.getReturnType();
+  const symbol = (outputType as unknown as { symbol?: ts.Symbol }).symbol;
+  if (symbol && symbol.name === "Promise") {
+    const typeArgs = (outputType as ts.TypeReference).typeArguments;
+    if (typeArgs && typeArgs.length > 0) {
+      outputType = typeArgs[0];
     }
   }
 
@@ -444,40 +512,65 @@ function findWorkflowsInFile(
           .replace(/['"]/g, "");
         const workflowFn = initializer.arguments[1];
 
-        if (
-          workflowName &&
-          (ts.isArrowFunction(workflowFn) ||
-            ts.isFunctionExpression(workflowFn))
-        ) {
-          let inputType: ts.Type = typeChecker.getAnyType();
-          let outputType: ts.Type = typeChecker.getAnyType();
-
-          if (workflowFn.parameters.length > 0) {
-            inputType = typeChecker.getTypeAtLocation(workflowFn.parameters[0]);
-          }
-
-          const signature = typeChecker.getSignatureFromDeclaration(workflowFn);
-          if (signature) {
-            outputType = typeChecker.getReturnTypeOfSignature(signature);
-
-            // Unwrap Promise<T> for output
-            const symbolName = outputType.symbol.name;
-            if (symbolName === "Promise") {
-              const typeArgs = (outputType as ts.TypeReference).typeArguments;
-              if (typeArgs && typeArgs.length > 0) {
-                outputType = typeArgs[0];
+        let inputType: ts.Type = typeChecker.getAnyType();
+        let outputType: ts.Type = typeChecker.getAnyType();
+        if (workflowName) {
+          if (
+            workflowFn &&
+            (ts.isArrowFunction(workflowFn) ||
+              ts.isFunctionExpression(workflowFn))
+          ) {
+            if (workflowFn.parameters.length > 0) {
+              inputType = typeChecker.getTypeAtLocation(
+                workflowFn.parameters[0],
+              );
+            }
+            const signature =
+              typeChecker.getSignatureFromDeclaration(workflowFn);
+            if (signature) {
+              outputType = typeChecker.getReturnTypeOfSignature(signature);
+              const symbolName = (
+                outputType as unknown as { symbol?: ts.Symbol }
+              ).symbol?.name;
+              if (symbolName === "Promise") {
+                const typeArgs = (outputType as ts.TypeReference).typeArguments;
+                if (typeArgs && typeArgs.length > 0) {
+                  outputType = typeArgs[0];
+                }
               }
             }
+          } else if (workflowFn) {
+            const res = extractCallableTypes(workflowFn, typeChecker);
+            inputType = res.inputType;
+            outputType = res.outputType;
           }
-
-          workflows.push({
-            name: workflowName,
-            componentName: node.name.getText(sourceFile),
-            inputType,
-            outputType,
-            isStreamComponent: false,
-          });
         }
+
+        workflows.push({
+          name: workflowName,
+          componentName: node.name.getText(sourceFile),
+          inputType,
+          outputType,
+          isStreamComponent: false,
+        });
+      }
+    } else if (ts.isVariableDeclaration(node) && node.initializer) {
+      // Re-exported files: exported const assigned a callable
+      const { inputType, outputType } = extractCallableTypes(
+        node.initializer,
+        typeChecker,
+      );
+      const isCallable =
+        typeChecker.typeToString(inputType) !== "any" ||
+        typeChecker.typeToString(outputType) !== "any";
+      if (isCallable) {
+        workflows.push({
+          name: node.name.getText(sourceFile),
+          componentName: node.name.getText(sourceFile),
+          inputType,
+          outputType,
+          isStreamComponent: false,
+        });
       }
     }
     ts.forEachChild(node, findWorkflows);
@@ -536,7 +629,7 @@ function createSchemaFromType(
   }
 
   // Get the type name if it's a named type
-  // eslint-disable-next-line
+
   const typeName = tsType.symbol?.escapedName?.toString();
   // TypeScript's internal type ID is a number
   const typeId = (tsType as unknown as { id: number }).id;

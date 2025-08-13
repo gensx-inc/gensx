@@ -3,10 +3,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import type {
-  ComponentOpts,
-  ComponentOpts as OriginalComponentOpts,
-  DecoratorComponentOpts,
-  WorkflowOpts,
+    ComponentOpts,
+    ComponentOpts as OriginalComponentOpts,
+    DecoratorComponentOpts,
+    WorkflowOpts,
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
@@ -14,12 +14,12 @@ const { serializeError } = serializeErrorPkg;
 
 import { ExecutionNode, STREAMING_PLACEHOLDER } from "./checkpoint-types.js";
 import {
-  ExecutionContext,
-  getContextSnapshot,
-  getCurrentContext,
-  getCurrentNodeCheckpointManager,
-  RunInContext,
-  withContext,
+    ExecutionContext,
+    getContextSnapshot,
+    getCurrentContext,
+    getCurrentNodeCheckpointManager,
+    RunInContext,
+    withContext,
 } from "./context.js";
 import { generateNodeId } from "./utils/nodeId.js";
 import { InputRequest, WorkflowExecutionContext } from "./workflow-context.js";
@@ -470,6 +470,11 @@ export function Workflow<P extends object = {}, R = unknown>(
   });
   Object.defineProperty(WorkflowFn, "__gensxWorkflow", {
     value: true,
+  });
+  // Expose a stable, bundler-safe workflow name for runtime discovery
+  // This mirrors the explicit name string passed to gensx.Workflow(name, ...)
+  Object.defineProperty(WorkflowFn, "__gensxWorkflowName", {
+    value: name,
   });
 
   return WorkflowFn;

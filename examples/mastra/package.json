@@ -1,0 +1,35 @@
+{
+  "name": "mastra",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "mastra dev",
+    "build": "mastra build",
+    "start": "mastra start",
+    "deploy": "gensx deploy --env default -e ANTHROPIC_API_KEY ./gensx/workflows.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "type": "module",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^1.0.0",
+    "@gensx/core": "workspace:*",
+    "@gensx/vercel-ai": "workspace:*",
+    "@mastra/core": "^0.13.2",
+    "@mastra/libsql": "^0.13.2",
+    "@mastra/loggers": "^0.10.6",
+    "@mastra/memory": "^0.12.2",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "mastra": "^0.10.21",
+    "typescript": "^5.9.2"
+  }
+}

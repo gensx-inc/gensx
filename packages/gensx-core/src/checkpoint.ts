@@ -118,6 +118,8 @@ export class CheckpointManager implements CheckpointWriter {
   public root?: ExecutionNode;
   public checkpointsEnabled: boolean;
   public workflowName?: string;
+  public projectName?: string;
+  public environmentName?: string;
   private activeCheckpoint: Promise<void> | null = null;
   private pendingUpdate = false;
   private version = 1;
@@ -190,6 +192,8 @@ export class CheckpointManager implements CheckpointWriter {
     runtime?: "cloud" | "sdk";
     runtimeVersion?: string;
     checkpoint?: ExecutionNode;
+    projectName?: string;
+    environmentName?: string;
   }) {
     // Priority order: constructor opts > env vars > config file
     const config = readConfig();
@@ -219,6 +223,11 @@ export class CheckpointManager implements CheckpointWriter {
 
     this.executionRunId =
       opts?.executionRunId ?? process.env.GENSX_EXECUTION_RUN_ID;
+
+    // TODO: Read this from the gensx.yaml if it exists
+    this.projectName = opts?.projectName ?? process.env.GENSX_PROJECT;
+    this.environmentName =
+      opts?.environmentName ?? process.env.GENSX_ENVIRONMENT;
 
     if (
       opts?.disabled ||
@@ -465,6 +474,8 @@ export class CheckpointManager implements CheckpointWriter {
         version: this.version,
         schemaVersion: 2,
         workflowName,
+        projectName: this.projectName,
+        environmentName: this.environmentName,
         startedAt: this.root.startTime,
         completedAt: this.root.endTime,
         rawExecution: base64CompressedExecution,
