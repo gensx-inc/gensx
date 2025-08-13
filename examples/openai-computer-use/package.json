@@ -17,7 +17,7 @@
     "@gensx/core": "0.3.13",
     "@gensx/openai": "0.1.28",
     "openai": "catalog:",
-    "playwright": "^1.52.0",
+    "playwright": "^1.54.2",
     "zod": "catalog:"
   },
   "devDependencies": {
