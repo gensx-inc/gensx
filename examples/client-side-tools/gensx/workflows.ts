@@ -1,6 +1,6 @@
 import * as gensx from "@gensx/core";
 import { Agent } from "./agent";
-import { CoreMessage } from "ai";
+import { ModelMessage } from "ai";
 import { webSearchTool } from "./tools/web-search";
 import { useBlob } from "@gensx/storage";
 import { asToolSet } from "@gensx/vercel-ai";
@@ -28,7 +28,7 @@ interface ChatAgentProps {
 
 interface ThreadData {
   summary?: string;
-  messages: CoreMessage[];
+  messages: ModelMessage[];
 }
 
 export const ChatAgent = gensx.Workflow(
@@ -65,7 +65,7 @@ export const ChatAgent = gensx.Workflow(
       const isNewThread = existingMessages.length === 0;
 
       if (isNewThread) {
-        const systemMessage: CoreMessage = {
+        const systemMessage: ModelMessage = {
           role: "system",
           content: `You are a helpful geographic assistant that can interact with an interactive map. You have access to several map tools:
 
@@ -163,7 +163,7 @@ Always be proactive about using the map tools to enhance the user's experience. 
       }
 
       // Add the new user message
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         ...existingMessages,
         {
           role: "user",
@@ -201,13 +201,6 @@ Always be proactive about using the map tools to enhance the user's experience. 
         messages,
         tools,
         model,
-        // providerOptions: thinking
-        //   ? {
-        //       anthropic: {
-        //         thinking: { type: "enabled", budgetTokens: 12000 },
-        //       } satisfies AnthropicProviderOptions,
-        //     }
-        //   : undefined,
       });
 
       const summary = await summaryPromise;

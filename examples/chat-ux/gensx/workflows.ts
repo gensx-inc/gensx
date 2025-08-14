@@ -1,6 +1,6 @@
 import * as gensx from "@gensx/core";
 import { Agent } from "./agent";
-import { CoreMessage } from "ai";
+import { ModelMessage } from "ai";
 import { webSearchTool } from "./tools/web-search";
 import { scrapePageTool } from "./tools/scrape-page";
 import { useBlob } from "@gensx/storage";
@@ -18,12 +18,12 @@ export const Chat = gensx.Workflow(
   "Chat",
   async ({ prompt, threadId, userId, thinking = true }: ChatAgentProps) => {
     // Get blob instance for chat history storage
-    const chatHistoryBlob = useBlob<CoreMessage[]>(
+    const chatHistoryBlob = useBlob<ModelMessage[]>(
       `chat-history/${userId}/${threadId}.json`,
     );
 
     // Function to load chat history
-    const loadChatHistory = async (): Promise<CoreMessage[]> => {
+    const loadChatHistory = async (): Promise<ModelMessage[]> => {
       const history = await chatHistoryBlob.getJSON();
       return (
         history ?? [
@@ -43,7 +43,7 @@ export const Chat = gensx.Workflow(
     };
 
     // Function to save chat history
-    const saveChatHistory = async (messages: CoreMessage[]): Promise<void> => {
+    const saveChatHistory = async (messages: ModelMessage[]): Promise<void> => {
       await chatHistoryBlob.putJSON(messages);
     };
 
@@ -52,7 +52,7 @@ export const Chat = gensx.Workflow(
       const existingMessages = await loadChatHistory();
 
       // Add the new user message
-      const messages: CoreMessage[] = [
+      const messages: ModelMessage[] = [
         ...existingMessages,
         {
           role: "user",

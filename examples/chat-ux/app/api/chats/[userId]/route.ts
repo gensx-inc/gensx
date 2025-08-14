@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BlobClient } from "@gensx/storage";
-import { CoreMessage } from "ai";
+import { ModelMessage } from "ai";
 
 interface ThreadSummary {
   id: string;
@@ -8,8 +8,8 @@ interface ThreadSummary {
   lastMessage: string;
 }
 
-// Helper function to extract text content from CoreMessage
-function extractTextContent(content: CoreMessage["content"]): string {
+// Helper function to extract text content from ModelMessage
+function extractTextContent(content: ModelMessage["content"]): string {
   if (typeof content === "string") {
     return content;
   }
@@ -49,7 +49,7 @@ export async function GET(
         continue;
       }
 
-      const blob = await blobClient.getBlob<CoreMessage[]>(blobInfo.key);
+      const blob = await blobClient.getBlob<ModelMessage[]>(blobInfo.key);
       const messages = await blob.getJSON();
 
       if (messages && messages.length > 0) {

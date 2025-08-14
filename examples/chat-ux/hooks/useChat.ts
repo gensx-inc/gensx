@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
 import { JsonValue } from "@gensx/core";
-import { CoreMessage, TextPart, ToolCallPart } from "ai";
+import { ModelMessage, TextPart, ToolCallPart } from "ai";
 
 // Workflow input/output types
 export interface ChatWorkflowInput {
@@ -12,13 +12,12 @@ export interface ChatWorkflowInput {
 
 export interface ChatWorkflowOutput {
   response: string;
-  messages: CoreMessage[];
+  messages: ModelMessage[];
 }
 
 export type ChatStatus = "completed" | "waiting" | "reasoning" | "streaming";
 
-// Just use CoreMessage directly
-export type Message = CoreMessage;
+export type Message = ModelMessage;
 
 interface UseChatReturn {
   sendMessage: (
@@ -57,7 +56,7 @@ export function useChat(): UseChatReturn {
   // Update messages when workflow publishes new messages
   useEffect(() => {
     if (messagesProgress?.messages && execution?.length > 0) {
-      const workflowMessages = messagesProgress.messages as CoreMessage[];
+      const workflowMessages = messagesProgress.messages as ModelMessage[];
       const lastMessage = workflowMessages[workflowMessages.length - 1];
 
       if (status === "waiting" || status === "reasoning") {
@@ -113,7 +112,7 @@ export function useChat(): UseChatReturn {
         throw new Error("Failed to load conversation history");
       }
 
-      const history: CoreMessage[] = await response.json();
+      const history: ModelMessage[] = await response.json();
       setMessages(history);
     } catch (err) {
       console.error("Error loading conversation history:", err);

@@ -1,7 +1,7 @@
 "use server";
 
 import { BlobClient } from "@gensx/storage";
-import { CoreMessage } from "ai";
+import { ModelMessage } from "ai";
 import { shouldUseLocalDevServer } from "@/app/api/gensx/gensx";
 
 export interface ThreadSummary {
@@ -12,11 +12,11 @@ export interface ThreadSummary {
 
 export interface ThreadData {
   summary?: string;
-  messages: CoreMessage[];
+  messages: ModelMessage[];
 }
 
-// Helper function to extract text content from CoreMessage
-function extractTextContent(content: CoreMessage["content"]): string {
+// Helper function to extract text content from ModelMessage
+function extractTextContent(content: ModelMessage["content"]): string {
   if (typeof content === "string") {
     return content;
   }
@@ -37,7 +37,7 @@ function extractTextContent(content: CoreMessage["content"]): string {
 export async function getChatHistory(
   userId: string,
   threadId: string,
-): Promise<CoreMessage[]> {
+): Promise<ModelMessage[]> {
   try {
     const blobClient = new BlobClient({
       kind: shouldUseLocalDevServer() ? "filesystem" : "cloud",
@@ -148,7 +148,7 @@ export async function getThreadSummaries(
       const threadData = await blob.getJSON();
 
       // Handle old format (array of messages)
-      let messages: CoreMessage[];
+      let messages: ModelMessage[];
       let summary: string | undefined;
 
       if (Array.isArray(threadData)) {

@@ -18,7 +18,6 @@ export interface ChatWorkflowOutput {
 
 export type ChatStatus = "completed" | "waiting" | "reasoning" | "streaming";
 
-// Just use CoreMessage directly
 export type Message = ModelMessage;
 
 interface UseChatReturn {

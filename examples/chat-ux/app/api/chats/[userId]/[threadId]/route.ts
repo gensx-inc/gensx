@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { BlobClient } from "@gensx/storage";
-import { CoreMessage } from "ai";
+import { ModelMessage } from "ai";
 
 export async function GET(
   request: NextRequest,
@@ -15,7 +15,7 @@ export async function GET(
 
     const blobPath = `chat-history/${userId}/${threadId}.json`;
 
-    const blob = await blobClient.getBlob<CoreMessage[]>(blobPath);
+    const blob = await blobClient.getBlob<ModelMessage[]>(blobPath);
 
     const exists = await blob.exists();
 
