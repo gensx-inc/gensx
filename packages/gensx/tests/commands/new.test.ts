@@ -73,7 +73,10 @@ vi.mock("ink-select-input", () => ({
   },
 }));
 
-suite("new command UI", () => {
+// Tests in this suite rely on shared global mocks for ink inputs.
+// Running them in parallel with other tests can lead to the mocks being
+// overwritten, so we execute the suite sequentially to avoid flakiness.
+suite.sequential("new command UI", () => {
   let tempDir: string;
 
   beforeEach(async () => {
