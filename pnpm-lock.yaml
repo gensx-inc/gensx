@@ -46,8 +46,8 @@ catalogs:
       specifier: ^3.2.3
       version: 3.2.3
     zod:
-      specifier: 3.25.56
-      version: 3.25.56
+      specifier: 3.25.76
+      version: 3.25.76
     zod-to-json-schema:
       specifier: ^3.24.1
       version: 3.24.5
@@ -479,7 +479,7 @@ importers:
         version: 1.3.0
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -890,10 +890,10 @@ importers:
         version: 0.3.13
       '@gensx/openai':
         specifier: 0.1.28
-        version: 0.1.28(openai@5.10.1(ws@8.18.2)(zod@3.25.56))
+        version: 0.1.28(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -934,16 +934,16 @@ importers:
         version: 0.3.13
       '@gensx/openai':
         specifier: 0.1.28
-        version: 0.1.28(openai@4.104.0(ws@8.18.2)(zod@3.25.56))
+        version: 0.1.28(openai@4.104.0(ws@8.18.2)(zod@3.25.76))
       openai:
         specifier: 'catalog:'
-        version: 4.104.0(ws@8.18.2)(zod@3.25.56)
+        version: 4.104.0(ws@8.18.2)(zod@3.25.76)
       playwright:
         specifier: ^1.52.0
         version: 1.54.1
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -1095,7 +1095,7 @@ importers:
         version: 12.0.0
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: catalog:examples
@@ -1328,7 +1328,7 @@ importers:
         version: 6.21.3
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
     devDependencies:
       '@types/chokidar':
         specifier: ^2.1.7
@@ -1446,7 +1446,7 @@ importers:
         version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.19.4)(yaml@2.8.0)
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
 
   packages/gensx-core:
     dependencies:
@@ -1461,10 +1461,10 @@ importers:
         version: 5.0.0
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
       zod-to-json-schema:
         specifier: 'catalog:'
-        version: 3.24.5(zod@3.25.56)
+        version: 3.24.5(zod@3.25.76)
     devDependencies:
       '@types/ini':
         specifier: ^4.1.1
@@ -1570,14 +1570,14 @@ importers:
         version: link:../gensx-core
       ai:
         specifier: ^5.0.4
-        version: 5.0.4(zod@3.25.56)
+        version: 5.0.4(zod@3.25.76)
       zod-to-json-schema:
         specifier: 'catalog:'
-        version: 3.24.5(zod@3.25.56)
+        version: 3.24.5(zod@3.25.76)
     devDependencies:
       '@ai-sdk/openai':
         specifier: ^2.0.3
-        version: 2.0.3(zod@3.25.56)
+        version: 2.0.3(zod@3.25.76)
       '@types/node':
         specifier: catalog:packages
         version: 18.19.86
@@ -1589,7 +1589,7 @@ importers:
         version: 3.2.3(@types/debug@4.1.12)(@types/node@18.19.86)(jiti@2.4.2)(lightningcss@1.30.1)(terser@5.43.1)(tsx@4.20.3)(yaml@2.8.0)
       zod:
         specifier: 'catalog:'
-        version: 3.25.56
+        version: 3.25.76
 
   packages/gensx-windsurf-rules:
     devDependencies:
@@ -9879,6 +9879,12 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.1(zod@3.25.56)
       zod: 3.25.56
 
+  '@ai-sdk/gateway@1.0.2(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.1(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/google@2.0.2(zod@3.25.56)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -9927,6 +9933,12 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.1(zod@3.25.56)
       zod: 3.25.56
 
+  '@ai-sdk/openai@2.0.3(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.1(zod@3.25.76)
+      zod: 3.25.76
+
   '@ai-sdk/openai@2.0.4(zod@3.25.56)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -9954,6 +9966,14 @@ snapshots:
       eventsource-parser: 3.0.3
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
+
+  '@ai-sdk/provider-utils@3.0.1(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.0.0
+      eventsource-parser: 3.0.3
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
 
   '@ai-sdk/provider-utils@3.0.3(zod@3.25.56)':
     dependencies:
@@ -10586,24 +10606,10 @@ snapshots:
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
 
-  '@gensx/openai@0.1.28(openai@4.104.0(ws@8.18.2)(zod@3.25.56))':
-    dependencies:
-      '@gensx/core': 0.3.13
-      openai: 4.104.0(ws@8.18.2)(zod@3.25.56)
-      zod: 3.25.56
-      zod-to-json-schema: 3.24.6(zod@3.25.56)
-
   '@gensx/openai@0.1.28(openai@4.104.0(ws@8.18.2)(zod@3.25.76))':
     dependencies:
       '@gensx/core': 0.3.13
       openai: 4.104.0(ws@8.18.2)(zod@3.25.76)
-      zod: 3.25.56
-      zod-to-json-schema: 3.24.6(zod@3.25.56)
-
-  '@gensx/openai@0.1.28(openai@5.10.1(ws@8.18.2)(zod@3.25.56))':
-    dependencies:
-      '@gensx/core': 0.3.13
-      openai: 5.10.1(ws@8.18.2)(zod@3.25.56)
       zod: 3.25.56
       zod-to-json-schema: 3.24.6(zod@3.25.56)
 
@@ -13088,6 +13094,14 @@ snapshots:
       '@ai-sdk/provider-utils': 3.0.1(zod@3.25.56)
       '@opentelemetry/api': 1.9.0
       zod: 3.25.56
+
+  ai@5.0.4(zod@3.25.76):
+    dependencies:
+      '@ai-sdk/gateway': 1.0.2(zod@3.25.76)
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.1(zod@3.25.76)
+      '@opentelemetry/api': 1.9.0
+      zod: 3.25.76
 
   ajv-formats@2.1.1(ajv@8.17.1):
     optionalDependencies:
@@ -19321,6 +19335,10 @@ snapshots:
   zod-to-json-schema@3.24.5(zod@3.25.56):
     dependencies:
       zod: 3.25.56
+
+  zod-to-json-schema@3.24.5(zod@3.25.76):
+    dependencies:
+      zod: 3.25.76
 
   zod-to-json-schema@3.24.6(zod@3.25.56):
     dependencies:
