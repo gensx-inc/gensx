@@ -13,7 +13,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.0",
+    "@ai-sdk/openai-compatible": "^1.0.7",
     "@ai-sdk/provider": "^2.0.0",
     "@gensx/client": "^0.1.8",
     "@gensx/core": "^0.5.4",

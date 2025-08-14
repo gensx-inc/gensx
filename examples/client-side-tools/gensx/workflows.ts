@@ -8,7 +8,7 @@ import { toolbox } from "./tools/toolbox";
 import { geocodeTool } from "./tools/geocode";
 import { generateText } from "ai";
 import { reverseGeocodeTool } from "./tools/reverse-geocode";
-import { createOpenAI } from "@ai-sdk/openai";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { locationSearchTool } from "./tools/location-search";
 import {
   findBoundingBoxTool,
@@ -191,7 +191,8 @@ Always be proactive about using the map tools to enhance the user's experience. 
         ...asToolSet(toolbox),
       };
 
-      const groqClient = createOpenAI({
+      const groqClient = createOpenAICompatible({
+        name: "groq",
         apiKey: process.env.GROQ_API_KEY!,
         baseURL: "https://api.groq.com/openai/v1",
       });
@@ -227,10 +228,11 @@ const GenerateSummary = gensx.Component(
   async ({ userMessage }: { userMessage: string }): Promise<string> => {
     try {
       const result = await generateText({
-        model: createOpenAI({
+        model: createOpenAICompatible({
+          name: "groq",
           apiKey: process.env.GROQ_API_KEY!,
           baseURL: "https://api.groq.com/openai/v1",
-        })("moonshotai/kimi-k2-instruct"),
+        }),
         prompt: `Please create a concise 3-5 word summary of this user question/request. Focus on the main topic or intent. Examples:
 - "Tell me about Paris" → Paris Information
 - "Find restaurants near me" → Local Restaurant Search
