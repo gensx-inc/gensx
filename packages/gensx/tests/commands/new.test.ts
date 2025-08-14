@@ -10,7 +10,7 @@ import { afterEach, beforeEach, expect, it, suite, vi } from "vitest";
 import { NewProjectUI } from "../../src/commands/new.js";
 import * as config from "../../src/utils/config.js";
 import { exec } from "../../src/utils/exec.js";
-import { waitForText } from "../test-helpers.js";
+import { waitForText, waitUntil } from "../test-helpers.js";
 
 // Setup Ink mocks locally to avoid global state between tests
 const { textInput, selectInput } = vi.hoisted(() => ({
@@ -105,6 +105,7 @@ suite("new command UI", () => {
 
     // Wait for description prompt
     await waitForText(lastFrame, /Enter a project description/);
+    await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
 
     // Simulate entering a description
     if (!textInput.onChange || !textInput.onSubmit)
@@ -117,6 +118,9 @@ suite("new command UI", () => {
 
     // Wait for AI assistant selection
     await waitForText(lastFrame, /Select AI assistants to integrate/);
+    await waitUntil(
+      () => !!selectInput.onSelect && selectInput.options.length > 0,
+    );
 
     // Simulate selecting an assistant
     if (!selectInput.onSelect || !selectInput.options)
@@ -147,14 +151,18 @@ suite("new command UI", () => {
 
     // Wait for description prompt
     await waitForText(lastFrame, /Enter a project description/);
+    await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
     if (!textInput.onChange || !textInput.onSubmit)
       throw new Error("TextInput handlers not found");
-    textInput.onChange("");
-    textInput.onSubmit("");
+    textInput.onChange!("");
+    textInput.onSubmit!("");
 
     // Wait for dependencies to install
     await waitForText(lastFrame, /Installing dependencies/);
     await waitForText(lastFrame, /Select AI assistants to integrate/);
+    await waitUntil(
+      () => !!selectInput.onSelect && selectInput.options.length > 0,
+    );
 
     // Simulate selecting "all"
     if (!selectInput.onSelect || !selectInput.options)
@@ -202,14 +210,18 @@ suite("new command UI", () => {
 
     // Wait for description prompt
     await waitForText(lastFrame, /Enter a project description/);
+    await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
     if (!textInput.onChange || !textInput.onSubmit)
       throw new Error("TextInput handlers not found");
-    textInput.onChange("");
-    textInput.onSubmit("");
+    textInput.onChange!("");
+    textInput.onSubmit!("");
 
     // Wait for dependencies to install
     await waitForText(lastFrame, /Installing dependencies/);
     await waitForText(lastFrame, /Select AI assistants to integrate/);
+    await waitUntil(
+      () => !!selectInput.onSelect && selectInput.options.length > 0,
+    );
 
     // Simulate selecting "none"
     if (!selectInput.onSelect || !selectInput.options)
@@ -237,6 +249,9 @@ suite("new command UI", () => {
 
     // Wait for template selection
     await waitForText(lastFrame, /Select a project template/);
+    await waitUntil(
+      () => !!selectInput.onSelect && selectInput.options.length > 0,
+    );
 
     // Simulate selecting TypeScript template
     if (!selectInput.onSelect || !selectInput.options)
@@ -249,13 +264,19 @@ suite("new command UI", () => {
 
     // Wait for description prompt
     await waitForText(lastFrame, /Enter a project description/);
+    await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
     if (!textInput.onChange || !textInput.onSubmit)
       throw new Error("TextInput handlers not found");
-    textInput.onChange("");
-    textInput.onSubmit("");
+    textInput.onChange!("");
+    textInput.onSubmit!("");
 
     // Skip AI assistants selection
     await waitForText(lastFrame, /Select AI assistants to integrate/);
+    await waitUntil(
+      () => !!selectInput.onSelect && selectInput.options.length > 0,
+    );
+    if (!selectInput.onSelect || !selectInput.options)
+      throw new Error("SelectInput handler/options not found");
     const noneOption = selectInput.options.find(
       (opt) => opt.value === "none",
     );
@@ -281,8 +302,13 @@ suite("new command UI", () => {
 
     // Wait for template selection
     await waitForText(lastFrame, /Select a project template/);
+    await waitUntil(
+      () => !!selectInput.onSelect && selectInput.options.length > 0,
+    );
 
     // Simulate selecting Next.js template
+    if (!selectInput.onSelect || !selectInput.options)
+      throw new Error("SelectInput handler/options not found");
     const nextOption = selectInput.options.find(
       (opt) => opt.value === "next",
     );
@@ -291,11 +317,19 @@ suite("new command UI", () => {
 
     // Wait for description prompt
     await waitForText(lastFrame, /Enter a project description/);
+    await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
+    if (!textInput.onChange || !textInput.onSubmit)
+      throw new Error("TextInput handlers not found");
     textInput.onChange!("");
     textInput.onSubmit!("");
 
     // Skip AI assistants selection
     await waitForText(lastFrame, /Select AI assistants to integrate/);
+    await waitUntil(
+      () => !!selectInput.onSelect && selectInput.options.length > 0,
+    );
+    if (!selectInput.onSelect || !selectInput.options)
+      throw new Error("SelectInput handler/options not found");
     const noneOption = selectInput.options.find(
       (opt) => opt.value === "none",
     );

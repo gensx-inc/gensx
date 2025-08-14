@@ -131,3 +131,23 @@ export function waitForMockCall(
     check();
   });
 }
+
+// Generic helper to wait for a condition to become true
+export function waitUntil(
+  condition: () => boolean,
+  timeout = 1000,
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const start = Date.now();
+    function check() {
+      if (condition()) {
+        resolve();
+      } else if (Date.now() - start > timeout) {
+        reject(new Error("Timed out waiting for condition"));
+      } else {
+        setTimeout(check, 20);
+      }
+    }
+    check();
+  });
+}
