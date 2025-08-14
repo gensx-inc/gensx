@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Genie Settings</title>
+  <link rel="icon" type="image/x-icon" href="../icons/icon-48.ico">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      line-height: 1.6;
+      color: #374151;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .logo {
+      width: 64px;
+      height: 64px;
+      background: #2563eb;
+      border-radius: 12px;
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .subtitle {
+      margin: 8px 0 0 0;
+      font-size: 16px;
+      color: #6b7280;
+    }
+
+    .section {
+      margin-bottom: 32px;
+    }
+
+    .section h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 16px 0;
+      color: #1f2937;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    input[type="text"], input[type="url"], textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+    }
+
+    input[type="text"]:focus, input[type="url"]:focus, textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+    }
+
+    .help-text {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      padding-top: 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #e5e7eb;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .alert-success {
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+
+    .alert-info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+
+    .developer-section {
+      margin-top: 40px;
+      padding: 20px;
+      background: #fafafa;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      display: none; /* Hidden by default */
+    }
+
+    .developer-section.visible {
+      display: block;
+    }
+
+    .developer-toggle {
+      margin-top: 32px;
+      padding: 16px 0;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+    }
+
+    .developer-toggle button {
+      background: none;
+      border: none;
+      color: #6b7280;
+      font-size: 12px;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 4px 8px;
+    }
+
+    .developer-toggle button:hover {
+      color: #374151;
+    }
+
+    .developer-section h2 {
+      color: #dc2626;
+      font-size: 18px;
+    }
+
+    .developer-warning {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"/>
+        <path d="m14 7 3 3"/>
+        <path d="M5 6v4"/>
+        <path d="M19 14v4"/>
+        <path d="M10 2v2"/>
+        <path d="M7 8H3"/>
+        <path d="M21 16h-4"/>
+        <path d="M11 3H9"/>
+      </svg>
+    </div>
+    <h1>Genie</h1>
+    <p class="subtitle">Configure your AI web assistant</p>
+  </div>
+
+  <div id="saved-alert" class="alert alert-success" style="display: none;">
+    Settings saved successfully!
+  </div>
+
+  <div class="alert alert-info">
+    <strong>Welcome to Genie!</strong> Your AI web assistant is ready to help you browse and interact with web pages.
+    Simply click the extension icon or use the keyboard shortcut to get started.
+  </div>
+
+  <form id="settings-form">
+
+
+    <div class="section">
+      <h2>Keyboard Shortcut</h2>
+
+      <div class="alert alert-info">
+        <strong>Ctrl+Shift+K</strong> (Cmd+Shift+K on Mac) - Opens Genie AI assistant<br>
+        <small>You can customize this shortcut in Chrome's extension shortcuts settings: <code>chrome://extensions/shortcuts</code></small>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>User Preferences</h2>
+
+      <div class="form-group">
+        <label for="userName">Your Name (Optional)</label>
+        <input type="text" id="userName" placeholder="Enter your name">
+        <div class="help-text">
+          The copilot will use this to personalize interactions
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="userContext">Additional Context (Optional)</label>
+        <textarea id="userContext" placeholder="Tell the copilot about your role, preferences, or any other context that might help it assist you better..."></textarea>
+        <div class="help-text">
+          This information will be shared with the AI to provide better assistance
+        </div>
+      </div>
+    </div>
+
+    <div class="developer-toggle">
+      <button type="button" id="developer-toggle-btn">
+        Developer Settings
+      </button>
+    </div>
+
+    <div id="developer-section" class="developer-section">
+      <div class="developer-warning">
+        <strong>⚠️ Developer Settings</strong><br>
+        These settings are for developers running local GenSX servers.
+        Changing these values may break the extension functionality.
+      </div>
+
+      <div class="section">
+        <h2>🛠️ API Configuration</h2>
+
+        <div class="form-group">
+          <label for="apiEndpoint">GenSX API Endpoint</label>
+          <input type="url" id="apiEndpoint" placeholder="https://api.gensx.com">
+          <div class="help-text">
+            The base URL where your GenSX server is running
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="scopedTokenEndpoint">Scoped Token Endpoint</label>
+          <input type="url" id="scopedTokenEndpoint" placeholder="https://genie.gensx.com/api/scoped-tokens">
+          <div class="help-text">
+            The endpoint used to mint scoped tokens for the extension
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="org">Organization</label>
+          <input type="text" id="org" placeholder="gensx">
+          <div class="help-text">
+            The GenSX organization identifier for your workflows
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="project">Project</label>
+          <input type="text" id="project" placeholder="chrome-copilot">
+          <div class="help-text">
+            The GenSX project name where your copilot workflow is deployed
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="environment">Environment</label>
+          <input type="text" id="environment" placeholder="default">
+          <div class="help-text">
+            The deployment environment (e.g., default, staging, production)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <button type="button" id="clear-token-btn" class="btn-secondary">Clear Access Token</button>
+          <div class="help-text">
+            Removes the cached scoped token from local storage; a new one will be minted when needed
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button type="button" id="reset-btn" class="btn-secondary">Reset to Defaults</button>
+      <button type="submit" class="btn-primary">Save Settings</button>
+    </div>
+  </form>
+
+
+  <script src="options.js"></script>
+</body>
+</html>

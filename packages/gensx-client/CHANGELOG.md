@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.9](https://github.com/gensx-inc/gensx/compare/gensx-client-v0.1.8...gensx-client-v0.1.9) (2025-08-11)
+
+
+### ✨ New Features
+
+* Add run() and getOutput() methods ([#919](https://github.com/gensx-inc/gensx/issues/919)) ([1fe6161](https://github.com/gensx-inc/gensx/commit/1fe6161afc30273f1ca083bceeb9aadad4bc967c))
+
 ## [0.1.8](https://github.com/gensx-inc/gensx/compare/gensx-client-v0.1.7...gensx-client-v0.1.8) (2025-08-06)
 
 

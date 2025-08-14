@@ -20,6 +20,21 @@ interface ShowcaseItem {
 
 const showcaseItems: ShowcaseItem[] = [
   {
+    id: "genie-extension",
+    title: "Genie Extension",
+    description:
+      "A Chrome extension that drives and automates any web page via natural language — powered by GenSX.",
+    image: "/showcase/genie-extension.png",
+    demo: "https://genie.gensx.com",
+    github:
+      "https://github.com/gensx-inc/gensx/tree/main/examples/genie-extension",
+    tags: [
+      "Category: Extension",
+      "Integration: Chrome Extension",
+      "Feature: Client-side tools",
+    ],
+  },
+  {
     id: "map-agent",
     title: "AI Map Agent",
     description:

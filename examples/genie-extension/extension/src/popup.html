@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Genie</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      width: 100%;
+      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      background: #2563eb;
+      color: white;
+      padding: 16px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-logo {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .header-info h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .header-info p {
+      font-size: 12px;
+      opacity: 0.9;
+      margin: 2px 0 0 0;
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .header-button {
+      padding: 6px;
+      background: transparent;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-button:hover {
+      background: #1d4ed8;
+    }
+
+    .header-button svg {
+      width: 16px;
+      height: 16px;
+    }
+
+
+    /* Chat Content */
+    .tab-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Messages */
+    .message {
+      display: flex;
+      max-width: none;
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message.assistant {
+      justify-content: flex-start;
+    }
+
+    .message-content {
+      max-width: 85%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message.user .message-content {
+      background: #2563eb;
+      color: white;
+    }
+
+    .message.assistant .message-content {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .message.system {
+      justify-content: center;
+      margin: 16px 0;
+    }
+
+    .message.system .message-content {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      max-width: 90%;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    /* Tool Calls */
+    .tool-calls {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .tool-call {
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      overflow: hidden;
+      font-size: 13px;
+    }
+
+    .tool-call-header {
+      background: #f9fafb;
+      padding: 8px 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+    }
+
+    .tool-call-header:hover {
+      background: #f3f4f6;
+    }
+
+    .tool-call-content {
+      padding: 10px;
+      background: white;
+      border-top: 1px solid #d1d5db;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tool-call-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tool-call-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .tool-call-code {
+      font-size: 11px;
+      background: #f9fafb;
+      padding: 6px;
+      border-radius: 4px;
+      overflow-x: hidden;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      max-height: 120px;
+      overflow-y: auto;
+      word-wrap: break-word;
+      word-break: break-all;
+      white-space: pre-wrap;
+    }
+
+    /* Input Form */
+    .input-form {
+      padding: 12px;
+      border-top: 1px solid #e5e7eb;
+      flex-shrink: 0;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 8px;
+    }
+
+    .input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      resize: none;
+      font-family: inherit;
+      line-height: 1.4;
+      transition: height 0.1s ease;
+      box-sizing: border-box;
+      background: white;
+    }
+
+    .input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+    }
+
+    .input:disabled {
+      background: #f9fafb;
+      color: #6b7280;
+      cursor: not-allowed;
+    }
+
+    .send-button {
+      padding: 8px 12px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .send-button:hover:not(:disabled) {
+      background: #1d4ed8;
+    }
+
+    .send-button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+
+    /* Loading spinner */
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #d1d5db;
+      border-top: 2px solid #2563eb;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Hint bubble */
+    .hint-bubble {
+      margin: 12px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .hint-content h4 {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1e40af;
+      margin: 0 0 6px 0;
+    }
+
+    .hint-content p {
+      font-size: 12px;
+      color: #1e40af;
+      line-height: 1.4;
+      margin: 0 0 8px 0;
+    }
+
+    .hint-code {
+      background: #dbeafe;
+      padding: 2px 4px;
+      border-radius: 3px;
+      color: #1e40af;
+      font-family: monospace;
+      font-size: 11px;
+    }
+
+    .hint-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .hint-button {
+      padding: 4px 8px;
+      font-size: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .hint-button.primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .hint-button.secondary {
+      background: transparent;
+      color: #2563eb;
+    }
+
+    /* Scrollbar */
+    .messages::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .messages::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .messages::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .messages::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Error styles */
+    .error {
+      background: #fee2e2;
+      color: #dc2626;
+      padding: 8px;
+      border-radius: 6px;
+      margin: 8px 0;
+      font-size: 13px;
+    }
+
+    /* Thinking spinner styles */
+    .thinking-indicator {
+      display: flex;
+      justify-content: flex-start;
+      margin: 12px 0;
+    }
+
+    .thinking-bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      background: #f3f4f6;
+      color: #374151;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    .thinking-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #d1d5db;
+      border-top: 2px solid #6b7280;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      flex-shrink: 0;
+    }
+
+    .thinking-text {
+      opacity: 0.8;
+    }
+
+
+    /* Reconnection status */
+    .reconnection-status {
+      padding: 12px 16px;
+      background: #eff6ff;
+      border-bottom: 1px solid #bfdbfe;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #1e40af;
+    }
+
+    .reconnection-content {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+
+    /* Todo List */
+    .todo-list-container {
+      max-height: 30%;
+      border-top: 1px solid #e5e7eb;
+      background: #f9fafb;
+      display: none;
+      flex-direction: column;
+    }
+
+    .todo-list-container.has-items {
+      display: flex;
+    }
+
+    .todo-list-header {
+      padding: 8px 12px;
+      background: #f3f4f6;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .todo-list-header:hover {
+      background-color: #f1f5f9;
+    }
+
+    .todo-list-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .todo-list-title svg {
+      width: 14px;
+      height: 14px;
+      color: #6b7280;
+    }
+
+    .todo-list-count {
+      background: #d1d5db;
+      color: #374151;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .todo-list-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6b7280;
+      transition: all 0.2s ease;
+    }
+
+    .todo-list-toggle:hover {
+      background-color: rgba(107, 114, 128, 0.1);
+      color: #4b5563;
+    }
+
+    .todo-toggle-icon {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .todo-list-container.collapsed .todo-toggle-icon {
+      transform: rotate(-90deg);
+    }
+
+    .todo-list-content {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.2s ease;
+      max-height: 300px;
+      opacity: 1;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .todo-list-container.collapsed .todo-list-content {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    .todo-list-items {
+      padding: 8px 0;
+      overflow-y: auto;
+      height: 100%;
+    }
+
+    .todo-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      color: #374151;
+      transition: background-color 0.2s ease;
+    }
+
+    .todo-item:hover {
+      background: #f3f4f6;
+    }
+
+    .todo-item.completed {
+      opacity: 0.6;
+    }
+
+    .todo-item.completed .todo-item-title {
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+
+    .todo-checkbox {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #d1d5db;
+      border-radius: 3px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .todo-checkbox.checked {
+      background: #2563eb;
+      border-color: #2563eb;
+    }
+
+    .todo-checkbox.checked::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 1px;
+    }
+
+    .todo-item-title {
+      flex: 1;
+      word-wrap: break-word;
+      line-height: 1.3;
+    }
+
+    .todo-list-empty {
+      padding: 12px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 12px;
+      font-style: italic;
+    }
+
+    /* Scrollbar for todo list */
+    .todo-list-container::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .todo-list-container::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .todo-list-container::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .todo-list-container::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* @ Mention Dropdown */
+    .mention-dropdown {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      right: 0;
+      max-height: 200px;
+      background: white;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 1000;
+      overflow-y: auto;
+      margin-bottom: 4px;
+    }
+
+    .mention-item {
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .mention-item:last-child {
+      border-bottom: none;
+    }
+
+    .mention-item:hover,
+    .mention-item.selected {
+      background: #eff6ff;
+    }
+
+    .mention-favicon {
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      background: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    .mention-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .mention-title {
+      font-weight: 500;
+      color: #374151;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mention-domain {
+      font-size: 12px;
+      color: #6b7280;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mention-tag {
+      background: #2563eb;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .mention-loading {
+      padding: 16px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .mention-empty {
+      padding: 16px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    /* Selected Tabs Area */
+    .selected-tabs-container {
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+
+    .selected-tabs-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      cursor: pointer;
+      padding: 2px 0;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+
+    .selected-tabs-header:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .selected-tabs-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .selected-tabs-toggle {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      transition: all 0.2s ease;
+    }
+
+    .selected-tabs-toggle:hover {
+      background-color: rgba(100, 116, 139, 0.1);
+      color: #475569;
+    }
+
+    .toggle-icon {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s ease;
+    }
+
+    .selected-tabs-container.collapsed .toggle-icon {
+      transform: rotate(-90deg);
+    }
+
+    .selected-tabs-content {
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.2s ease;
+      max-height: 200px;
+      opacity: 1;
+    }
+
+    .selected-tabs-container.collapsed .selected-tabs-content {
+      max-height: 0;
+      opacity: 0;
+    }
+
+    .selected-tabs-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .selected-tab-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #2563eb;
+      color: white;
+      padding: 6px 8px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      max-width: 220px;
+      min-height: 28px;
+    }
+
+    .selected-tab-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .selected-tab-title {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.2;
+    }
+
+    .selected-tab-domain {
+      font-size: 10px;
+      opacity: 0.8;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.1;
+    }
+
+    .selected-tab-favicon {
+      width: 14px;
+      height: 14px;
+      border-radius: 2px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+    }
+
+    .selected-tab-remove {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: background-color 0.2s ease;
+    }
+
+    .selected-tab-remove:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .selected-tab-active {
+      background: #059669;
+    }
+
+    /* Input container positioning context */
+    .input-container {
+      position: relative;
+    }
+
+    /* Styled mention tags */
+    .mention-tag {
+      background: #2563eb;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-block;
+      margin: 0 1px;
+    }
+
+    .mention-tag-light {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+      padding: 1px 5px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 500;
+      display: inline-block;
+      margin: 0 1px;
+    }
+
+    /* Scrollbar for mention dropdown */
+    .mention-dropdown::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .mention-dropdown::-webkit-scrollbar-track {
+      background: #f3f4f6;
+    }
+
+    .mention-dropdown::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 2px;
+    }
+
+    .mention-dropdown::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="header-info">
+        <p id="currentPage">Ready to help</p>
+      </div>
+    </div>
+    <div class="header-buttons">
+      <button class="header-button" id="clearThread" title="Start new chat">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
+      </button>
+      <button class="header-button" id="openOptions" title="Settings">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+
+  <div class="tab-content" id="chatTab" style="display: flex;">
+    <div class="messages" id="messages">
+      <!-- Messages will be dynamically inserted here -->
+    </div>
+
+    <!-- Todo List Container -->
+    <div class="todo-list-container" id="todoListContainer">
+      <div class="todo-list-header" id="todoListHeader">
+        <div class="todo-list-title">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          Todo List
+          <span class="todo-list-count" id="todoListCount">0/0</span>
+        </div>
+        <button class="todo-list-toggle" id="todoListToggle" title="Toggle todo list visibility">
+          <svg class="todo-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </button>
+      </div>
+      <div class="todo-list-content" id="todoListContent">
+        <div class="todo-list-items" id="todoListItems">
+          <!-- Todo items will be dynamically inserted here -->
+        </div>
+      </div>
+    </div>
+
+    <form class="input-form" id="inputForm">
+      <!-- Selected Tabs Area -->
+      <div class="selected-tabs-container" id="selectedTabsContainer" style="display: none;">
+        <div class="selected-tabs-header" id="selectedTabsHeader">
+          <span class="selected-tabs-label">Selected tabs:</span>
+          <button type="button" class="selected-tabs-toggle" id="selectedTabsToggle" title="Toggle tabs visibility">
+            <svg class="toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+        </div>
+        <div class="selected-tabs-content" id="selectedTabsContent">
+          <div class="selected-tabs-list" id="selectedTabsList">
+            <!-- Selected tab chips will be inserted here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="input-container">
+        <!-- @ Mention Dropdown -->
+        <div class="mention-dropdown" id="mentionDropdown" style="display: none;">
+          <div class="mention-loading" id="mentionLoading" style="display: none;">
+            <div class="loading"></div>
+            Loading tabs...
+          </div>
+          <div class="mention-empty" id="mentionEmpty" style="display: none;">
+            No matching tabs found
+          </div>
+          <div id="mentionItems"></div>
+        </div>
+        
+        <!-- Simplified input without overlay -->
+        <textarea
+          class="input"
+          id="messageInput"
+          placeholder="Ask me anything..."
+          rows="1"
+          style="resize: none; height: 36px; min-height: 36px; max-height: 120px; overflow-y: hidden;"
+        ></textarea>
+        <button type="submit" class="send-button" id="sendButton">
+          Send
+        </button>
+      </div>
+    </form>
+  </div>
+
+
+  <script src="popup.js"></script>
+</body>
+</html>
