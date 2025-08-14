@@ -1094,8 +1094,8 @@ importers:
         specifier: ^12.0.0
         version: 12.0.0
       zod:
-        specifier: 3.25.56
-        version: 3.25.56
+        specifier: 3.25.76
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: catalog:examples
