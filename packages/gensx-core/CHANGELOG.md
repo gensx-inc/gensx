@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.5](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.4...gensx-core-v0.5.5) (2025-08-14)
+
+
+### 🐛 Bug Fixes
+
+* upgrade zod in gensx/core ([#932](https://github.com/gensx-inc/gensx/issues/932)) ([d3383d4](https://github.com/gensx-inc/gensx/commit/d3383d48e879d93c3cacb8d0c096e0f80628be19))
+
 ## [0.5.4](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.3...gensx-core-v0.5.4) (2025-08-06)
 
 

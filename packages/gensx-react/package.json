@@ -1,6 +1,6 @@
 {
   "name": "@gensx/react",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "React hooks and components for GenSX AI workflows.",
   "type": "module",
   "main": "./dist/cjs/index.cjs",
