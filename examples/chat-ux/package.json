@@ -14,11 +14,11 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.0",
     "@ai-sdk/provider": "^2.0.0",
-    "@gensx/client": "^0.1.8",
-    "@gensx/core": "^0.5.4",
-    "@gensx/react": "^0.2.5",
-    "@gensx/storage": "^0.2.4",
-    "@gensx/vercel-ai": "^0.4.0",
+    "@gensx/client": "^0.1.10",
+    "@gensx/core": "^0.5.5",
+    "@gensx/react": "^0.2.7",
+    "@gensx/storage": "^0.2.5",
+    "@gensx/vercel-ai": "^0.4.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@tavily/core": "^0.5.9",
     "@types/react-syntax-highlighter": "^15.5.13",
@@ -35,7 +35,7 @@
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.1",
     "tailwind-merge": "^3.3.0",
-    "zod": "3.25.56"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

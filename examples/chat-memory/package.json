@@ -17,12 +17,12 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^2.0.0",
-    "@gensx/core": "^0.5.4",
+    "@gensx/core": "^0.5.5",
     "@gensx/storage": "^0.2.4",
-    "@gensx/vercel-ai": "^0.4.0",
+    "@gensx/vercel-ai": "^0.4.2",
     "ai": "^5.0.0",
     "openai": "^4.104.0",
-    "zod": "3.25.56"
+    "zod": "3.25.76"
   },
   "devDependencies": {
     "@types/node": "^20",
