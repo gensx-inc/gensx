@@ -6,12 +6,14 @@ import { LoginUI } from "../../src/commands/login.js";
 import * as config from "../../src/utils/config.js";
 import { waitForText } from "../test-helpers.js";
 
-// Define the type for the global callback
-declare global {
-  var __useInputCallback:
-    | ((input: string, key: { return?: boolean; escape?: boolean }) => void)
-    | undefined;
-}
+const { inputHandler } = vi.hoisted(() => ({
+  inputHandler: {
+    callback: undefined as (
+      | ((input: string, key: { return?: boolean; escape?: boolean }) => void)
+      | undefined
+    ),
+  },
+}));
 
 // Mock dependencies
 vi.mock("open");
@@ -21,7 +23,7 @@ vi.mock("ink", async () => {
     ...actual,
     useInput: vi.fn((callback) => {
       // Store the callback for later use
-      global.__useInputCallback = callback;
+      inputHandler.callback = callback;
     }),
     useApp: () => ({
       exit: vi.fn(),
@@ -41,7 +43,7 @@ const originalFetch = global.fetch;
 afterEach(() => {
   vi.clearAllMocks();
   global.fetch = originalFetch;
-  delete global.__useInputCallback;
+  inputHandler.callback = undefined;
 });
 
 suite("login command", () => {
@@ -100,7 +102,7 @@ suite("login command", () => {
     );
 
     // Simulate Enter key press
-    const callback = global.__useInputCallback;
+    const callback = inputHandler.callback;
     if (!callback) throw new Error("useInput callback not found");
     callback("", { return: true });
 
@@ -148,7 +150,7 @@ suite("login command", () => {
     );
 
     // Simulate Enter key press
-    const callback = global.__useInputCallback;
+    const callback = inputHandler.callback;
     if (!callback) throw new Error("useInput callback not found");
     callback("", { return: true });
 
@@ -175,7 +177,7 @@ suite("login command", () => {
     );
 
     // Simulate Enter key press
-    const callback = global.__useInputCallback;
+    const callback = inputHandler.callback;
     if (!callback) throw new Error("useInput callback not found");
     callback("", { return: true });
 
@@ -216,7 +218,7 @@ suite("login command", () => {
     );
 
     // Simulate Enter key press
-    const callback = global.__useInputCallback;
+    const callback = inputHandler.callback;
     if (!callback) throw new Error("useInput callback not found");
     callback("", { return: true });
 
@@ -246,7 +248,7 @@ suite("login command", () => {
     );
 
     // Simulate Enter key press
-    const callback = global.__useInputCallback;
+    const callback = inputHandler.callback;
     if (!callback) throw new Error("useInput callback not found");
     callback("", { return: true });
 

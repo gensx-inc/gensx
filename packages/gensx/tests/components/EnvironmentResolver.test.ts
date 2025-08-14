@@ -25,41 +25,20 @@ vi.mock("../../src/utils/env-config.js", () => ({
   validateAndSelectEnvironment: vi.fn(),
 }));
 
-// Mock SelectInput component
-vi.mock("ink-select-input", () => ({
-  default: ({
-    items,
-    onSelect,
-  }: {
-    items: { label: string; value: string }[];
-    onSelect: (item: { label: string; value: string }) => void;
-  }) => {
-    console.info("SelectInput items:", items);
-    global.__selectInputCallback = onSelect;
-    // If items are Yes/No, render as before
-    if (
-      items.length === 2 &&
-      items[0].label.trim() === "Yes" &&
-      items[1].label.trim() === "No"
-    ) {
-      return React.createElement(Box, {}, [
-        React.createElement(Text, { key: "yes" }, "❯ Yes"),
-        React.createElement(Text, { key: "no" }, "  No"),
-      ]);
-    }
-    // Otherwise, render all items
-    return React.createElement(
-      Box,
-      {},
-      items.map((item) =>
-        React.createElement(Text, { key: item.value }, item.label),
-      ),
-    );
+// Setup Ink mocks
+const { textInput, selectInput } = vi.hoisted(() => ({
+  textInput: {
+    onChange: undefined as ((value: string) => void) | undefined,
+    onSubmit: undefined as ((value: string) => void) | undefined,
+  },
+  selectInput: {
+    onSelect: undefined as ((item: { label: string; value: string }) => void) | undefined,
+    options: [] as { label: string; value: string }[],
   },
 }));
 
-// Mock TextInput component
 vi.mock("ink-text-input", () => ({
+  __esModule: true,
   default: ({
     value,
     onChange,
@@ -69,29 +48,38 @@ vi.mock("ink-text-input", () => ({
     onChange: (value: string) => void;
     onSubmit: (value: string) => void;
   }) => {
-    global.__textInputCallbacks = { onChange, onSubmit };
+    textInput.onChange = onChange;
+    textInput.onSubmit = onSubmit;
     return React.createElement(Text, {}, value);
   },
 }));
 
-// Define the type for the global callbacks
-declare global {
-  var __selectInputCallback:
-    | ((item: { label: string; value: string }) => void)
-    | undefined;
-  var __textInputCallbacks:
-    | {
-        onChange: (value: string) => void;
-        onSubmit: (value: string) => void;
-      }
-    | undefined;
-}
+vi.mock("ink-select-input", () => ({
+  __esModule: true,
+  default: ({
+    items,
+    onSelect,
+  }: {
+    items: { label: string; value: string }[];
+    onSelect: (item: { label: string; value: string }) => void;
+  }) => {
+    selectInput.onSelect = onSelect;
+    selectInput.options = items;
+    return React.createElement(
+      Box,
+      {},
+      items.map((item) => React.createElement(Text, { key: item.value }, item.label)),
+    );
+  },
+}));
 
-// Reset mocks
+// Reset mocks after each test
 afterEach(() => {
-  vi.resetAllMocks();
-  global.__selectInputCallback = undefined;
-  global.__textInputCallbacks = undefined;
+  vi.clearAllMocks();
+  selectInput.onSelect = undefined;
+  selectInput.options = [];
+  textInput.onChange = undefined;
+  textInput.onSubmit = undefined;
 });
 
 suite("EnvironmentResolver component", () => {
@@ -180,20 +168,18 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Select an environment for project/);
 
     // Simulate selecting create new
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({
-        label: "+ create new",
-        value: "__create__",
-      });
-    }
+    selectInput.onSelect?.({
+      label: "+ create new",
+      value: "__create__",
+    });
 
     // Wait for create prompt to appear
     await waitForText(lastFrame, /Enter a name for the new environment/);
 
     // Simulate entering new environment name
-    if (global.__textInputCallbacks) {
-      global.__textInputCallbacks.onChange("staging");
-      global.__textInputCallbacks.onSubmit("staging");
+    if (textInput.onChange && textInput.onSubmit) {
+      textInput.onChange("staging");
+      textInput.onSubmit("staging");
     }
 
     // Wait for the component to resolve
@@ -246,20 +232,18 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Select an environment for project/);
 
     // Simulate selecting create new
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({
-        label: "+ create new",
-        value: "__create__",
-      });
-    }
+    selectInput.onSelect?.({
+      label: "+ create new",
+      value: "__create__",
+    });
 
     // Wait for create prompt to appear
     await waitForText(lastFrame, /Enter a name for the new environment/);
 
     // Simulate entering new environment name
-    if (global.__textInputCallbacks) {
-      global.__textInputCallbacks.onChange("staging");
-      global.__textInputCallbacks.onSubmit("staging");
+    if (textInput.onChange && textInput.onSubmit) {
+      textInput.onChange("staging");
+      textInput.onSubmit("staging");
     }
 
     // Wait for the component to resolve
@@ -301,12 +285,7 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Select an environment for project/);
 
     // Simulate selecting an environment
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({
-        label: "production",
-        value: "production",
-      });
-    }
+    selectInput.onSelect?.({ label: "production", value: "production" });
 
     // Wait for the component to resolve
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -327,12 +306,7 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Select an environment for project/);
 
     // Simulate selecting create new
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({
-        label: "+ create new",
-        value: "__create__",
-      });
-    }
+    selectInput.onSelect?.({ label: "+ create new", value: "__create__" });
 
     // Wait for create prompt to appear
     await waitForText(lastFrame, /Enter a name for the new environment/);
@@ -357,20 +331,15 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Select an environment for project/);
 
     // Simulate selecting create new
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({
-        label: "+ create new",
-        value: "__create__",
-      });
-    }
+    selectInput.onSelect?.({ label: "+ create new", value: "__create__" });
 
     // Wait for create prompt to appear
     await waitForText(lastFrame, /Enter a name for the new environment/);
 
     // Simulate entering new environment name
-    if (global.__textInputCallbacks) {
-      global.__textInputCallbacks.onChange("staging");
-      global.__textInputCallbacks.onSubmit("staging");
+    if (textInput.onChange && textInput.onSubmit) {
+      textInput.onChange("staging");
+      textInput.onSubmit("staging");
     }
 
     // Wait for the component to resolve
@@ -400,9 +369,7 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Use selected environment/);
 
     // Simulate confirming selection
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({ label: "Yes", value: "yes" });
-    }
+    selectInput.onSelect?.({ label: "Yes", value: "yes" });
 
     // Wait for the component to resolve
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -427,9 +394,7 @@ suite("EnvironmentResolver component", () => {
     await waitForText(lastFrame, /Use selected environment/);
 
     // Simulate rejecting selection
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({ label: "No", value: "no" });
-    }
+    selectInput.onSelect?.({ label: "No", value: "no" });
 
     // Wait for selection list to appear
     await waitForText(lastFrame, /Select an environment for project/);

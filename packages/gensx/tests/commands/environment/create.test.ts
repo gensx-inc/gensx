@@ -1,7 +1,7 @@
 import { Box, Text } from "ink";
 import { render } from "ink-testing-library";
 import React from "react";
-import { expect, it, suite, vi } from "vitest";
+import { afterEach, expect, it, suite, vi } from "vitest";
 
 import { CreateEnvironmentUI } from "../../../src/commands/environment/create.js";
 import * as environmentModel from "../../../src/models/environment.js";
@@ -10,22 +10,19 @@ import * as envConfig from "../../../src/utils/env-config.js";
 import * as projectConfig from "../../../src/utils/project-config.js";
 import { waitForText } from "../../test-helpers.js";
 
-// Define the type for the global callback
-declare global {
-  var __selectInputCallback:
-    | ((item: { label: string; value: string }) => void)
-    | undefined;
-}
+// Setup Ink mocks
+const { selectInput } = vi.hoisted(() => ({
+  selectInput: {
+    onSelect: undefined as ((item: { label: string; value: string }) => void) | undefined,
+    options: [] as { label: string; value: string }[],
+  },
+}));
 
-// Mock SelectInput component
 vi.mock("ink-select-input", () => ({
-  default: ({
-    onSelect,
-  }: {
-    onSelect: (item: { label: string; value: string }) => void;
-  }) => {
-    // Store the onSelect callback for later use
-    global.__selectInputCallback = onSelect;
+  __esModule: true,
+  default: ({ onSelect }: { onSelect: (item: { label: string; value: string }) => void }) => {
+    selectInput.onSelect = onSelect;
+    selectInput.options = [];
     return React.createElement(Box, {}, [
       React.createElement(Text, { key: "yes" }, "❯ Yes"),
       React.createElement(Text, { key: "no" }, "  No"),
@@ -51,6 +48,11 @@ vi.mock("../../../src/utils/project-config.js", () => ({
 vi.mock("../../../src/utils/env-config.js", () => ({
   validateAndSelectEnvironment: vi.fn().mockResolvedValue(true),
 }));
+afterEach(() => {
+  vi.clearAllMocks();
+  selectInput.onSelect = undefined;
+  selectInput.options = [];
+});
 
 suite("environment create Ink UI", () => {
   it("should create environment for an existing project", async () => {
@@ -207,9 +209,7 @@ suite("environment create Ink UI", () => {
     await waitForText(lastFrame, /Would you like to create it\?/);
 
     // Simulate selecting "Yes" from SelectInput
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({ label: "Yes", value: "yes" });
-    }
+    selectInput.onSelect?.({ label: "Yes", value: "yes" });
 
     // Wait for success message with a longer timeout
     await waitForText(
@@ -246,9 +246,7 @@ suite("environment create Ink UI", () => {
     await waitForText(lastFrame, /Would you like to create it\?/);
 
     // Simulate selecting "No" from SelectInput
-    if (global.__selectInputCallback) {
-      global.__selectInputCallback({ label: "No", value: "no" });
-    }
+    selectInput.onSelect?.({ label: "No", value: "no" });
 
     // Wait for error message with a longer timeout
     await waitForText(lastFrame, /Project creation cancelled/, 3000);
