@@ -16,7 +16,9 @@ const { textInput, selectInput } = vi.hoisted(() => ({
     onSubmit: undefined as ((value: string) => void) | undefined,
   },
   selectInput: {
-    onSelect: undefined as ((item: { label: string; value: string }) => void) | undefined,
+    onSelect: undefined as
+      | ((item: { label: string; value: string }) => void)
+      | undefined,
     options: [] as { label: string; value: string }[],
   },
 }));
@@ -31,7 +33,11 @@ vi.mock("ink-text-input", () => ({
 
 vi.mock("ink-select-input", () => ({
   __esModule: true,
-  default: ({ onSelect }: { onSelect: (item: { label: string; value: string }) => void }) => {
+  default: ({
+    onSelect,
+  }: {
+    onSelect: (item: { label: string; value: string }) => void;
+  }) => {
     selectInput.onSelect = onSelect;
     selectInput.options = [];
     return React.createElement(Box, {}, [

@@ -13,14 +13,20 @@ import { waitForText } from "../../test-helpers.js";
 // Setup Ink mocks
 const { selectInput } = vi.hoisted(() => ({
   selectInput: {
-    onSelect: undefined as ((item: { label: string; value: string }) => void) | undefined,
+    onSelect: undefined as
+      | ((item: { label: string; value: string }) => void)
+      | undefined,
     options: [] as { label: string; value: string }[],
   },
 }));
 
 vi.mock("ink-select-input", () => ({
   __esModule: true,
-  default: ({ onSelect }: { onSelect: (item: { label: string; value: string }) => void }) => {
+  default: ({
+    onSelect,
+  }: {
+    onSelect: (item: { label: string; value: string }) => void;
+  }) => {
     selectInput.onSelect = onSelect;
     selectInput.options = [];
     return React.createElement(Box, {}, [

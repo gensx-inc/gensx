@@ -8,10 +8,9 @@ import { waitForText } from "../test-helpers.js";
 
 const { inputHandler } = vi.hoisted(() => ({
   inputHandler: {
-    callback: undefined as (
+    callback: undefined as
       | ((input: string, key: { return?: boolean; escape?: boolean }) => void)
-      | undefined
-    ),
+      | undefined,
   },
 }));
 
