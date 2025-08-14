@@ -131,7 +131,7 @@ importers:
         version: 0.5.4
       '@gensx/openai':
         specifier: ^0.3.4
-        version: 0.3.4(openai@5.10.1(ws@8.18.2)(zod@3.25.76))
+        version: 0.3.4(openai@5.10.1(ws@8.18.2)(zod@3.25.56))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -1460,7 +1460,7 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       zod:
-        specifier: 'catalog:'
+        specifier: 3.25.76
         version: 3.25.76
       zod-to-json-schema:
         specifier: 'catalog:'
@@ -10860,8 +10860,8 @@ snapshots:
       p-queue: 6.6.2
       p-retry: 4.6.2
       uuid: 10.0.0
-      zod: 3.25.56
-      zod-to-json-schema: 3.24.6(zod@3.25.56)
+      zod: 3.25.76
+      zod-to-json-schema: 3.24.6(zod@3.25.76)
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@opentelemetry/exporter-trace-otlp-proto'
@@ -16687,8 +16687,8 @@ snapshots:
       react-compiler-runtime: 0.0.0-experimental-22c6e49-20241219(react@18.3.1)
       react-dom: 18.3.1(react@18.3.1)
       scroll-into-view-if-needed: 3.1.0
-      zod: 3.25.56
-      zod-validation-error: 3.4.0(zod@3.25.56)
+      zod: 3.25.76
+      zod-validation-error: 3.4.0(zod@3.25.76)
       zustand: 5.0.3(@types/react@19.1.8)(react@18.3.1)(use-sync-external-store@1.5.0(react@18.3.1))
     transitivePeerDependencies:
       - '@types/react'
@@ -16736,8 +16736,8 @@ snapshots:
       unist-util-visit: 5.0.0
       unist-util-visit-children: 3.0.0
       yaml: 2.8.0
-      zod: 3.25.56
-      zod-validation-error: 3.4.0(zod@3.25.56)
+      zod: 3.25.76
+      zod-validation-error: 3.4.0(zod@3.25.76)
     transitivePeerDependencies:
       - acorn
       - supports-color
@@ -19348,9 +19348,9 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-validation-error@3.4.0(zod@3.25.56):
+  zod-validation-error@3.4.0(zod@3.25.76):
     dependencies:
-      zod: 3.25.56
+      zod: 3.25.76
 
   zod@3.25.56: {}
 
