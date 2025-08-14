@@ -58,7 +58,7 @@
     "access": "public"
   },
   "peerDependencies": {
-    "zod": "^3.25.0"
+    "zod": "^3.25.76"
   },
   "dependencies": {
     "@ai-sdk/provider": "^2.0.0",
