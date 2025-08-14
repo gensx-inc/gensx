@@ -3,10 +3,9 @@ import { Agent } from "./agent";
 import { ModelMessage } from "ai";
 import { webSearchTool } from "./tools/web-search";
 import { useBlob } from "@gensx/storage";
-import { asToolSet } from "@gensx/vercel-ai";
+import { asToolSet, generateText } from "@gensx/vercel-ai";
 import { toolbox } from "./tools/toolbox";
 import { geocodeTool } from "./tools/geocode";
-import { generateText } from "ai";
 import { reverseGeocodeTool } from "./tools/reverse-geocode";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { locationSearchTool } from "./tools/location-search";
@@ -227,12 +226,16 @@ const GenerateSummary = gensx.Component(
   "GenerateSummary",
   async ({ userMessage }: { userMessage: string }): Promise<string> => {
     try {
+      const groqClient = createOpenAICompatible({
+        name: "groq",
+        apiKey: process.env.GROQ_API_KEY!,
+        baseURL: "https://api.groq.com/openai/v1",
+      });
+
+      const model = groqClient("moonshotai/kimi-k2-instruct");
+
       const result = await generateText({
-        model: createOpenAICompatible({
-          name: "groq",
-          apiKey: process.env.GROQ_API_KEY!,
-          baseURL: "https://api.groq.com/openai/v1",
-        }),
+        model,
         prompt: `Please create a concise 3-5 word summary of this user question/request. Focus on the main topic or intent. Examples:
 - "Tell me about Paris" → Paris Information
 - "Find restaurants near me" → Local Restaurant Search
