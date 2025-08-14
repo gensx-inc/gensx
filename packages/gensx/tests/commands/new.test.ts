@@ -19,9 +19,9 @@ const { textInput, selectInput } = vi.hoisted(() => ({
     onSubmit: undefined as ((value: string) => void) | undefined,
   },
   selectInput: {
-    onSelect: undefined as (
-      (item: { label: string; value: string }) => void
-    ) | undefined,
+    onSelect: undefined as
+      | ((item: { label: string; value: string }) => void)
+      | undefined,
     options: [] as { label: string; value: string }[],
   },
 }));
@@ -51,7 +51,11 @@ vi.mock("ink-select-input", () => ({
       Box,
       {},
       props.items.map((item) =>
-        React.createElement(Text, { key: item.value, color: "cyan" }, item.label),
+        React.createElement(
+          Text,
+          { key: item.value, color: "cyan" },
+          item.label,
+        ),
       ),
     );
   },
@@ -123,13 +127,11 @@ suite("new command UI", () => {
     );
 
     // Simulate selecting an assistant
-    if (!selectInput.onSelect || !selectInput.options)
-      throw new Error("SelectInput handler/options not found");
     const claudeOption = selectInput.options.find(
       (opt) => opt.value === "@gensx/claude-md",
     );
     if (!claudeOption) throw new Error("Claude option not found");
-    selectInput.onSelect(claudeOption);
+    selectInput.onSelect!(claudeOption);
 
     // Wait for done message
     await waitForText(lastFrame, /Successfully created GenSX project/);
@@ -154,8 +156,8 @@ suite("new command UI", () => {
     await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
     if (!textInput.onChange || !textInput.onSubmit)
       throw new Error("TextInput handlers not found");
-    textInput.onChange!("");
-    textInput.onSubmit!("");
+    textInput.onChange("");
+    textInput.onSubmit("");
 
     // Wait for dependencies to install
     await waitForText(lastFrame, /Installing dependencies/);
@@ -165,13 +167,9 @@ suite("new command UI", () => {
     );
 
     // Simulate selecting "all"
-    if (!selectInput.onSelect || !selectInput.options)
-      throw new Error("SelectInput handler/options not found");
-    const allOption = selectInput.options.find(
-      (opt) => opt.value === "all",
-    );
+    const allOption = selectInput.options.find((opt) => opt.value === "all");
     if (!allOption) throw new Error("All option not found");
-    selectInput.onSelect(allOption);
+    selectInput.onSelect!(allOption);
 
     await waitForText(lastFrame, /Successfully created GenSX project/);
     expect(exec).toHaveBeenCalledWith(
@@ -213,8 +211,8 @@ suite("new command UI", () => {
     await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
     if (!textInput.onChange || !textInput.onSubmit)
       throw new Error("TextInput handlers not found");
-    textInput.onChange!("");
-    textInput.onSubmit!("");
+    textInput.onChange("");
+    textInput.onSubmit("");
 
     // Wait for dependencies to install
     await waitForText(lastFrame, /Installing dependencies/);
@@ -224,13 +222,9 @@ suite("new command UI", () => {
     );
 
     // Simulate selecting "none"
-    if (!selectInput.onSelect || !selectInput.options)
-      throw new Error("SelectInput handler/options not found");
-    const noneOption = selectInput.options.find(
-      (opt) => opt.value === "none",
-    );
+    const noneOption = selectInput.options.find((opt) => opt.value === "none");
     if (!noneOption) throw new Error("None option not found");
-    selectInput.onSelect(noneOption);
+    selectInput.onSelect!(noneOption);
 
     await waitForText(lastFrame, /Successfully created GenSX project/);
     // No exec for assistants
@@ -254,34 +248,28 @@ suite("new command UI", () => {
     );
 
     // Simulate selecting TypeScript template
-    if (!selectInput.onSelect || !selectInput.options)
-      throw new Error("SelectInput handler/options not found");
     const typescriptOption = selectInput.options.find(
       (opt) => opt.value === "typescript",
     );
     if (!typescriptOption) throw new Error("TypeScript option not found");
-    selectInput.onSelect(typescriptOption);
+    selectInput.onSelect!(typescriptOption);
 
     // Wait for description prompt
     await waitForText(lastFrame, /Enter a project description/);
     await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
     if (!textInput.onChange || !textInput.onSubmit)
       throw new Error("TextInput handlers not found");
-    textInput.onChange!("");
-    textInput.onSubmit!("");
+    textInput.onChange("");
+    textInput.onSubmit("");
 
     // Skip AI assistants selection
     await waitForText(lastFrame, /Select AI assistants to integrate/);
     await waitUntil(
       () => !!selectInput.onSelect && selectInput.options.length > 0,
     );
-    if (!selectInput.onSelect || !selectInput.options)
-      throw new Error("SelectInput handler/options not found");
-    const noneOption = selectInput.options.find(
-      (opt) => opt.value === "none",
-    );
+    const noneOption = selectInput.options.find((opt) => opt.value === "none");
     if (!noneOption) throw new Error("None option not found");
-    selectInput.onSelect(noneOption);
+    selectInput.onSelect!(noneOption);
 
     await waitForText(lastFrame, /Successfully created GenSX project/);
 
@@ -307,11 +295,7 @@ suite("new command UI", () => {
     );
 
     // Simulate selecting Next.js template
-    if (!selectInput.onSelect || !selectInput.options)
-      throw new Error("SelectInput handler/options not found");
-    const nextOption = selectInput.options.find(
-      (opt) => opt.value === "next",
-    );
+    const nextOption = selectInput.options.find((opt) => opt.value === "next");
     if (!nextOption) throw new Error("Next.js option not found");
     selectInput.onSelect!(nextOption);
 
@@ -320,19 +304,15 @@ suite("new command UI", () => {
     await waitUntil(() => !!textInput.onChange && !!textInput.onSubmit);
     if (!textInput.onChange || !textInput.onSubmit)
       throw new Error("TextInput handlers not found");
-    textInput.onChange!("");
-    textInput.onSubmit!("");
+    textInput.onChange("");
+    textInput.onSubmit("");
 
     // Skip AI assistants selection
     await waitForText(lastFrame, /Select AI assistants to integrate/);
     await waitUntil(
       () => !!selectInput.onSelect && selectInput.options.length > 0,
     );
-    if (!selectInput.onSelect || !selectInput.options)
-      throw new Error("SelectInput handler/options not found");
-    const noneOption = selectInput.options.find(
-      (opt) => opt.value === "none",
-    );
+    const noneOption = selectInput.options.find((opt) => opt.value === "none");
     if (!noneOption) throw new Error("None option not found");
     selectInput.onSelect!(noneOption);
 
