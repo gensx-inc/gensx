@@ -44,7 +44,18 @@ export function ToolMessage({ message, messages }: ToolMessageProps) {
       (item): item is ToolResultPart =>
         item.type === "tool-result" && item.toolCallId === toolCall.toolCallId,
     );
-    toolResultContent = JSON.stringify(resultItem?.output, null, 2) || null;
+    if (resultItem?.output) {
+      // Handle new v5 format where output can be { type: "text", value: "..." }
+      if (
+        typeof resultItem.output === "object" &&
+        resultItem.output !== null &&
+        "value" in resultItem.output
+      ) {
+        toolResultContent = String(resultItem.output.value);
+      } else {
+        toolResultContent = String(resultItem.output);
+      }
+    }
   }
 
   const isComplete = !!toolResult;

@@ -90,7 +90,7 @@ IMPORTANT: When writing the report, include citations wherever possible for fact
       model: anthropic("claude-sonnet-4-20250514"),
       system: systemMessage,
       messages: [{ role: "user", content: fullPrompt }],
-      maxTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
     });
 
     let text = "";

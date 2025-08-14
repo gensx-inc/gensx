@@ -271,7 +271,7 @@ RULE: If the text is asking for content creation or explanation, return text_inp
           action = {
             type: "model_selection",
             action: "add",
-            parameters: toolCall.args,
+            parameters: toolCall.input,
           };
           break;
 
@@ -279,7 +279,7 @@ RULE: If the text is asking for content creation or explanation, return text_inp
           action = {
             type: "model_selection",
             action: "remove",
-            parameters: toolCall.args,
+            parameters: toolCall.input,
           };
           break;
 
@@ -287,7 +287,7 @@ RULE: If the text is asking for content creation or explanation, return text_inp
           action = {
             type: "model_selection",
             action: "select_only",
-            parameters: toolCall.args,
+            parameters: toolCall.input,
           };
           break;
 
@@ -295,7 +295,7 @@ RULE: If the text is asking for content creation or explanation, return text_inp
           action = {
             type: "model_selection",
             action: "set_single",
-            parameters: toolCall.args,
+            parameters: toolCall.input,
           };
           break;
 
@@ -319,7 +319,7 @@ RULE: If the text is asking for content creation or explanation, return text_inp
           action = {
             type: "sorting",
             action: "sort_generations",
-            parameters: toolCall.args,
+            parameters: toolCall.input,
           };
           break;
 
@@ -327,7 +327,7 @@ RULE: If the text is asking for content creation or explanation, return text_inp
           action = {
             type: "sorting",
             action: "sort_models",
-            parameters: toolCall.args,
+            parameters: toolCall.input,
           };
           break;
 
@@ -375,7 +375,7 @@ RULE: If the text is asking for content creation or explanation, return text_inp
           action = {
             type: "version_navigation",
             action: "goto",
-            parameters: toolCall.args,
+            parameters: toolCall.input,
           };
           break;
 
