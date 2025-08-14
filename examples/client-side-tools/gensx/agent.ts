@@ -1,7 +1,7 @@
 import * as gensx from "@gensx/core";
 import { streamText, wrapVercelAIModel } from "@gensx/vercel-ai";
 import {
-  CoreMessage,
+  ModelMessage,
   ToolSet,
   wrapLanguageModel,
   TextPart,
@@ -9,6 +9,7 @@ import {
   ToolResultPart,
   smoothStream,
   stepCountIs,
+  AssistantContent,
 } from "ai";
 
 import { LanguageModelV2, SharedV2ProviderMetadata } from "@ai-sdk/provider";
@@ -19,7 +20,7 @@ interface ReasoningPart {
 }
 
 interface AgentProps {
-  messages: CoreMessage[];
+  messages: ModelMessage[];
   tools: ToolSet;
   model: LanguageModelV2;
   maxSteps?: number;
@@ -36,7 +37,7 @@ export const Agent = gensx.Component(
     providerOptions,
   }: AgentProps) => {
     // Track all messages including responses
-    const allMessages: CoreMessage[] = [];
+    const allMessages: ModelMessage[] = [];
 
     const publishMessages = () => {
       gensx.publishObject("messages", {
@@ -54,7 +55,7 @@ export const Agent = gensx.Component(
             // Add assistant response to messages
             allMessages.push({
               role: "assistant",
-              content: result.text ?? "",
+              content: result.content as AssistantContent,
             });
 
             publishMessages();
@@ -94,7 +95,6 @@ export const Agent = gensx.Component(
       model: wrappedLanguageModel,
       tools,
       providerOptions,
-      toolCallStreaming: true,
       temperature: 0,
       experimental_transform: smoothStream(),
       onChunk: ({ chunk: streamChunk }) => {
@@ -109,7 +109,7 @@ export const Agent = gensx.Component(
         }
         switch (chunk.type) {
           case "text-delta":
-            accumulatedText += chunk.textDelta;
+            accumulatedText += chunk.text;
             // Update or add text part
             const existingTextPartIndex = contentParts.findIndex(
               (part) => part.type === "text",
@@ -128,8 +128,8 @@ export const Agent = gensx.Component(
             allMessages[assistantMessageIndex].content = [...contentParts];
             publishMessages();
             break;
-          case "reasoning":
-            accumulatedReasoning += chunk.textDelta;
+          case "reasoning-delta":
+            accumulatedReasoning += chunk.text;
             // Update or add reasoning part
             const existingReasoningPartIndex = contentParts.findIndex(
               (part) => part.type === "reasoning",
@@ -150,20 +150,20 @@ export const Agent = gensx.Component(
             break;
           case "tool-call":
             // Add tool call part - ensure args is an object, not a string
-            let parsedArgs = chunk.args;
-            if (typeof chunk.args === "string") {
+            let parsedArgs = chunk.input;
+            if (typeof chunk.input === "string") {
               try {
-                parsedArgs = JSON.parse(chunk.args);
+                parsedArgs = JSON.parse(chunk.input);
               } catch {
-                console.warn("Failed to parse tool args:", chunk.args);
-                parsedArgs = chunk.args;
+                console.warn("Failed to parse tool args:", chunk.input);
+                parsedArgs = chunk.input;
               }
             }
             contentParts.push({
               type: "tool-call",
               toolCallId: chunk.toolCallId,
               toolName: chunk.toolName,
-              args: parsedArgs,
+              input: parsedArgs,
             });
             allMessages[assistantMessageIndex].content = [...contentParts];
             publishMessages();
@@ -217,11 +217,11 @@ export const Agent = gensx.Component(
             // Check if the message already has a tool message after it
             const nextMessage = allMessages[toolCallMessageIndex + 1];
             if (nextMessage?.role === "tool") {
-              nextMessage.content.push(chunk);
+              nextMessage.content.push(chunk as ToolResultPart);
             } else {
               allMessages.splice(toolCallMessageIndex + 1, 0, {
                 role: "tool",
-                content: [chunk],
+                content: [chunk as ToolResultPart],
               });
             }
             publishMessages();

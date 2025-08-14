@@ -256,8 +256,8 @@ const UpdateDraftWorkflow = gensx.Workflow(
           ],
           onFinish: ({ usage }) => {
             // Update exact token counts from the response
-            modelStream.inputTokens = usage.promptTokens;
-            modelStream.outputTokens = usage.completionTokens;
+            modelStream.inputTokens = usage.inputTokens;
+            modelStream.outputTokens = usage.outputTokens;
             gensx.publishObject<DraftProgress>("draft-progress", draftProgress);
           },
         });

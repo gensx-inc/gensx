@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useWorkflow, useObject } from "@gensx/react";
 import { JsonValue, ToolImplementations, WorkflowMessage } from "@gensx/core";
-import { CoreMessage, TextPart, ToolCallPart } from "ai";
+import { ModelMessage, TextPart, ToolCallPart } from "ai";
 import { getChatHistory } from "@/lib/actions/chat-history";
 
 // Workflow input/output types
@@ -13,13 +13,13 @@ export interface ChatWorkflowInput {
 
 export interface ChatWorkflowOutput {
   response: string;
-  messages: CoreMessage[];
+  messages: ModelMessage[];
 }
 
 export type ChatStatus = "completed" | "waiting" | "reasoning" | "streaming";
 
 // Just use CoreMessage directly
-export type Message = CoreMessage;
+export type Message = ModelMessage;
 
 interface UseChatReturn {
   sendMessage: (
@@ -64,7 +64,7 @@ export function useChat(
   // Update messages when workflow publishes new messages
   useEffect(() => {
     if (messagesProgress?.messages && execution?.length > 0) {
-      const workflowMessages = messagesProgress.messages as CoreMessage[];
+      const workflowMessages = messagesProgress.messages as ModelMessage[];
       const lastMessage = workflowMessages[workflowMessages.length - 1];
 
       // Detect and notify about tool calls
@@ -74,7 +74,7 @@ export function useChat(
         );
 
         toolCalls.forEach((toolCall) => {
-          onToolCall(toolCall.toolName, toolCall.args);
+          onToolCall(toolCall.toolName, toolCall.input);
         });
       }
 

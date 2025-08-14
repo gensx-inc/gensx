@@ -247,7 +247,7 @@ const GenerateSummary = gensx.Component(
 User message: "${userMessage}"
 
 Summary:`,
-        maxTokens: 50,
+        maxOutputTokens: 50,
       });
 
       // Remove quotes and trim whitespace
