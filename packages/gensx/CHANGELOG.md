@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/gensx-inc/gensx/compare/gensx-v0.5.1...gensx-v0.5.2) (2025-08-14)
+
+
+### ✨ New Features
+
+* Chrome extension example ([#918](https://github.com/gensx-inc/gensx/issues/918)) ([1df660b](https://github.com/gensx-inc/gensx/commit/1df660b25b5c83d1cb9dce0f08b85409a2f52252))
+
 ## [0.5.1](https://github.com/gensx-inc/gensx/compare/gensx-v0.5.0...gensx-v0.5.1) (2025-08-11)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.4.0...gensx-vercel-ai-v0.4.1) (2025-08-14)
+
+
+### 🐛 Bug Fixes
+
+* updating packages to use newer zod version ([#931](https://github.com/gensx-inc/gensx/issues/931)) ([1aeb171](https://github.com/gensx-inc/gensx/commit/1aeb1714a72688632239a80d539d3f7d05d8d057))
+
 ## [0.4.0](https://github.com/gensx-inc/gensx/compare/gensx-vercel-ai-v0.3.3...gensx-vercel-ai-v0.4.0) (2025-08-06)
 
 
