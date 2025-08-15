@@ -359,19 +359,27 @@ function extractWorkflowTypes(
   // Extract output type from function signature
   const signature = typeChecker.getSignatureFromDeclaration(workflowFunction);
   if (signature) {
-    outputType = typeChecker.getReturnTypeOfSignature(signature);
-
-    // Unwrap Promise<T> for output
-    const symbolName = outputType.symbol.name;
-    if (symbolName === "Promise") {
-      const typeArgs = (outputType as ts.TypeReference).typeArguments;
-      if (typeArgs && typeArgs.length > 0) {
-        outputType = typeArgs[0];
-      }
-    }
+    outputType = unwrapPromiseType(
+      typeChecker.getReturnTypeOfSignature(signature),
+    );
   }
 
   return { inputType, outputType };
+}
+
+/**
+ * Returns the inner type of Promise<T> if the provided type is a Promise.
+ * Otherwise returns the original type.
+ */
+function unwrapPromiseType(tsType: ts.Type): ts.Type {
+  const symbolName = tsType.getSymbol()?.name;
+  if (symbolName === "Promise") {
+    const typeArgs = (tsType as ts.TypeReference).typeArguments;
+    if (typeArgs && typeArgs.length > 0) {
+      return typeArgs[0];
+    }
+  }
+  return tsType;
 }
 
 /**
@@ -458,16 +466,9 @@ function findWorkflowsInFile(
 
           const signature = typeChecker.getSignatureFromDeclaration(workflowFn);
           if (signature) {
-            outputType = typeChecker.getReturnTypeOfSignature(signature);
-
-            // Unwrap Promise<T> for output
-            const symbolName = outputType.symbol.name;
-            if (symbolName === "Promise") {
-              const typeArgs = (outputType as ts.TypeReference).typeArguments;
-              if (typeArgs && typeArgs.length > 0) {
-                outputType = typeArgs[0];
-              }
-            }
+            outputType = unwrapPromiseType(
+              typeChecker.getReturnTypeOfSignature(signature),
+            );
           }
 
           workflows.push({
