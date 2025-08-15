@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.8](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.2.7...gensx-react-v0.2.8) (2025-08-15)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @gensx/client bumped to 0.1.11
+    * @gensx/core bumped to 0.5.6
+
 ## [0.2.7](https://github.com/gensx-inc/gensx/compare/gensx-react-v0.2.6...gensx-react-v0.2.7) (2025-08-14)
 
 
