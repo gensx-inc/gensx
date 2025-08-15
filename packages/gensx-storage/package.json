@@ -52,17 +52,17 @@
     "@types/node": "catalog:packages",
     "@vitest/coverage-istanbul": "catalog:",
     "vitest": "catalog:",
-    "@libsql/client": "^0.15.9"
+    "@libsql/client": "^0.15.11"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
     "@gensx/core": "workspace:*",
-    "@turbopuffer/turbopuffer": "^0.10.4"
+    "@turbopuffer/turbopuffer": "^0.10.17"
   },
   "peerDependencies": {
-    "@libsql/client": "^0.15.9"
+    "@libsql/client": "^0.15.11"
   },
   "peerDependenciesMeta": {
     "@libsql/client": {
