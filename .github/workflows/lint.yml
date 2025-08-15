@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
         with:
-          version: 20.x
+          version: 24.x
 
       - name: Lint code 💅
         run: pnpm lint:all
