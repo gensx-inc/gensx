@@ -1,95 +1,216 @@
 # GenSX Chat Memory Example
 
-This example shows you how to build a chat application with persistent memory using GenSX. We'll use OpenAI's GPT-4o-mini model and store chat history in [GenSX Cloud blob storage](https://www.gensx.com/docs/cloud/storage/blob-storage).
+This example demonstrates the powerful new **GenSX Memory** abstraction - a sophisticated memory layer that provides semantic search, automatic fact extraction, and intelligent conversation management on top of GenSX Storage.
 
-## Overview
+## What's New in GenSX Memory
 
-The ChatMemoryWorkflow takes a `threadId` and a `message` as inputs. Each chat thread maintains its own conversation history, enabling context-aware responses across multiple interactions.
+GenSX Memory goes beyond simple chat history storage to provide:
 
-Here's what happens when you run the workflow:
+- **🧠 Semantic Memory** - Persistent facts and preferences that survive across sessions
+- **📝 Episodic Memory** - Contextual event logging of interactions and outcomes  
+- **⚡ Short-term Memory** - Rolling conversation buffer with automatic summarization
+- **🔍 Hybrid Search** - Combines vector similarity, keyword search, and recency scoring
+- **🤖 Agent Integration** - Drop-in `attach()` method adds memory to any agent
+- **🎯 Automatic Fact Extraction** - Learns preferences and facts from conversations
 
-1. The system loads any existing chat history for your specified thread
-2. Your message and chat history are processed using GPT-4o-mini
-3. The updated conversation history is saved
-4. The assistant's response is displayed
+## How It Works
 
-The workflow uses:
+### Smart Memory (Recommended)
 
-- `@gensx/core` for workflow management
-- `@gensx/openai` for OpenAI integration
-- `@gensx/storage` for persistent chat history storage
+The `SmartChatWithMemory` component shows the simplest approach - just attach memory to your agent:
 
-## Getting Started
+```typescript
+// Create memory instance with scoped namespacing
+const memory = createMemory({
+  scope: {
+    workspaceId: "chat-example",
+    userId,
+    agentId: "chat-assistant", 
+    threadId,
+  },
+});
 
-1. Log in to GenSX (if you haven't already):
+// Attach memory capabilities to your agent
+const agentWithMemory = await memory.attach(ChatAgent, {
+  preRecall: { limit: 5, types: ["semantic", "episodic", "shortTerm"] },
+  postTurn: { logEpisodic: true, extractFacts: true },
+});
 
-   ```bash
-   npx gensx login
-   ```
+// Use the agent normally - memory is handled automatically!
+const response = await agentWithMemory({ messages });
+```
 
-2. Install the required dependencies:
+### Manual Memory Control
 
+The `SimpleChatWithMemory` component shows manual memory management:
+
+```typescript
+const memory = createMemory({ scope: { workspaceId, userId, threadId } });
+
+// Store memories manually
+await memory.remember({
+  text: userInput,
+  type: "shortTerm",
+  tags: ["conversation"],
+});
+
+// Recall relevant context
+const context = await memory.recall({
+  types: ["shortTerm"],
+  limit: 10,
+});
+```
+
+## Memory Types Explained
+
+- **Semantic** (`type: "semantic"`) - Long-term facts like "User prefers dark mode" or "Derek works at GenSX"
+- **Episodic** (`type: "episodic"`) - Event logs like "User searched for authentication tutorials" 
+- **Short-term** (`type: "shortTerm"`) - Recent conversation turns, auto-summarized when buffer fills
+
+## Running the Examples
+
+### Prerequisites
+
+1. Install dependencies:
    ```bash
    pnpm install
    ```
 
-3. Set up your environment variables:
-
+2. Set up your environment variables:
    ```bash
    export OPENAI_API_KEY=your_api_key_here
    ```
 
-## Running in GenSX Cloud
-
-To run the workflow in GenSX Cloud:
-
-1. Deploy your workflow:
-
+3. Log in to GenSX (if you haven't already):
    ```bash
-   pnpm run deploy
+   npx gensx login
    ```
 
-2. Start a conversation by calling the workflow:
+### Try the Memory Demo
 
-   ```bash
-   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "userInput": "What is the capital of France?"}'
-   ```
-
-3. Continue the conversation by using the same `threadId`:
-
-   ```bash
-   gensx run ChatMemoryWorkflow --input '{"threadId": "thread-1", "userInput": "Tell me more about its history"}'
-   ```
-
-Once deployed, you can go to the [GenSX console](https://app.gensx.com) to see your workflow, test it, analyze traces, and get code snippets.
-
-## Running locally
-
-### Test the workflow directly
-
-You can run the workflow directly using the `src/index.tsx` file:
+Run the memory demonstration to see semantic search and fact storage in action:
 
 ```bash
-pnpm dev thread-1 "What is the capital of France?"
+gensx run MemoryDemoWorkflow --input '{}'
 ```
 
-### Run the API locally
+This will:
+1. Store user preferences and conversation history
+2. Perform semantic searches to find relevant memories
+3. Show how different memory types work together
 
-You can also test the workflow through a local API server:
+### Smart Chat with Memory
+
+Test the intelligent memory-enhanced chat:
+
+```bash
+gensx run ChatMemoryWorkflow --input '{
+  "userInput": "I love TypeScript and prefer concise explanations", 
+  "threadId": "thread-1",
+  "userId": "alice",
+  "useSmartMemory": true
+}'
+```
+
+Continue the conversation to see memory in action:
+
+```bash
+gensx run ChatMemoryWorkflow --input '{
+  "userInput": "Can you help me with React hooks?",
+  "threadId": "thread-1", 
+  "userId": "alice",
+  "useSmartMemory": true
+}'
+```
+
+The agent will remember Alice's preferences for TypeScript and concise explanations!
+
+### Simple Memory Approach
+
+Compare with the manual memory approach:
+
+```bash
+gensx run ChatMemoryWorkflow --input '{
+  "userInput": "Hello, I need help with Next.js",
+  "threadId": "thread-2",
+  "userId": "bob", 
+  "useSmartMemory": false
+}'
+```
+
+## Cloud Deployment
+
+Deploy your memory-enhanced workflows to GenSX Cloud:
+
+```bash
+pnpm run deploy
+```
+
+Once deployed, visit the [GenSX console](https://app.gensx.com) to:
+- Test your workflows with the built-in UI
+- Analyze memory performance and traces
+- Monitor fact extraction and recall accuracy
+- Get code snippets for integration
+
+## Local Development
+
+### Run the workflow directly
+
+```bash
+pnpm dev "What's the weather like?" "my-thread"
+```
+
+### Start the API server
 
 ```bash
 pnpm start
 ```
 
-This will start a local API server and you can call the workflow APIs via curl or any HTTP client:
+Test the API:
 
 ```bash
 curl -X POST http://localhost:1337/workflows/ChatMemoryWorkflow \
   -H "Content-Type: application/json" \
   -d '{
-    "threadId": "thread-1",
-    "message": "Hello, how are you?"
+    "userInput": "I prefer technical explanations",
+    "threadId": "test-thread",
+    "userId": "test-user",
+    "useSmartMemory": true
   }'
 ```
 
-A swagger UI will also be available at [http://localhost:1337/swagger-ui](http://localhost:1337/swagger-ui) to view the API details and test the workflow.
+## Memory Architecture
+
+GenSX Memory provides:
+
+1. **Scoped Namespacing** - Separate memories by workspace/user/agent/thread
+2. **Hybrid Retrieval** - Vector similarity + keyword search + recency scoring  
+3. **Automatic Embeddings** - Uses OpenAI's text-embedding-3-small (with fallback)
+4. **Fact Extraction** - Identifies preferences, relationships, and important statements
+5. **Buffer Management** - Short-term memory automatically summarizes when full
+6. **Agent Integration** - Drop-in memory enhancement for any GenSX component
+
+## Configuration Options
+
+```typescript
+const memory = createMemory({
+  scope: { workspaceId, userId, agentId, threadId },
+  policy: {
+    shortTerm: {
+      tokenLimit: 4000,           // Buffer size before summarization
+      summarizeOverflow: true,    // Auto-summarize old messages
+    },
+    observability: {
+      trace: true,                // Enable memory operation logging
+    },
+  },
+});
+```
+
+## Learn More
+
+- **[GenSX Storage Documentation](https://docs.gensx.com/storage)** - Vector search and blob storage
+- **[GenSX Core Documentation](https://docs.gensx.com/core)** - Component and workflow patterns
+- **[Memory API Reference](https://docs.gensx.com/storage/memory)** - Complete API documentation
+
+Try the example and see how GenSX Memory transforms your chat applications from simple request-response to intelligent, context-aware conversations!

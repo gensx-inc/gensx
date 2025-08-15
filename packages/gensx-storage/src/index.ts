@@ -12,3 +12,7 @@ export { DatabaseClient } from "./database/databaseClient.js";
 export * from "./search/types.js";
 export { useSearch } from "./search/useSearch.js";
 export { SearchClient } from "./search/searchClient.js";
+
+// Export the memory abstraction types and interfaces
+export * from "./memory/types.js";
+export { createMemory, MemoryClient } from "./memory/index.js";
