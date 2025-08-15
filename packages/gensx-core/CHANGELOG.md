@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.5...gensx-core-v0.5.6) (2025-08-15)
+
+
+### ✨ New Features
+
+* Mastra example ([#927](https://github.com/gensx-inc/gensx/issues/927)) ([270a283](https://github.com/gensx-inc/gensx/commit/270a28310a655d0c0fa3d324f921d462e0e8cf1c))
+
 ## [0.5.5](https://github.com/gensx-inc/gensx/compare/gensx-core-v0.5.4...gensx-core-v0.5.5) (2025-08-14)
 
 
