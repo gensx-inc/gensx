@@ -19,14 +19,14 @@
     "@ai-sdk/anthropic": "^1.0.0",
     "@gensx/core": "workspace:*",
     "@gensx/vercel-ai": "workspace:*",
-    "@mastra/core": "^0.13.2",
-    "@mastra/libsql": "^0.13.2",
-    "@mastra/loggers": "^0.10.6",
-    "@mastra/memory": "^0.12.2",
+    "@mastra/core": "^0.14.1",
+    "@mastra/libsql": "^0.13.4",
+    "@mastra/loggers": "^0.10.7",
+    "@mastra/memory": "^0.13.1",
     "zod": "^3"
   },
   "devDependencies": {
-    "@types/node": "^24.2.1",
+    "@types/node": "^20.19.11",
     "mastra": "^0.10.21",
     "typescript": "^5.9.2"
   }
