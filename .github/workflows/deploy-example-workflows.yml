@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Deploy Client-Side Tools Workflow
         id: deploy
@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Deploy Chat UX Workflow
         id: deploy
@@ -63,7 +63,7 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - name: Checkout repository
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v5
 
   #     - name: Deploy Draft Pad Workflow
   #       id: deploy
@@ -99,7 +99,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Deploy Deep Research Workflow
         id: deploy

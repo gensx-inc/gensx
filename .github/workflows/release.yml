@@ -34,7 +34,7 @@ jobs:
       # The following steps only run when merging a release PR
       - name: Checkout 🛬
         if: ${{ steps.release.outputs.releases_created }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
           fetch-depth: 0
@@ -72,7 +72,7 @@ jobs:
         target: [win, linux, macos-x64, macos-arm64]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Deno ⚙️
         uses: denoland/setup-deno@v2
@@ -143,7 +143,7 @@ jobs:
           echo "X64_SHA256=$(sha256sum gensx_${{ needs.build-cli-binary.outputs.version }}_macos-x64.tar.gz | cut -d ' ' -f 1)" >> $GITHUB_ENV
 
       - name: Checkout homebrew-gensx repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: gensx-inc/homebrew-gensx
           token: ${{ secrets.PAT_GITHUB_TOKEN }}
