@@ -1,12 +1,35 @@
 /* eslint-disable @typescript-eslint/require-await */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import type { ExecutionNode, NodeId } from "../src/checkpoint.js";
+
 import { expect, suite, test } from "vitest";
 
 import * as gensx from "../src/index.js";
 import { executeWorkflowWithCheckpoints } from "./utils/executeWithCheckpoints.js";
 
 suite("component retry", () => {
+  function findNodeByComponentName(
+    checkpoints: Record<string, ExecutionNode>,
+    name: string,
+  ): ExecutionNode | undefined {
+    const seen = new Set<NodeId>();
+    function dfs(node: ExecutionNode): ExecutionNode | undefined {
+      if (seen.has(node.id)) return undefined;
+      seen.add(node.id);
+      if (node.componentName === name) return node;
+      if (Array.isArray(node.children)) {
+        for (const child of node.children) {
+          const found = dfs(child);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    }
+    for (const root of Object.values(checkpoints)) {
+      const found = dfs(root);
+      if (found) return found;
+    }
+    return undefined;
+  }
   test("retries until success with exponential backoff config", async () => {
     let calls = 0;
     async function sometimesFails(): Promise<string> {
@@ -36,17 +59,19 @@ suite("component retry", () => {
 
     expect(result).toBe("ok");
     // Find the RetryComp node
-    const node = Object.values(checkpoints).find(
-      (n) => n.componentName === "RetryComp",
-    );
+    const node = findNodeByComponentName(checkpoints, "RetryComp");
     expect(node).toBeDefined();
     expect(calls).toBe(3);
     expect(node?.metadata?.retry).toBeDefined();
-    const retryMeta = node?.metadata?.retry as any;
+    const retryMeta = node!.metadata!.retry as {
+      enabled?: boolean;
+      maxAttempts?: number;
+      attempts?: unknown[];
+    };
     expect(retryMeta.enabled).toBe(true);
     expect(retryMeta.maxAttempts).toBe(5);
     expect(Array.isArray(retryMeta.attempts)).toBe(true);
-    expect(retryMeta.attempts.length).toBeGreaterThanOrEqual(2);
+    expect((retryMeta.attempts ?? []).length).toBeGreaterThanOrEqual(2);
   });
 
   test("respects retryOn predicate", async () => {
@@ -74,9 +99,7 @@ suite("component retry", () => {
     );
 
     // Should NOT retry on first error, so component should fail; but since workflow catches errors, result undefined and error present
-    const node = Object.values(checkpoints).find(
-      (n) => n.componentName === "RetryOnComp",
-    );
+    const node = findNodeByComponentName(checkpoints, "RetryOnComp");
     expect(node).toBeDefined();
     // The node should be completed with an error metadata
     expect(node?.metadata?.error).toBeDefined();
@@ -110,9 +133,7 @@ suite("component retry", () => {
     );
 
     expect(result).toBe("ok");
-    const node = Object.values(checkpoints).find(
-      (n) => n.componentName === "RuntimeRetryComp",
-    );
+    const node = findNodeByComponentName(checkpoints, "RuntimeRetryComp");
     expect(node?.metadata?.retry).toBeDefined();
     expect(calls).toBe(2);
   });
