@@ -6,9 +6,8 @@ import type {
   ComponentOpts,
   ComponentOpts as OriginalComponentOpts,
   DecoratorComponentOpts,
-  WorkflowOpts,
-  RetryConfig,
   RetryStrategy,
+  WorkflowOpts,
 } from "./types.js";
 
 import serializeErrorPkg from "@common.js/serialize-error";
@@ -51,13 +50,13 @@ function resolveRetryConfig(opts?: ComponentOpts): {
 } {
   const user = opts?.retry;
   const enabled = user?.enabled === true;
-  const maxAttempts = enabled ? (user?.maxAttempts ?? 3) : 1;
+  const maxAttempts = enabled ? (user.maxAttempts ?? 3) : 1;
   const strategy: Required<Pick<RetryStrategy, "type" | "jitter">> &
     Partial<Omit<RetryStrategy, "type" | "jitter">> & {
       initialDelayMs: number;
       factor: number;
     } = {
-    type: (user?.strategy?.type ?? "exponential") as "fixed" | "exponential",
+    type: user?.strategy?.type ?? "exponential",
     jitter: user?.strategy?.jitter ?? true,
     initialDelayMs: user?.strategy?.initialDelayMs ?? 250,
     factor: user?.strategy?.factor ?? 2,
@@ -331,6 +330,7 @@ export function Component<P extends object = {}, R = unknown>(
       if (initialResult instanceof Promise) {
         becameAsync = true;
         const doAsync = async () => {
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           while (true) {
             if (retry.enabled) {
               retryAttemptsMeta.push({ attempt });
