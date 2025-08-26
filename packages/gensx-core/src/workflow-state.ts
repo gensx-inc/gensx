@@ -117,6 +117,10 @@ export interface EndMessage {
   type: "end";
 }
 
+export interface HeartbeatMessage {
+  type: "heartbeat";
+}
+
 export interface ExternalToolMessage {
   type: "external-tool";
   toolName: string;
