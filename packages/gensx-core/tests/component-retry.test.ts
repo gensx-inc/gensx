@@ -16,7 +16,13 @@ suite("component retry", () => {
       retry: {
         enabled: true,
         maxAttempts: 5,
-        strategy: { type: "exponential", initialDelayMs: 1, factor: 1.1, jitter: false, maxDelayMs: 2 },
+        strategy: {
+          type: "exponential",
+          initialDelayMs: 1,
+          factor: 1.1,
+          jitter: false,
+          maxDelayMs: 2,
+        },
       },
     });
 
@@ -27,7 +33,9 @@ suite("component retry", () => {
 
     expect(result).toBe("ok");
     // Find the RetryComp node
-    const node = Object.values(checkpoints).find((n) => n.componentName === "RetryComp");
+    const node = Object.values(checkpoints).find(
+      (n) => n.componentName === "RetryComp",
+    );
     expect(node).toBeDefined();
     expect(calls).toBe(3);
     expect(node?.metadata?.retry).toBeDefined();
@@ -63,7 +71,9 @@ suite("component retry", () => {
     );
 
     // Should NOT retry on first error, so component should fail; but since workflow catches errors, result undefined and error present
-    const node = Object.values(checkpoints).find((n) => n.componentName === "RetryOnComp");
+    const node = Object.values(checkpoints).find(
+      (n) => n.componentName === "RetryOnComp",
+    );
     expect(node).toBeDefined();
     // The node should be completed with an error metadata
     expect(node?.metadata?.error).toBeDefined();
@@ -82,14 +92,25 @@ suite("component retry", () => {
     const Comp = gensx.Component("RuntimeRetryComp", flaky);
 
     const { result, checkpoints } = await executeWorkflowWithCheckpoints(
-      () => Comp({}, { retry: { enabled: true, maxAttempts: 2, strategy: { type: "fixed", delayMs: 1, jitter: false } } }),
+      () =>
+        Comp(
+          {},
+          {
+            retry: {
+              enabled: true,
+              maxAttempts: 2,
+              strategy: { type: "fixed", delayMs: 1, jitter: false },
+            },
+          },
+        ),
       {},
     );
 
     expect(result).toBe("ok");
-    const node = Object.values(checkpoints).find((n) => n.componentName === "RuntimeRetryComp");
+    const node = Object.values(checkpoints).find(
+      (n) => n.componentName === "RuntimeRetryComp",
+    );
     expect(node?.metadata?.retry).toBeDefined();
     expect(calls).toBe(2);
   });
 });
-
