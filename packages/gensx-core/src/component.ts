@@ -6,6 +6,7 @@ import type {
   ComponentOpts,
   ComponentOpts as OriginalComponentOpts,
   DecoratorComponentOpts,
+  RetryConfig,
   WorkflowOpts,
 } from "./types.js";
 
@@ -68,6 +69,32 @@ function getResolvedOpts(
   };
 
   return merged;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function computeDelay(attempt: number, cfg: RetryConfig): number {
+  const strategy = cfg.strategy ?? "none";
+  if (strategy === "fixed") {
+    return Math.max(0, cfg.delayMs ?? 1000);
+  }
+  if (strategy === "exponential") {
+    const base = cfg.baseDelayMs ?? 500;
+    const factor = cfg.factor ?? 2;
+    const max = cfg.maxDelayMs;
+    let delay = Math.round(base * Math.pow(factor, Math.max(0, attempt - 1)));
+    if (typeof max === "number") delay = Math.min(delay, max);
+    const jitter = cfg.jitter ?? 0;
+    if (jitter > 0) {
+      const jitterAmount = delay * jitter;
+      const delta = (Math.random() * 2 - 1) * jitterAmount; // +/- jitter
+      delay = Math.max(0, Math.round(delay + delta));
+    }
+    return delay;
+  }
+  return 0;
 }
 
 export function Component<P extends object = {}, R = unknown>(
@@ -226,33 +253,130 @@ export function Component<P extends object = {}, R = unknown>(
       return value;
     }
 
-    try {
-      // TODO: Don't emit this when rerunning the workflow with a partial checkpoint.
-      let runInContext: RunInContext;
-      workflowContext.sendWorkflowMessage({
-        type: "component-start",
-        componentName: componentName,
-        componentId: nodeId,
-      });
-      const result = context.withCurrentNode(node, () => {
-        runInContext = getContextSnapshot();
-        return target((props ?? {}) as P);
-      });
+    // TODO: Don't emit this when rerunning the workflow with a partial checkpoint.
+    workflowContext.sendWorkflowMessage({
+      type: "component-start",
+      componentName: componentName,
+      componentId: nodeId,
+    });
 
-      if (result instanceof Promise) {
-        return result
-          .then((value) => handleResultValue(value, runInContext, true))
-          .catch((error: unknown) => {
-            handleError(node, error, workflowContext, true);
-            throw error;
-          }) as R;
-      }
+    const retryCfg: RetryConfig | undefined = resolvedComponentOpts.retry;
+    const retryEnabled = retryCfg ? retryCfg.enabled !== false : false;
+    const maxTries = retryEnabled ? Math.max(1, retryCfg?.maxTries ?? 1) : 1;
 
-      return handleResultValue(result, runInContext!, false) as R;
-    } catch (error) {
-      handleError(node, error, workflowContext, false);
-      throw error;
+    // Attach retry metadata to the parent component node
+    if (retryEnabled) {
+      checkpointManager.addMetadata(node, {
+        retry: {
+          enabled: true,
+          maxTries,
+          strategy: retryCfg?.strategy ?? "none",
+        },
+      });
     }
+
+    const parentComponentPath = extractPathFromId(nodeId);
+
+    const runAttempt = (attempt: number): R => {
+      let runInContext: RunInContext;
+      try {
+        const result = context.withCurrentNode(node, () => {
+          runInContext = getContextSnapshot();
+          return target((props ?? {}) as P);
+        });
+
+        if (result instanceof Promise) {
+          return result
+            .then((value) => handleResultValue(value, runInContext, true))
+            .catch(async (error: unknown) => {
+              // Record failed attempt
+              const attemptNode = checkpointManager.addNode(
+                {
+                  id: generateNodeId(
+                    `${componentName}.attempt`,
+                    { attempt },
+                    undefined,
+                    parentComponentPath,
+                    checkpointManager.getNextCallIndex(
+                      parentComponentPath,
+                      `${componentName}.attempt`,
+                      { attempt } as Record<string, unknown>,
+                      undefined,
+                    ),
+                  ),
+                  componentName: `${componentName} Attempt #${attempt}`,
+                  props: { attempt },
+                },
+                node,
+              );
+              checkpointManager.addMetadata(attemptNode, {
+                status: "failed",
+                attempt,
+                error: serializeError(error),
+              });
+              checkpointManager.completeNode(attemptNode, undefined, {
+                wrapInPromise: true,
+              });
+
+              if (retryEnabled && attempt < maxTries) {
+                const delay = computeDelay(attempt, retryCfg!);
+                if (delay > 0) await sleep(delay);
+                return runAttempt(attempt + 1);
+              }
+              handleError(node, error, workflowContext, true);
+              throw error;
+            }) as R;
+        }
+
+        // Synchronous result
+        return handleResultValue(result, runInContext!, false) as R;
+      } catch (error) {
+        // Record failed attempt for sync error
+        const attemptNode = checkpointManager.addNode(
+          {
+            id: generateNodeId(
+              `${componentName}.attempt`,
+              { attempt },
+              undefined,
+              parentComponentPath,
+              checkpointManager.getNextCallIndex(
+                parentComponentPath,
+                `${componentName}.attempt`,
+                { attempt } as Record<string, unknown>,
+                undefined,
+              ),
+            ),
+            componentName: `${componentName} Attempt #${attempt}`,
+            props: { attempt },
+          },
+          node,
+        );
+        checkpointManager.addMetadata(attemptNode, {
+          status: "failed",
+          attempt,
+          error: serializeError(error),
+        });
+        checkpointManager.completeNode(attemptNode, undefined, {
+          wrapInPromise: false,
+        });
+
+        if (retryEnabled && attempt < maxTries) {
+          const delay = computeDelay(attempt, retryCfg!);
+          if (delay > 0) {
+            // Convert to async flow to respect delay
+            return (async () => {
+              await sleep(delay);
+              return runAttempt(attempt + 1);
+            })() as unknown as R;
+          }
+          return runAttempt(attempt + 1);
+        }
+        handleError(node, error, workflowContext, false);
+        throw error;
+      }
+    };
+
+    return runAttempt(1);
   };
 
   Object.defineProperty(ComponentFn, "name", {
