@@ -205,11 +205,6 @@ export default async function Post(props: Params) {
                   <HyperText>Quickstart Guide</HyperText>
                 </Button>
               </Link>
-              <Link href="https://signin.gensx.com/sign-up">
-                <Button variant="ghost">
-                  <HyperText>Sign up for free</HyperText>
-                </Button>
-              </Link>
             </div>
           </div>
         </div>

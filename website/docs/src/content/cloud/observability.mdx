@@ -15,7 +15,7 @@ When you run a workflow, GenSX automatically generates a trace that captures the
 
 The GenSX cloud console includes a trace viewer. You can access traces in several ways:
 
-1. **From the Console**: Navigate to your project in the [GenSX Console](https://app.gensx.com) and select the "Executions" tab
+1. **From the Console**: Navigate to your project in the GenSX Console and select the "Executions" tab
 2. **Trace URL**: When running a workflow with `printUrl: true`, a direct link to the trace is printed to the console
 3. **API Response**: When running a workflow in the cloud, the execution ID from API responses can be used to view traces in the console
 
@@ -24,7 +24,7 @@ The GenSX cloud console includes a trace viewer. You can access traces in severa
 const result = await MyWorkflow({ input: "What is GenSX?" });
 
 // Console output includes:
-// [GenSX] View execution at: https://app.gensx.com/your_org/executions/your_execution_id
+// [GenSX] View execution at: https://console/your_org/executions/your_execution_id
 ```
 
 ### Understanding the flame graph
@@ -223,12 +223,12 @@ When `secretOutputs` is set to `true`, the entire output object or value will be
 
 GenSX observability features have certain limits based on your subscription tier:
 
-| Feature                   | Free Tier      | Pro Tier ($20/month/dev) | Enterprise |
-| ------------------------- | -------------- | ------------------------ | ---------- |
-| Traced components         | 100K per month | 1M per month             | Custom     |
-| Overage cost              | N/A            | $0.20 per 10K components | Custom     |
-| Trace retention           | 7 days         | 30 days                  | Custom     |
-| Maximum input/output size | 4MB each       | 4MB each                 | 4MB each   |
+| Feature                   | Free Tier      | Pro Tier           | Enterprise |
+| ------------------------- | -------------- | ------------------ | ---------- |
+| Traced components         | 100K per month | 1M per month       | Custom     |
+| Overage cost              | N/A            | Per 10K components | Custom     |
+| Trace retention           | 7 days         | 30 days            | Custom     |
+| Maximum input/output size | 4MB each       | 4MB each           | 4MB each   |
 
 A few important notes on these limits:
 

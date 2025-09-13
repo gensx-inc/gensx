@@ -121,7 +121,7 @@ Available workflows:
 - TextToSQLWorkflow
 - RAGWorkflow
 
-Dashboard: https://app.gensx.com/your-org/your-project/default/workflows
+Dashboard: your-org/your-project/default/workflows
 ```
 
 And we can run our agent from the CLI:
@@ -227,4 +227,4 @@ This initial release of GenSX Cloud is just a small first step towards that futu
 - **Durable workflows** - workflows that are automatically resilient to failure, can run for days, pause/resume, and even time travel
 - **Front-end tool calling** for agents need to manipulate and query front-end applications
 
-[Give GenSX Cloud a try](/docs/quickstart). The free tier has everything you need to build and deploy your first production-ready agent. Checkout the open source [GenSX project on GitHub](https://github.com/gensx-inc/gensx) and join our [community of AI engineers on Discord](https://discord.gg/wRmwfz5tCy).
+[Give GenSX Cloud a try](/docs/quickstart). The free tier has everything you need to build and deploy your first production-ready agent. Checkout the open source [GenSX project on GitHub](https://github.com/gensx-inc/gensx).

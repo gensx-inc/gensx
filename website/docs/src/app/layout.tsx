@@ -36,8 +36,6 @@ export default async function RootLayout({ children }) {
     <Navbar
       logo={<Logo />}
       logoLink="/docs"
-      // GenSX discord server.
-      chatLink="https://discord.gg/wRmwfz5tCy"
       projectLink="https://github.com/gensx-inc/gensx"
     />
   );

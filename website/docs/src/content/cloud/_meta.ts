@@ -6,7 +6,7 @@ const meta = {
   observability: "Observability & tracing",
   "mcp-server": "MCP server",
   "projects-environments": "Projects and environments",
-  pricing: "Pricing & limits",
+  // pricing removed
 };
 
 export default meta;

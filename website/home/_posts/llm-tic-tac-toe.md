@@ -126,4 +126,4 @@ For example, maybe formatting the board differently for the model would help, ma
 
 Think you can get better results? Pull down the [code](https://github.com/gensx-inc/gensx/tree/main/examples/llm-games) and try it yourself.
 
-Want to see more of these experiments? Join us on [Discord](https://discord.gg/wRmwfz5tCy) and let us know.
+Want to see more of these experiments? Let us know.

@@ -164,4 +164,4 @@ It reminds me a lot of the median junior dev. To succeed it needs very clear ins
 
 [Fork the example from GitHub](https://github.com/gensx-inc/gensx/tree/main/examples/self-modifying-code) and form your own opinion.
 
-If you’re interested in learning more about GenSX and building agents that bring sci-fi to life, check out the [getting started guide](/docs/quickstart) and join our community on [discord](https://discord.gg/wRmwfz5tCy).
+If you’re interested in learning more about GenSX and building agents that bring sci-fi to life, check out the [getting started guide](/docs/quickstart).

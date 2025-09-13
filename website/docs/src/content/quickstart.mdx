@@ -121,7 +121,7 @@ pnpm dev
 This will run the workflow and print the workflow's output to the console along with a URL to the trace (if you're logged in).
 
 ```bash
-[GenSX] View execution at: https://app.gensx.com/<org>/<project>/executions/<run-id>?workflowName=ChatWorkflow
+[GenSX] View execution at: https://console/<org>/<project>/executions/<run-id>?workflowName=ChatWorkflow
 
 Hello, World!
 ```
@@ -210,7 +210,7 @@ The CLI makes it easy to test your workflows and integrate them into scripts or 
 
 The GenSX Cloud console provides a visual interface for managing and executing your workflows:
 
-1. Log in to [app.gensx.com](https://app.gensx.com)
+1. Log in to the GenSX Console
 2. Navigate to your project and environment
 3. Select the workflow you want to run
 4. Click the "Run" button and enter your input
@@ -334,7 +334,7 @@ gensx run ChatWorkflow --input '{"userMessage":"What was my previous message?", 
 
 ```
 
-You should see that the model remembers the previous message. You can also go to the _Blob Storage_ tab in the [GenSX Cloud console](https://app.gensx.com) and see the blob that was created.
+You should see that the model remembers the previous message. You can also go to the _Blob Storage_ tab in the GenSX Cloud console and see the blob that was created.
 
 ### Add RAG with vector search
 

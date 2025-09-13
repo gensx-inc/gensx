@@ -147,6 +147,6 @@ Next time you're designing a workflow system, resist the urge to reach for the g
 
 Your future self—trying to understand that workflow six months from now—will thank you. Your teammates who need to maintain your code will buy you coffee. And your production systems will be more robust for it.
 
-And maybe give [GenSX](https://app.gensx.com) a try. We've bet our workflow model on trees, and we haven't looked back.
+And maybe give GenSX a try. We've bet our workflow model on trees, and we haven't looked back.
 
 Because sometimes, the best graph is the one you don't have to think about.

@@ -16,7 +16,7 @@ GenSX Cloud provides everything you need to ship production-grade agents and wor
 
 Unlike traditional serverless offerings, GenSX Cloud is optimized for long-running workflows. Free tier workflows can run up to 5 minutes and Pro tier workflows can run for up to 60 minutes.
 
-All of this is available on a free tier for individuals and with $20/developer pricing for teams.
+All of this is available on a free tier for individuals.
 
 ## Serverless deployments
 
@@ -45,7 +45,7 @@ $ npx gensx deploy ./src/workflows.ts
 
 ✔ Successfully deployed project to GenSX Cloud
 
-Dashboard: https://app.gensx.com/gensx/support-tools/default/workflows
+Dashboard: console/support-tools/default/workflows
 
 Available workflows:
 - ChatAgent
@@ -197,7 +197,6 @@ GenSX Cloud provides comprehensive tracing and observability for all your workfl
 - **Complete execution traces**: Every workflow execution generates a detailed trace that captures the entire flow from start to finish, allowing you to understand exactly what happened during execution.
 
 - **Comprehensive component visibility**: Each component in your workflow automatically records its inputs and outputs, including:
-
   - All LLM calls with full prompts, parameters, and responses
   - Every tool invocation with input arguments and return values
   - All intermediate steps and state changes in your agents and workflows
@@ -321,21 +320,7 @@ This organizational structure is designed to be flexible and adaptable, allowing
 
 For more details see the full [projects and environments reference](/docs/cloud/projects-environments).
 
-## Pricing
-
-GenSX Cloud offers simple, predictable pricing designed to scale with your needs, including a free tier for individuals:
-
-| Resource           | Free Tier              | Pro Tier ($20/month/dev) | Overage/Action   |
-| ------------------ | ---------------------- | ------------------------ | ---------------- |
-| Serverless Compute | 50K sec                | 500K sec                 | $0.00003/sec     |
-| Traces (events)    | 100K events            | 1M events                | $0.20/10K        |
-| Blob Storage       | 500MB                  | 5GB                      | $0.25/GB         |
-| SQLite Storage     | 500MB                  | 1GB                      | $1.50/GB         |
-| Vector Storage     | 250MB                  | 1GB                      | $1.00/GB         |
-| Execution time     | Up to 5 minutes        | Up to 60 minutes         | Custom           |
-| Observability      | 7 days trace retention | 30 days trace retention  | Custom retention |
-
-For more details, visit our [pricing page](/docs/cloud/pricing) or [contact us](mailto:contact@gensx.com) for enterprise needs.
+For more details, [contact us](mailto:contact@gensx.com) for enterprise needs.
 
 ## Get started
 
