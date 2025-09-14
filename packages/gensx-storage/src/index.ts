@@ -12,3 +12,8 @@ export { DatabaseClient } from "./database/databaseClient.js";
 export * from "./search/types.js";
 export { useSearch } from "./search/useSearch.js";
 export { SearchClient } from "./search/searchClient.js";
+
+// Export the key-value storage interfaces
+export * from "./kv/types.js";
+export { useKV } from "./kv/useKV.js";
+export { KVClient } from "./kv/kvClient.js";
