@@ -33,7 +33,7 @@
   "dependencies": {
     "commander": "^11.1.0",
     "gensx": "workspace:*",
-    "yaml": "^2.8.0",
+    "yaml": "^2.8.1",
     "ink": "catalog:",
     "react": "18.3.1"
   },
@@ -42,7 +42,7 @@
     "@types/node": "catalog:packages",
     "@types/react": "^19",
     "@vitest/coverage-istanbul": "catalog:",
-    "fs-extra": "^11.3.0",
+    "fs-extra": "^11.3.1",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
